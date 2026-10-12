@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>H5 快手小游戏</title>
+<style>
+  /* ── 浏览器调试：固定 iPhone XR 尺寸 414×896（竖屏默认），在浏览器视口居中 ── */
+  html {
+    width: 414px;
+    height: 896px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    overflow: hidden;
+    box-shadow: 0 0 0 1px #444;
+    transition: transform 0.3s;
+  }
+  body {
+    margin: 0;
+    background: #000;
+    overflow: hidden;
+    touch-action: none;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── 胶囊 UI（右上角） ── */
+  #debug-capsule {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  /* Home 键 */
+  #debug-home {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(200,200,200,0.55);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #debug-home svg { width: 18px; height: 18px; }
+
+  /* 胶囊条 */
+  #debug-pill {
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 18px;
+    background: rgba(200,200,200,0.55);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #debug-pill span {
+    font-size: 18px;
+    color: rgba(80,80,80,0.9);
+    line-height: 1;
+    letter-spacing: 1px;
+  }
+  #debug-pill .pill-close {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(160,160,160,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #debug-pill .pill-close svg { width: 10px; height: 10px; }
+
+</style>
+</head>
+<body>
+<canvas id="game" style="display:block"></canvas>
+
+<!-- 胶囊 UI + Home 键（仅浏览器调试用） -->
+<div id="debug-capsule">
+  <div id="debug-home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="rgba(80,80,80,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V10.5z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  </div>
+  <div id="debug-pill">
+    <span>···</span>
+    <div class="pill-close">
+      <svg viewBox="0 0 10 10" fill="none" stroke="rgba(80,80,80,0.85)" stroke-width="1.5" stroke-linecap="round">
+        <line x1="2" y1="2" x2="8" y2="8"/>
+        <line x1="8" y1="2" x2="2" y2="8"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script>
+window.canvas = document.getElementById('game');
+
+// H5 调试与快手小游戏统一为竖屏逻辑分辨率。
+var _debugHtml = document.documentElement;
+_debugHtml.setAttribute('data-debug-w', '414');
+_debugHtml.setAttribute('data-debug-h', '896');
+</script>
+<!-- m3-init.js 必须最先加载，初始化 M3 命名空间和 M3.Layout 基础字段 -->
+<script src="js/m3-init.js?v=1"></script>
+<!-- standard/ 标准库：资源管理器 / 事件总线 / 分包加载器 / CDN 加载器 -->
+  <script src="standard/asset-manager.js?v=3"></script>
+<script src="standard/kwai-event-bus.js?v=1"></script>
+<script src="standard/subpackage-loader.js?v=1"></script>
+  <script src="standard/cdn-loader.js?v=3"></script>
+<script src="standard/game-logger.js?v=1"></script>
+<script src="js/kwai-ad-config.js?v=3"></script>
+<script src="api/kwai-login.js?v=1"></script>
+<script src="api/kwai-ad.js?v=2"></script>
+<script src="api/kwai-share.js?v=1"></script>
+<script src="api/kwai-base.js?v=1"></script>
+<script src="api/kwai-render.js?v=1"></script>
+<script src="api/kwai-network.js?v=1"></script>
+<script src="api/kwai-storage.js?v=1"></script>
+  <script src="js/runtime-endpoints.js?v=4"></script>
+<script src="js/play/kwai-platform.js?v=3"></script>
+  <script src="js/play/neutral-config.js?v=15"></script>
+<script src="js/play/config-validator.js?v=11"></script>
+<script src="js/play/template-rules.js?v=2"></script>
+<script src="js/play/feature-system.js?v=5"></script>
+<script src="js/play/reward-system.js?v=2"></script>
+<script src="js/play/save-data.js?v=4"></script>
+<script src="js/play/deck.js?v=2"></script>
+<script src="js/play/progression.js?v=2"></script>
+<script src="js/play/bonds.js?v=1"></script>
+<script src="js/play/world-map.js?v=3"></script>
+<script src="js/play/runtime-config.js?v=13"></script>
+<script src="js/play/board.js?v=1"></script>
+<script src="js/play/combat.js?v=3"></script>
+<script src="js/play/combat-features.js?v=16"></script>
+<script src="js/play/platform-compliance.js?v=1"></script>
+  <script src="js/render/ui-layout.js?v=27"></script>
+<script src="js/scene/scene-models.js?v=1"></script>
+  <script src="js/render/glyphs.js?v=2"></script>
+  <script src="js/render/font-cn-main-data.js?v=1"></script>
+  <script src="js/render/texture-assets.js?v=7"></script>
+  <script src="js/render/bitmap-font.js?v=5"></script>
+  <script src="js/render/renderer.js?v=92"></script>
+  <script src="js/render/tile-render-hook.js?v=2"></script>
+<script src="js/play/game.js?v=6"></script>
+<script src="js/play/game-features.js?v=19"></script>
+<script src="js/play/input.js?v=2"></script>
+<!-- main.js 保持最后 -->
+<script src="js/main.js?v=1"></script>
+</body>
+</html>

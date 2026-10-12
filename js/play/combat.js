@@ -23,7 +23,7 @@
   };
   Combat.prototype._updateEnemies = function (dt) {
     var i, e, u, a, b, dx, dy, len, dist, factor;
-    for (i = this.enemies.length - 1; i >= 0; i -= 1) { e = this.enemies[i]; u = this.units[e.unitId]; if (e.hp <= 0) { this.gold = Math.min(this.level.economy.resourceCap, this.gold + (u.killReward || 0)); this.enemies.splice(i, 1); continue; }
+    for (i = this.enemies.length - 1; i >= 0; i -= 1) { e = this.enemies[i]; u = this.units[e.unitId]; if (e.dying) { e.deathAge = (e.deathAge || 0) + dt; if (e.deathAge >= e.deathDuration) this.enemies.splice(i, 1); continue; } if (e.hp <= 0) { this.gold = Math.min(this.level.economy.resourceCap, this.gold + (u.killReward || 0)); e.dying = true; e.deathAge = 0; e.deathDuration = .45; e.hp = 0; continue; }
       if (e.segment >= this.board.path.length - 1) { this.baseHp -= 1; this.enemies.splice(i, 1); continue; }
       a = this.board.path[e.segment]; b = this.board.path[e.segment + 1]; dx = b.x - a.x; dy = b.y - a.y; len = Math.sqrt(dx*dx + dy*dy) || 1; factor = this.elapsed < e.slowUntil ? e.slowFactor : 1; dist = (u.speed || 1) * (this.level.map.speedMultiplier || 1) * factor * dt; e.progress += dist / len;
       while (e.progress >= 1 && e.segment < this.board.path.length - 1) { e.progress -= 1; e.segment += 1; if (e.segment >= this.board.path.length - 1) break; }
@@ -34,7 +34,7 @@
     var i, j, t, u, target, best, dx, dy, d, damage, effect = this.bonds.effects || {}, splash, damageModel = (this.manifest.systems.M8_balance || {}).damage_model;
     for (i = 0; i < this.towers.length; i += 1) { t = this.towers[i]; u = this.units[t.unitId]; t.cooldown -= dt; if (t.cooldown > 0) continue; target = null; best = -1;
       if(u.kind==='economy'){this.gold=Math.min(this.level.economy.resourceCap,this.gold+Number(u.productionAmount));t.cooldown=Number(u.productionInterval);continue;}
-      for (j = 0; j < this.enemies.length; j += 1) { dx = this.enemies[j].x - (t.x+0.5); dy = this.enemies[j].y - (t.y+0.5); d = Math.sqrt(dx*dx+dy*dy); if (d <= u.range && this.enemies[j].segment + this.enemies[j].progress > best) { best = this.enemies[j].segment + this.enemies[j].progress; target = this.enemies[j]; } }
+      for (j = 0; j < this.enemies.length; j += 1) { if (this.enemies[j].dying || (this.enemies[j].segment === 0 && this.enemies[j].progress <= .5)) continue; dx = this.enemies[j].x - (t.x+0.5); dy = this.enemies[j].y - (t.y+0.5); d = Math.sqrt(dx*dx+dy*dy); if (d <= u.range && this.enemies[j].segment + this.enemies[j].progress > best) { best = this.enemies[j].segment + this.enemies[j].progress; target = this.enemies[j]; } }
       if (!target) continue; damage = (u.attack || 0) * Math.pow(u.growth || 1, t.level - 1) * (effect.attackMultiplier || 1) * t.progressionMultiplier; if (damageModel === 'equal') target.hp -= Math.max(1, damage); else target.hp -= Math.max(1, damage - ((this.units[target.unitId] && this.units[target.unitId].defense) || 0));
       if (u.skill === 'slow') { target.slowFactor = Math.max(0.15, 1 - (u.skillPower || 0) - (effect.slowPowerBonus || 0)); target.slowUntil = this.elapsed + (u.skillDuration || 1); }
       if (u.skill === 'splash') { splash = damage * (u.skillPower || 0.5); for (j = 0; j < this.enemies.length; j += 1) if (this.enemies[j] !== target) { dx = this.enemies[j].x-target.x; dy = this.enemies[j].y-target.y; if (dx*dx+dy*dy <= 1.7) this.enemies[j].hp -= splash; } }

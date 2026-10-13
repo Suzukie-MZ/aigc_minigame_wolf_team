@@ -32,7 +32,7 @@
     manifest.presentation.typography.styles = merge((defaults.typography && defaults.typography.styles) || {}, (supplied.typography && supplied.typography.styles) || {});
     manifest.assetManifest = manifest.assetManifest || [];
     for (i = 0; i < manifest.assetManifest.length; i += 1) assetKeys[manifest.assetManifest[i].key] = true;
-    for (i = 0; i < fallbackAssets.length; i += 1) if ((fallbackAssets[i].key.indexOf('font-cn-main-') === 0 || fallbackAssets[i].key.indexOf('ui-item-') === 0 || fallbackAssets[i].key === 'ui-level-lock' || fallbackAssets[i].key.indexOf('ui-result-') === 0) && !assetKeys[fallbackAssets[i].key]) manifest.assetManifest.push(clone(fallbackAssets[i]));
+    for (i = 0; i < fallbackAssets.length; i += 1) if ((fallbackAssets[i].key.indexOf('font-cn-main-') === 0 || fallbackAssets[i].key.indexOf('ui-item-') === 0 || fallbackAssets[i].key.indexOf('ui-map-') === 0 || fallbackAssets[i].key === 'ui-level-lock' || fallbackAssets[i].key.indexOf('ui-result-') === 0) && !assetKeys[fallbackAssets[i].key]) manifest.assetManifest.push(clone(fallbackAssets[i]));
     for (key in dc) if (Object.prototype.hasOwnProperty.call(dc, key)) manifest.presentation.colors[key] = color(sc[key], dc[key]);
     rolePalette = Array.isArray(supplied.rolePalette) && supplied.rolePalette.length ? supplied.rolePalette : defaults.rolePalette;
     enemyPalette = Array.isArray(supplied.enemyPalette) && supplied.enemyPalette.length ? supplied.enemyPalette : defaults.enemyPalette;

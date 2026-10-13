@@ -91,7 +91,7 @@
       schemaVersion: 1, revision: 2, gameId: 'ks654147848546150500',
       presentation: {
         themeId: 'coral-fantasy', displayName: '珊瑚防线',
-        copy: { homeTitle: '珊瑚防线', homeSubtitle: '守护最后的珊瑚礁', homeAction: '进入潮汐地图', mapTitle: '潮汐战图', mapSubtitle: '选择珊瑚前哨', mapUpgrade: '英雄强化', detailBack: '返回', detailAction: '选择四座防御塔', deckTitle: '选择四座防御塔', deckHint: '固定阵容，局内不可更换', progressionTitle: '英雄强化', progressionMaterial: '局外货币', progressionCost: '强化花费', purchaseCost: '建造花费', battleGold: '局内资源', battleLife: '基地', resultWin: '守护成功', resultLose: '防线失守', resultAction: '返回地图' },
+        copy: { homeTitle: '珊瑚防线', homeSubtitle: '守护最后的珊瑚礁', homeAction: '进入潮汐地图', mapTitle: '潮汐战图', mapSubtitle: '选择珊瑚前哨', mapUpgrade: '英雄强化', detailBack: '返回', detailAction: '选择四座防御塔', deckTitle: '选择四座防御塔', deckHint: '固定阵容，局内不可更换', progressionTitle: '英雄强化', progressionMaterial: '局外货币', progressionCost: '强化花费', purchaseCost: '建造花费', battleGold: '金币', battleLife: '基地生命', resultWin: '守护成功', resultLose: '防线失守', resultAction: '返回地图' },
         sceneAssets: { homeBackground: 'demo-scene', worldMapBackground: 'demo-scene', levelBackground: 'demo-scene', battleBackground: 'demo-scene' },
         typography: { defaultFont: 'font-cn-main', minReadableSize: 13.5, outlineWidth: 0, outlineColor: [0.01,0.06,0.09,0.58], shadowColor: [0,0,0,0], shadowOffsetX: 0, shadowOffsetY: 0, styles: { title: { minSize: 19, letterSpacing: 0.8, outlineWidth: 0, shadowColor: [0,0,0,0], shadowOffsetX: 0, shadowOffsetY: 0 }, body: { minSize: 13.5, letterSpacing: 0.4, outlineWidth: 0 }, label: { minSize: 14, letterSpacing: 0.6, outlineWidth: 0 }, button: { minSize: 15, letterSpacing: 0.75, outlineWidth: 0, shadowColor: [0,0,0,0], shadowOffsetX: 0, shadowOffsetY: 0 }, compactButton: { minSize: 15, letterSpacing: 0, outlineWidth: 0, shadowColor: [0,0,0,0], shadowOffsetX: 0, shadowOffsetY: 0 } } },
         colors: { background: [0.025,0.10,0.17], panel: [0.07,0.24,0.29], primary: [0.16,0.72,0.70], accent: [0.96,0.48,0.36], success: [0.20,0.76,0.48], disabled: [0.24,0.30,0.34], frame: [0.72,0.96,0.91], route: [0.34,0.48,0.48], ground: [0.08,0.30,0.31], obstacle: [0.72,0.36,0.28], enemy: [0.92,0.28,0.38], health: [0.28,0.94,0.46], gold: [1.0,0.82,0.28] },
@@ -152,6 +152,9 @@
       worldMap: { nodes: fallbackNodes },
       levels: fallbackLevelRefs,
       assetManifest: [
+        { key: 'ui-map-share', type: 'image', url: 'assets/Image/ui/map/map-share.png', version: '1', preload: true, render: { fit: 'contain' } },
+        { key: 'ui-map-energy', type: 'image', url: 'assets/Image/ui/map/map-energy.png', version: '1', preload: true, render: { fit: 'contain' } },
+        { key: 'ui-map-hero-upgrade', type: 'image', url: 'assets/Image/ui/map/map-hero-upgrade.png', version: '1', preload: true, render: { fit: 'contain' } },
         { key: 'ui-item-supply', type: 'image', url: 'assets/Image/ui/item/tactical-supply.png', version: '1', preload: true, render: { fit: 'contain' } },
         { key: 'ui-item-question', type: 'image', url: 'assets/Image/ui/item-question-glass.jpeg', version: '1', preload: true, render: { fit: 'contain' } },
         { key: 'ui-item-economy', type: 'image', url: 'assets/Image/ui/item/economy-boost.png', version: '1', preload: true, render: { fit: 'contain' } },
@@ -180,5 +183,5 @@
     levels: fallbackLevels
   };
   M3.NeutralConfig.manifest.cards.forEach(function (card) { card.portraitAsset = 'demo-guardian'; });
-  for (fallbackIndex = 0; fallbackIndex < 9; fallbackIndex += 1) M3.NeutralConfig.manifest.assetManifest.push({ key: 'font-cn-main-' + fallbackIndex, type: 'image', url: 'assets/Font/font-cn-main-' + fallbackIndex + '.png', version: '1', preload: true });
+  for (fallbackIndex = 0; fallbackIndex < 9; fallbackIndex += 1) M3.NeutralConfig.manifest.assetManifest.push({ key: 'font-cn-main-' + fallbackIndex, type: 'image', url: 'assets/Font/font-cn-main-' + fallbackIndex + '.png', version: fallbackIndex === 8 ? '2' : '1', preload: true });
 })();

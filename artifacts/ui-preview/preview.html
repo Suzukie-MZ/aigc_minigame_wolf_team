@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>结算与道具 UI 预览</title>
+<style>
+  body { margin:0; background:#090f14; color:#dcebf0; font:14px system-ui,sans-serif; }
+  aside { position:fixed; top:24px; left:24px; width:210px; }
+  button { display:block; width:180px; margin:12px 0; padding:12px; border:1px solid #426c78; border-radius:8px; background:#162b35; color:#dcebf0; cursor:pointer; }
+  button[aria-pressed="true"] { border-color:#6ac4cd; background:#24434e; }
+  p { color:#8ca4b0; line-height:1.6; }
+  iframe { position:fixed; width:414px; height:896px; top:50%; left:50%; transform:translate(-50%,-50%); border:0; }
+</style>
+<aside>
+  <strong>边框效果预览</strong>
+  <button data-mode="lose" aria-pressed="true">失败结算</button>
+  <button data-mode="win" aria-pressed="false">成功结算</button>
+  <button data-mode="item" aria-pressed="false">道具弹窗</button>
+  <p id="status">正在加载游戏…</p>
+  <p>使用项目实际渲染代码与配置。预览奖励为示例数值。</p>
+</aside>
+<iframe id="preview" src="../../index.html?preview=tactical-supply-aligned" title="小游戏界面预览"></iframe>
+<script>
+  var mode='lose',frame=document.getElementById('preview');
+  document.querySelectorAll('button').forEach(function(button){
+    button.onclick=function(){mode=button.getAttribute('data-mode');document.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b===button));});};
+  });
+  function connect(){
+    var game=frame.contentWindow,M3=game.M3,manifest=M3&&M3.RuntimeConfig&&M3.RuntimeConfig.getManifest(),level,id,deck,hero,combat,snapshot;
+    if(!manifest||!M3.Game||M3.Game.getViewModel().state==='BOOT'){requestAnimationFrame(connect);return;}
+    id=manifest.worldMap.nodes[0].levelId;level=M3.RuntimeConfig.getLevel(id);
+    deck=M3.Deck.allowedCards(manifest).slice(0,manifest.deckRules.deckSize||4).map(function(c){return c.id;});
+    hero=(manifest.systems.M5_hero.hero_unit_pool||[]).slice(0,1).map(function(h){return h.id;});
+    M3.UILayout.setGrid(level.map.width,level.map.height);
+    combat=M3.Combat.create(level,manifest,deck,hero);
+    snapshot=M3.SceneModels.snapshot;
+    M3.SceneModels.snapshot=function(){
+      var view=snapshot();
+      view.message='';view.paused=false;view.levelPreview=level;
+      if(mode==='item'){view.state='BATTLE';view.combat=combat.view();view.itemMenuOpen=true;}
+      else{view.state='RESULT';view.result=mode;view.resultData={outerCurrency:mode==='win'?25:8,xp:mode==='win'?30:10,doubled:false};}
+      return view;
+    };
+    document.getElementById('status').textContent='已加载：'+manifest.presentation.displayName+'（'+M3.RuntimeConfig.getSource()+'）';
+  }
+  frame.onload=function(){requestAnimationFrame(connect);};
+</script>
+</html>

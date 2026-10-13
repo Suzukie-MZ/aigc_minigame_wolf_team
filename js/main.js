@@ -75,9 +75,9 @@
   // 必须使用 WebGL，禁止使用 '2d' context。
   // 优先获取 webgl2，不支持时降级到 webgl；所有绘制必须通过 WebGL API 实现。
   var gl;
-  try { gl = canvas.getContext('webgl2'); } catch (e) {}
+  try { gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true }); } catch (e) {}
   if (!gl) {
-    try { gl = canvas.getContext('webgl'); } catch (e) {}
+    try { gl = canvas.getContext('webgl', { preserveDrawingBuffer: true }); } catch (e) {}
   }
   if (!gl) { console.error('[M3] WebGL not supported'); }
 

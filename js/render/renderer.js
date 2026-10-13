@@ -21,7 +21,7 @@
   function chamferOutline(r,c,b,cut){var k=Math.max(2,Math.min(cut||8,Math.min(r.w,r.h)*.18)),p=[[r.x+k,r.y],[r.x+r.w-k,r.y],[r.x+r.w,r.y+k],[r.x+r.w,r.y+r.h-k],[r.x+r.w-k,r.y+r.h],[r.x+k,r.y+r.h],[r.x,r.y+r.h-k],[r.x,r.y+k]],i,n;for(i=0;i<8;i+=1){n=(i+1)%8;line(p[i][0],p[i][1],p[n][0],p[n][1],b||2,c);}}
   function cutCorners(r,c,cut){var x=r.x,y=r.y,w=r.w,h=r.h,k=Math.max(2,Math.min(cut||8,Math.min(w,h)*.18));solid([x,y,x+k,y,x,y+k,x+w,y,x+w,y+k,x+w-k,y,x,y+h,x,y+h-k,x+k,y+h,x+w,y+h,x+w-k,y+h,x+w,y+h-k],c);}
   function uiPalette(){return{navy:[.025,.055,.075,.96],navy2:[.04,.09,.115,.96],panelVariants:[[.025,.080,.095,.96],[.040,.065,.110,.96],[.060,.055,.105,.96],[.030,.085,.075,.96]],borderVariants:[[.22,.72,.76,1],[.34,.58,.86,1],[.62,.48,.82,1],[.32,.70,.54,1],[.82,.62,.28,1],[.78,.42,.52,1]],buttonGreen:[.035,.20,.15,.98],buttonBlue:[.035,.13,.22,.98],buttonAmber:[.20,.15,.055,.98],buttonViolet:[.13,.085,.20,.98],resource:[.72,.82,.86,1],primary:[.22,.72,.76,1],cyan:[.22,.72,.76,1],violet:[.66,.50,.86,1],accent:[.55,.72,.80,1],gold:[.55,.72,.80,1],ink:[.012,.028,.042,1],paper:[.94,.97,.98,1],frame:[.78,.87,.90,1],muted:[.50,.60,.65,1],disabled:[.18,.22,.24,1]};}
-  function sceneBackdrop(l,v,key,opacity){var p=uiPalette(v),asset=key||(v.presentation&&v.presentation.sceneAssets&&v.presentation.sceneAssets.worldMapBackground);opacity=Math.max(.92,opacity===undefined?.92:opacity);if(!imageAsset(asset,0,l.top,l.w,l.usable,opacity))rect(0,l.top,l.w,l.usable,p.ink);rect(0,l.top,l.w,l.usable,[.005,.025,.045,.10]);rect(0,l.top+l.usable*.88,l.w,l.usable*.12,[.005,.025,.045,.08]);}
+  function sceneBackdrop(l,v,key,opacity,withoutOverlay){var p=uiPalette(v),asset=key||(v.presentation&&v.presentation.sceneAssets&&v.presentation.sceneAssets.worldMapBackground);opacity=Math.max(.92,opacity===undefined?.92:opacity);if(!imageAsset(asset,0,l.top,l.w,l.usable,opacity))rect(0,l.top,l.w,l.usable,p.ink);if(withoutOverlay)return;rect(0,l.top,l.w,l.usable,[.005,.025,.045,.10]);rect(0,l.top+l.usable*.88,l.w,l.usable*.12,[.005,.025,.045,.08]);}
   function ornatePanel(r,v,accent,selected,fill){var p=uiPalette(),cut=Math.min(11,Math.max(5,r.h*.08)),edge=accent||p.accent;chamfer({x:r.x+4,y:r.y+5,w:r.w,h:r.h},[0,0,0,.34],cut);chamfer(r,fill||p.navy,cut);chamferOutline(r,selected?p.primary:[edge[0],edge[1],edge[2],.86],selected?3:2,cut);chamferOutline({x:r.x+4,y:r.y+4,w:r.w-8,h:r.h-8},[.72,.82,.86,.22],1,Math.max(3,cut-3));}
   // Layered metal frames for settlement and tactical supply surfaces.
   function refinedPanel(r,accent,fill,kind){
@@ -118,8 +118,7 @@
       adAmount=Number(energyCfg.ad_refill_amount)||5,shareAmount=Number(energyCfg.share_refill_amount)||3,
       header=l.mapHeader,top=l.mapList.y,bottom=top+l.mapList.h,i,item,node,level,r,preview,info,active,accent,fill,badge,
       total=entries.length*(l.levelRowH+l.levelGap)-l.levelGap,thumbH,trackX,lockBox,titleY,dividerY,descriptionY;
-    sceneBackdrop(l,v,null,.55);
-    chamfer({x:0,y:l.top,w:l.w,h:l.usable},[.005,.018,.03,.24],2);
+    sceneBackdrop(l,v,null,1,true);
     refinedPanel(header,p.cyan,[.022,.060,.080,.97],'button');
     imageAsset('ui-result-map',header.x+14,header.y+(header.h-34)*.5,34,34,1);
     line(header.x+58,header.y+13,header.x+58,header.y+header.h-13,.8,[p.cyan[0],p.cyan[1],p.cyan[2],.23]);

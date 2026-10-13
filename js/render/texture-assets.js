@@ -11,12 +11,12 @@
     if(fallbackEntries[item.key])return item.key;
     for(key in scenes)if(Object.prototype.hasOwnProperty.call(scenes,key)&&scenes[key]===item.key)return 'demo-scene';
     if(/^tile[-_]/.test(item.key)){if(/road/.test(item.key))return 'tile-road';if(/spawn/.test(item.key))return 'tile-spawn';if(/goal/.test(item.key))return 'tile-goal';if(/obstacle/.test(item.key))return 'tile-obstacle';if(/hero/.test(item.key))return 'tile-hero-slot';if(/tower|build/.test(item.key))return 'tile-tower-slot';return 'tile-grass';}
-    return 'demo-guardian';
+    return 'hero-1';
   }
   function configure(manifest){
     var defaults=M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[],list=manifest&&manifest.assetManifest||[],i,item,cacheKey,sourceKey,fallback;
-    entries={};fallbackEntries={};
-    for(i=0;i<defaults.length;i+=1){item=defaults[i];if(!item||item.type!=='image'||!item.key||!item.url)continue;cacheKey='default:'+item.key+'@'+(item.version||'1');fallbackEntries[item.key]={cacheKey:cacheKey,item:item};start(item,cacheKey);}
+    entries={};fallbackEntries={};sources={};
+    for(i=0;i<defaults.length;i+=1){item=defaults[i];if(!item||item.type!=='image'||!item.key||!item.url)continue;sourceKey=item.url+'@'+(item.version||'1');cacheKey=sources[sourceKey]||'default:'+item.key+'@'+(item.version||'1');sources[sourceKey]=cacheKey;fallbackEntries[item.key]={cacheKey:cacheKey,item:item};start(item,cacheKey);}
     for(i=0;i<list.length;i+=1){
       item=list[i];
       if(!item||item.type!=='image'||!item.key||!item.url)continue;

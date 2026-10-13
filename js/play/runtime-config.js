@@ -80,7 +80,9 @@
   function fallback(reason) {
     var errors = state.errors.slice(0);
     errors.push(reason || 'fallback');
-    accept(clone(M3.NeutralConfig.manifest), clone(M3.NeutralConfig.levels), 'fallback', errors);
+    var manifest = clone(M3.NeutralConfig.manifest), levels = clone(M3.NeutralConfig.levels), id;
+    for (id in levels) if (Object.prototype.hasOwnProperty.call(levels, id)) normalizeRoleContracts(manifest, normalizeLevelCompatibility(levels[id]));
+    accept(manifest, levels, 'fallback', errors);
   }
   function completeMissingLevels(manifest, levels, errors) {
     var refs = manifest.levels || {}, nodes = manifest.worldMap && manifest.worldMap.nodes || [], firstId = '', seed, nodeByLevel = {}, id, i, copy;

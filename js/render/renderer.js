@@ -253,7 +253,7 @@
     text('暂不使用',l.itemSkip.x+l.itemSkip.w*.5,l.itemSkip.y+(l.itemSkip.h-16)*.5,1,p.paper,l.itemSkip.w*.88,'center','button');
   }
   function loadingScreen(l,v,failed){
-    var mid=l.top+l.usable*.5,width=Math.min(l.w*.7,290),x=(l.w-width)*.5,pulse=(Math.sin(M3._now()*.004)+1)*.5,label=failed?'资源加载失败':v.loadingPhase==='render'?'正在准备画面':v.loadingPhase==='assets'?'正在加载图片':'正在读取配置';
+    var mid=l.top+l.usable*.5,width=Math.min(l.w*.7,290),x=(l.w-width)*.5,pulse=(Math.sin(M3._now()*.004)+1)*.5,label=failed?'资源加载失败':v.loadingPhase==='render'?'正在准备画面':v.loadingPhase==='assets'?'正在加载游戏':'正在读取配置';
     if(gl&&gl.disable)gl.disable(gl.SCISSOR_TEST);
     rect(0,l.top,l.w,l.usable,[.018,.035,.055,.96]);
     rect(x,mid-15,width,4,[.12,.22,.28,1]);

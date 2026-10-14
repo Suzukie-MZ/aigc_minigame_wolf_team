@@ -61,9 +61,13 @@
     // 已缓存：直接从 AssetManager 获取
     if (_cache[key]) {
       var img = M3.AssetManager && M3.AssetManager.get(key);
-      if (img) {
+      if (img && M3.AssetManager.loaded(key)) {
         if (opts.onSuccess) opts.onSuccess(img);
         return Promise.resolve(img);
+      }
+      if (img && M3.AssetManager.getState(key) && M3.AssetManager.getState(key).failed) {
+        M3.AssetManager.release(key);
+        delete _cache[key];
       }
     }
 
@@ -113,6 +117,9 @@
       if (opts.onSuccess) opts.onSuccess(img);
       return img;
     }, function (e) {
+      delete _pending[key];
+      delete _cache[key];
+      if (M3.AssetManager && M3.AssetManager.getState(key) && M3.AssetManager.getState(key).failed) M3.AssetManager.release(key);
       if (opts.onFail) opts.onFail(e);
       return Promise.reject(e);
     });

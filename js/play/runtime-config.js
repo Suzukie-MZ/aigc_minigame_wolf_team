@@ -1,5 +1,5 @@
 (function () {
-  var M3 = window.M3, CACHE = 'm3-runtime-config-v5', BASE = (window.RUNTIME_CONFIG_BASE_URL || '').replace(/\/$/, ''), ENDPOINTS = window.RUNTIME_CONFIG_ENDPOINTS || {}, MANIFEST_URL = ENDPOINTS.manifestUrl || (BASE ? BASE + '/v1/games/ks654147848546150500/runtime-manifest' : ''), LEVEL_URL_TEMPLATE = ENDPOINTS.levelUrlTemplate || (BASE ? BASE + '/v1/games/ks654147848546150500/levels/{levelId}' : ''), state = { source: 'fallback', manifest: null, levels: {}, errors: [] };
+  var M3 = window.M3, BASE = (window.RUNTIME_CONFIG_BASE_URL || '').replace(/\/$/, ''), ENDPOINTS = window.RUNTIME_CONFIG_ENDPOINTS || {}, MANIFEST_URL = ENDPOINTS.manifestUrl || (BASE ? BASE + '/v1/games/ks654147848546150500/runtime-manifest' : ''), LEVEL_URL_TEMPLATE = ENDPOINTS.levelUrlTemplate || (BASE ? BASE + '/v1/games/ks654147848546150500/levels/{levelId}' : ''), state = { source: 'loading', manifest: null, levels: {}, errors: [] };
   function clone(v) { return JSON.parse(JSON.stringify(v)); }
   function merge(base, extra) { var out = {}, key; for (key in base) if (Object.prototype.hasOwnProperty.call(base, key)) out[key] = base[key]; for (key in extra) if (Object.prototype.hasOwnProperty.call(extra, key)) out[key] = extra[key]; return out; }
   function color(value, fallback) { return Array.isArray(value) && value.length >= 3 ? value.slice(0, 4) : clone(fallback); }
@@ -26,13 +26,18 @@
   function applyPresentationFallback(manifest, levels) {
     var defaults = M3.NeutralConfig.manifest.presentation, supplied = manifest.presentation || {}, dc = defaults.colors, sc = supplied.colors || {}, cards = manifest.cards || [], rolePalette, enemyPalette, roleAppearances, enemyAppearances, cardByUnit = {}, assetKeys = {}, fallbackAssets = M3.NeutralConfig.manifest.assetManifest || [], key, i, j, units, enemyIndex, fallbackAppearance;
     manifest.presentation = clone(defaults); manifest.presentation.themeId = supplied.themeId || defaults.themeId; manifest.presentation.displayName = supplied.displayName || defaults.displayName;
-    manifest.presentation.sceneAssets = merge(defaults.sceneAssets, supplied.sceneAssets || {});
+    manifest.presentation.sceneAssets = merge({}, supplied.sceneAssets || {});
     manifest.presentation.copy = merge(defaults.copy, supplied.copy || {});
     manifest.presentation.typography = merge(defaults.typography || {}, supplied.typography || {});
     manifest.presentation.typography.styles = merge((defaults.typography && defaults.typography.styles) || {}, (supplied.typography && supplied.typography.styles) || {});
-    manifest.assetManifest = manifest.assetManifest || [];
+    // UI icons are bundled with the game. Server entries with the same keys must not replace them.
+    var localUi = {};
+    for (i = 0; i < fallbackAssets.length; i += 1) if (/^ui-(item|map|result)-/.test(fallbackAssets[i].key) || fallbackAssets[i].key === 'ui-level-lock') localUi[fallbackAssets[i].key] = true;
+    manifest.assetManifest = (manifest.assetManifest || []).filter(function (item) { return item && !localUi[item.key]; });
     for (i = 0; i < manifest.assetManifest.length; i += 1) assetKeys[manifest.assetManifest[i].key] = true;
-    for (i = 0; i < fallbackAssets.length; i += 1) if ((fallbackAssets[i].key.indexOf('font-cn-main-') === 0 || fallbackAssets[i].key.indexOf('ui-item-') === 0 || fallbackAssets[i].key.indexOf('ui-map-') === 0 || fallbackAssets[i].key === 'ui-level-lock' || fallbackAssets[i].key.indexOf('ui-result-') === 0) && !assetKeys[fallbackAssets[i].key]) manifest.assetManifest.push(clone(fallbackAssets[i]));
+    for (i = 0; i < fallbackAssets.length; i += 1) {
+      if (localUi[fallbackAssets[i].key] || (fallbackAssets[i].key.indexOf('font-cn-main-') === 0 && !assetKeys[fallbackAssets[i].key])) manifest.assetManifest.push(clone(fallbackAssets[i]));
+    }
     for (key in dc) if (Object.prototype.hasOwnProperty.call(dc, key)) manifest.presentation.colors[key] = color(sc[key], dc[key]);
     rolePalette = Array.isArray(supplied.rolePalette) && supplied.rolePalette.length ? supplied.rolePalette : defaults.rolePalette;
     enemyPalette = Array.isArray(supplied.enemyPalette) && supplied.enemyPalette.length ? supplied.enemyPalette : defaults.enemyPalette;
@@ -53,7 +58,7 @@
     manifest.presentation.enemyAppearances = enemyAppearances.map(function (a, index) { return appearance(a, defaults.enemyAppearances[index % defaults.enemyAppearances.length], manifest.presentation.enemyPalette[index % manifest.presentation.enemyPalette.length]); });
     for (i = 0; i < cards.length; i += 1) { cards[i].color = color(cards[i].color, manifest.presentation.rolePalette[i % manifest.presentation.rolePalette.length]); cards[i].symbol = cards[i].symbol || (i % 9) + 1; cards[i].uiName = cards[i].uiName || cards[i].displayName || ('守卫' + (i + 1)); if (typeof cards[i].portraitAsset !== 'string') cards[i].portraitAsset = ''; fallbackAppearance = manifest.presentation.roleAppearances[i % manifest.presentation.roleAppearances.length]; cards[i].appearance = appearance(cards[i].appearance, fallbackAppearance, cards[i].color); cardByUnit[cards[i].unitId] = cards[i]; }
     for (key in levels) if (Object.prototype.hasOwnProperty.call(levels, key)) {
-      levels[key].map.presentation = merge({ groundColor: dc.ground, routeColor: dc.route, obstacleColor: dc.obstacle, waterColor: dc.background }, levels[key].map.presentation || {});
+      levels[key].map.presentation = merge({ groundColor: manifest.presentation.colors.ground, routeColor: manifest.presentation.colors.route, obstacleColor: manifest.presentation.colors.obstacle, waterColor: manifest.presentation.colors.background }, levels[key].map.presentation || {});
       levels[key].map.presentation.style = merge(manifest.presentation.mapStyle, levels[key].map.presentation.style || {});
       levels[key].uiName = levels[key].uiName || levels[key].name || '珊瑚前哨'; levels[key].description = levels[key].description || '守住最后的珊瑚礁'; levels[key].objective = levels[key].objective || ('坚持' + levels[key].waves.length + '波攻击');
       units = levels[key].units || []; enemyIndex = 0;
@@ -61,7 +66,7 @@
     }
     return { manifest: manifest, levels: levels };
   }
-  function accept(manifest, levels, source, errors) { var bundle = applyPresentationFallback(clone(manifest), clone(levels)); state.manifest = bundle.manifest; state.levels = bundle.levels; state.source = source; state.errors = errors || []; if (source === 'remote') try { KwaiStorage.setSync(CACHE, bundle); } catch (e) {} }
+  function accept(manifest, levels, source, errors) { var bundle = applyPresentationFallback(clone(manifest), clone(levels)); state.manifest = bundle.manifest; state.levels = bundle.levels; state.source = source; state.errors = errors || [];  }
   function validBundle(manifest, levels) {
     var refs = manifest && manifest.levels, nodes = manifest && manifest.worldMap && manifest.worldMap.nodes, cards = (manifest&&manifest.cards||[]).filter(function(card){var banned=manifest&&manifest.deckRules&&manifest.deckRules.bannedCardIds||[];return card.unlocked!==false&&banned.indexOf(card.id)<0;}).slice(0,6), heroes=(manifest&&manifest.systems&&manifest.systems.M5_hero&&manifest.systems.M5_hero.hero_unit_pool||[]).slice(0,3), economyId=manifest&&manifest.systems&&manifest.systems.M4_economy_unit&&manifest.systems.M4_economy_unit.unit_id, key, i, j, unit, unitIds;
     if (!M3.ConfigValidator.validateManifest(manifest).ok || !refs || !levels) return false;
@@ -78,11 +83,10 @@
     return Object.keys(refs).length > 0;
   }
   function fallback(reason) {
-    var errors = state.errors.slice(0);
-    errors.push(reason || 'fallback');
-    var manifest = clone(M3.NeutralConfig.manifest), levels = clone(M3.NeutralConfig.levels), id;
-    for (id in levels) if (Object.prototype.hasOwnProperty.call(levels, id)) normalizeRoleContracts(manifest, normalizeLevelCompatibility(levels[id]));
-    accept(manifest, levels, 'fallback', errors);
+    state.manifest = null;
+    state.levels = {};
+    state.source = 'error';
+    state.errors = [reason || '配置加载失败'];
   }
   function completeMissingLevels(manifest, levels, errors) {
     var refs = manifest.levels || {}, nodes = manifest.worldMap && manifest.worldMap.nodes || [], firstId = '', seed, nodeByLevel = {}, id, i, copy;
@@ -127,7 +131,7 @@
         else { levels[id] = level; remoteCount += 1; }
         pending -= 1;
         if (!pending) {
-          if (!remoteCount || !completeMissingLevels(manifest, levels, levelErrors) || !validBundle(manifest, levels)) fallback('level load failed');
+          if (remoteCount !== refs.length || !validBundle(manifest, levels)) fallback('level load failed: ' + levelErrors.join('; '));
           else accept(manifest, levels, 'remote', levelErrors);
           done();
         }

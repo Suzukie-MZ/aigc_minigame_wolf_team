@@ -252,6 +252,26 @@
     refinedPanel(l.itemSkip,p.cyan,p.buttonBlue,'button');
     text('暂不使用',l.itemSkip.x+l.itemSkip.w*.5,l.itemSkip.y+(l.itemSkip.h-16)*.5,1,p.paper,l.itemSkip.w*.88,'center','button');
   }
-  function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]),toast,toastWidth,toastHeight;if(v&&v.state==='BATTLE'&&v.message){toastWidth=Math.min(l.board.w*.9,l.w*.82);toastHeight=58;toast={x:l.board.x+(l.board.w-toastWidth)*.5,y:l.board.y+(l.board.h-toastHeight)*.5,w:toastWidth,h:toastHeight};}init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')rect(l.w*.2,l.top+l.usable*.45,l.w*.6,8,tone(v,'primary',[.3,.75,.95,1]));else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.message){if(toast){rect(toast.x+4,toast.y+5,toast.w,toast.h,[0,0,0,.38]);rect(toast.x,toast.y,toast.w,toast.h,[.08,.035,.025,.92]);frame(toast,tone(v,'gold',[1,.85,.25,1]),2);text(v.message,toast.x+toast.w*.5,toast.y+(toast.h-20)*.5,1.25,tone(v,'gold',[1,.85,.25,1]),toast.w*.9,'center','button');}else if(v.state!=='WORLD_MAP')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
+  function loadingScreen(l,v,failed){
+    var mid=l.top+l.usable*.5,width=Math.min(l.w*.7,290),x=(l.w-width)*.5,pulse=(Math.sin(M3._now()*.004)+1)*.5,label=failed?'资源加载失败':v.loadingPhase==='render'?'正在准备画面':v.loadingPhase==='assets'?'正在加载图片':'正在读取配置';
+    if(gl&&gl.disable)gl.disable(gl.SCISSOR_TEST);
+    rect(0,l.top,l.w,l.usable,[.018,.035,.055,.96]);
+    rect(x,mid-15,width,4,[.12,.22,.28,1]);
+    if(!failed)rect(x,mid-15,width*(.28+.68*pulse),4,[.30,.78,.91,1]);
+    text(label,l.w*.5,mid-70,1.25,[.86,.96,1,1],l.w*.86,'center');
+    text(failed?'点击屏幕重试':'请稍候，完成后自动进入游戏',l.w*.5,mid+24,.78,[.64,.79,.85,1],l.w*.88,'center');
+    if(failed&&v.loadingError)text(String(v.loadingError).slice(0,42),l.w*.5,mid+57,.56,[1,.65,.59,1],l.w*.9,'center');
+  }
+  function prepareAssets(keys){
+    var i,key,error;
+    if(gl.getError)gl.getError();
+    for(i=0;i<(keys||[]).length;i+=1){
+      key=keys[i];
+      if(!imageAsset(key,-4,-4,1,1,0))throw new Error('图片无法渲染: '+key);
+      error=gl.getError&&gl.getError();
+      if(error&&error!==gl.NO_ERROR)throw new Error('图片渲染失败: '+key+' ('+error+')');
+    }
+  }
+  function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]),toast,toastWidth,toastHeight;if(v&&v.state==='BATTLE'&&v.message){toastWidth=Math.min(l.board.w*.9,l.w*.82);toastHeight=58;toast={x:l.board.x+(l.board.w-toastWidth)*.5,y:l.board.y+(l.board.h-toastHeight)*.5,w:toastWidth,h:toastHeight};}init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')loadingScreen(l,v,false);else if(v.state==='LOADING'){if(v.loadingPhase==='render'){try{prepareAssets(v.assetKeys);mapV2(l,v);if(gl.getError&&gl.getError()!==gl.NO_ERROR)throw new Error('地图画面渲染失败');loadingScreen(l,v,false);if(M3.Game&&M3.Game.assetsRendered)M3.Game.assetsRendered();}catch(error){if(M3.Game&&M3.Game.assetRenderFailed)M3.Game.assetRenderFailed(error);loadingScreen(l,{loadingError:error&&error.message||'图片渲染失败'},true);}}else loadingScreen(l,v,false);}else if(v.state==='LOAD_ERROR')loadingScreen(l,v,true);else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.message){if(toast){rect(toast.x+4,toast.y+5,toast.w,toast.h,[0,0,0,.38]);rect(toast.x,toast.y,toast.w,toast.h,[.08,.035,.025,.92]);frame(toast,tone(v,'gold',[1,.85,.25,1]),2);text(v.message,toast.x+toast.w*.5,toast.y+(toast.h-20)*.5,1.25,tone(v,'gold',[1,.85,.25,1]),toast.w*.9,'center','button');}else if(v.state!=='WORLD_MAP')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
   M3.Renderer={draw:draw,rect:rect,imageRegion:imageRegion};
 })();

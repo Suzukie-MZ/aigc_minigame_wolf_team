@@ -86,7 +86,18 @@
   function deck(l,v){var i,r,c,selected={};(v.deck||[]).forEach(function(id){selected[id]=true;});text(copy(v,'deckTitle','选择四座防御塔'),l.w*.5,l.top+l.usable*.035,2.15,tone(v,'frame',[.8,1,1,1]),l.w*.86,'center');text(copy(v,'deckHint','固定阵容，局内不可更换')+'  '+v.deck.length+'/'+v.cardTotal,l.w*.5,l.top+l.usable*.105,.82,tone(v,'primary',[.3,.8,.7,1]),l.w*.9,'center');for(i=0;i<l.cards.length;i+=1){r=l.cards[i];c=v.cards[i]&&v.cards[i].color||tone(v,'panel',[.18,.2,.24]);rect(r.x,r.y,r.w,r.h,tone(v,'panel',[.12,.18,.22,1]));if(v.cards[i]){imageAsset(v.cards[i].portraitAsset,r.x+5,r.y+5,r.w-10,r.h*.58,1)||actor(r.x+r.w*.5,r.y+r.h*.32,Math.min(r.w,r.h)*.64,v.cards[i].appearance,c);text(v.cards[i].uiName||('守卫'+(i+1)),r.x+r.w*.5,r.y+r.h*.63,.95,tone(v,'frame',[1,1,1,1]),r.w*.9,'center');text(v.cards[i].roleDescription||'通用防御单位',r.x+r.w*.5,r.y+r.h*.75,.76,tone(v,'primary',[.3,.8,.7,1]),r.w*.9,'center');text(copy(v,'purchaseCost','花费')+' '+v.cards[i].purchaseCost,r.x+r.w*.5,r.y+r.h*.87,.76,tone(v,'gold',[1,.8,.3,1]),r.w*.86,'center');}if(v.cards[i]&&selected[v.cards[i].id])frame(r,tone(v,'frame',[1,1,1,1]),5);else frame(r,tone(v,'background',[.12,.15,.2,1]),2);}rect(l.pagePrev.x,l.pagePrev.y,l.pagePrev.w,l.pagePrev.h,tone(v,'primary',[.24,.55,.9,1]));text('返回',l.pagePrev.x+l.pagePrev.w*.5,l.pagePrev.y+l.pagePrev.h*.24,.86,[1,1,1,1],l.pagePrev.w*.8,'center');rect(l.deckStart.x,l.deckStart.y,l.deckStart.w,l.deckStart.h,v.deckValid?tone(v,'success',[.18,.72,.48,1]):tone(v,'disabled',[.3,.32,.35,1]));text('开始防御',l.deckStart.x+l.deckStart.w*.5,l.deckStart.y+l.deckStart.h*.24,1.05,tone(v,'background',[.03,.1,.16,1]),l.deckStart.w*.85,'center');}
   function heroSelect(l,v){var i,r,h,selected={};(v.heroes||[]).forEach(function(id){selected[id]=true;});text('选择一名英雄',l.w*.5,l.top+l.usable*.045,2.2,tone(v,'frame',[.8,1,1,1]),l.w*.9,'center');text('固定 3 名候选，局内限用一名',l.w*.5,l.top+l.usable*.12,.92,tone(v,'primary',[.3,.8,.7,1]),l.w*.9,'center');for(i=0;i<v.heroCards.length&&i<l.heroCards.length;i+=1){r=l.heroCards[i];h=v.heroCards[i];rect(r.x,r.y,r.w,r.h,tone(v,'panel',[.12,.18,.22,1]));imageAsset(h.portraitAsset,r.x+4,r.y+4,r.w-8,r.h*.60,1)||actor(r.x+r.w*.5,r.y+r.h*.33,Math.min(r.w,r.h)*.66,h.appearance,h.color);text(h.uiName,r.x+r.w*.5,r.y+r.h*.64,.95,[1,1,1,1],r.w*.9,'center');text(h.roleDescription||'支援全场的英雄单位',r.x+r.w*.5,r.y+r.h*.76,.76,tone(v,'primary',[.3,.8,.7,1]),r.w*.9,'center');text('等级 '+h.level,r.x+r.w*.5,r.y+r.h*.88,.78,tone(v,'gold',[1,.8,.3,1]),r.w*.84,'center');frame(r,selected[h.id]?tone(v,'gold',[1,.8,.3,1]):tone(v,'frame',[.7,.9,.9,1]),selected[h.id]?5:2);}rect(l.heroBack.x,l.heroBack.y,l.heroBack.w,l.heroBack.h,tone(v,'disabled',[.3,.32,.35,1]));text('返回',l.heroBack.x+l.heroBack.w*.5,l.heroBack.y+l.heroBack.h*.27,.92,[1,1,1,1],l.heroBack.w*.8,'center');rect(l.heroStart.x,l.heroStart.y,l.heroStart.w,l.heroStart.h,v.heroes.length===1?tone(v,'success',[.18,.72,.48,1]):tone(v,'disabled',[.3,.32,.35,1]));text('消耗体力开始',l.heroStart.x+l.heroStart.w*.5,l.heroStart.y+l.heroStart.h*.27,1.05,tone(v,'background',[.03,.1,.16,1]),l.heroStart.w*.88,'center');}
   function heroShowcaseCard(r,h,index,isSelected,v,p){var portrait,nameBar,cardFill=p.panelVariants[(index+1)%p.panelVariants.length],cardAccent=p.borderVariants[(index+2)%p.borderVariants.length];ornatePanel(r,v,cardAccent,isSelected,cardFill);nameBar={x:r.x+8,y:r.y+7,w:r.w-16,h:24};chamfer(nameBar,[.010,.032,.046,.88],6);line(nameBar.x+8,nameBar.y+nameBar.h-2,nameBar.x+nameBar.w-8,nameBar.y+nameBar.h-2,1,[cardAccent[0],cardAccent[1],cardAccent[2],.40]);text(heroDisplayName(h.uiName),r.x+r.w*.5,nameBar.y+3,.76,p.paper,nameBar.w*.90,'center','label');portrait={x:r.x+8,y:r.y+34,w:r.w-16,h:r.w-34};imageAsset(h.portraitAsset,portrait.x,portrait.y,portrait.w,portrait.h,1)||actor(r.x+r.w*.5,portrait.y+portrait.h*.52,Math.min(portrait.w,portrait.h)*.78,h.appearance,h.color);cutCorners(portrait,cardFill,10);chamferOutline(portrait,isSelected?p.primary:[cardAccent[0],cardAccent[1],cardAccent[2],.64],isSelected?2:1,10);text('等级  '+h.level,r.x+r.w*.5,r.y+r.h+8,.70,p.paper,r.w*.94,'center');text(h.roleDescription||'支援全场的英雄单位',r.x+r.w*.5,r.y+r.h+31,.64,p.paper,r.w*.96,'center');if(isSelected)selectionMark(r,v);edgeJewels(r,v);}
-  function progression(l,v){var p=uiPalette(v),i,r,c,cards=v.progressionCards||[],selected=v.selectedProgressionHero,preview=v.heroUpgradePreview,header={x:l.w*.10,y:l.top+l.usable*.05,w:l.w*.80,h:l.usable*.065},rule={x:l.w*.14,y:l.top+l.usable*.12,w:l.w*.72,h:l.usable*.045};sceneBackdrop(l,v,null,.46);ornatePanel(header,v,p.frame,true,p.panelVariants[1]);diamond(l.w*.5,header.y,15,15,p.primary);text(copy(v,'progressionTitle','英雄升级'),l.w*.5,header.y+header.h*.12,1.28,p.paper,header.w*.88,'center','title');text('点击英雄查看升级效果与花费',l.w*.5,header.y+header.h*.62,.58,p.paper,header.w*.92,'center');ornatePanel(rule,v,p.accent,false,p.panelVariants[0]);text(copy(v,'progressionMaterial','材料')+'  '+v.materials,l.w*.5,rule.y+rule.h*.25,.68,p.paper,rule.w*.90,'center');for(i=0;i<cards.length&&i<l.heroSelectCards.length;i+=1){r=l.heroSelectCards[i];c=cards[i];heroShowcaseCard(r,c,i,!!(selected&&selected.id===c.id),v,p);}uiButton(l.progressionBack,v,'返回','back',true);if(selected&&preview){ornatePanel(l.progressionPanel,v,p.gold,true,p.panelVariants[2]);text(heroDisplayName(selected.uiName)+'  等级 '+preview.level+' → '+preview.nextLevel,l.progressionPanel.x+12,l.progressionPanel.y+10,.68,p.paper,l.progressionPanel.w-24,'left');text('攻击加成 +'+preview.currentBonus+'% → +'+preview.nextBonus+'%',l.progressionPanel.x+12,l.progressionPanel.y+34,.62,p.paper,l.progressionPanel.w-24,'left');text('升级花费  '+preview.cost,l.progressionPanel.x+12,l.progressionPanel.y+57,.62,p.paper,l.progressionPanel.w-24,'left');uiButton(l.progressionCancel,v,'取消','back',true);uiButton(l.progressionConfirm,v,preview.level>=preview.maxLevel?'已满级':'确认升级','gold',preview.canUpgrade);}}
+  function progression(l,v){
+    var rows=l.loadoutHeroes||l.heroSelectCards,cards=v.progressionCards||[],selected=v.selectedProgressionHero,preview=v.heroUpgradePreview,i,h,hint='选择英雄，查看升级收益',label='请选择升级英雄';
+    sceneBackdrop(l,v,null,1,true);
+    if(selected&&preview){
+      hint=preview.level>=preview.maxLevel?'当前英雄已达到最高等级':'攻击加成 '+preview.currentBonus+'% 升至 '+preview.nextBonus+'%';
+      label=preview.level>=preview.maxLevel?'已满级':(preview.canUpgrade?'升级 · ':'材料不足 · ')+preview.cost;
+    }
+    loadoutHeader(l,'英雄升级',hint,null,'材料 '+v.materials,'英雄成长');
+    for(i=0;i<cards.length&&i<rows.length;i+=1){h=cards[i];loadoutHeroCard(rows[i],h,!!(selected&&selected.id===h.id));}
+    loadoutButton(l.heroBack,'返回',false,true);
+    loadoutButton(l.heroStart,label,true,!!(selected&&preview&&preview.canUpgrade));
+  }
   function alphaColor(color,alpha){return[color[0],color[1],color[2],(color.length>3?color[3]:1)*alpha];}
   function upgradeEffects(v,b,cell){var events=v.combat.upgradeEvents||[],i,event,progress,fade,cx,cy,ring,particle,j,angle,distance,px,py,color;for(i=0;i<events.length;i+=1){event=events[i];progress=Math.min(1,event.age/event.duration);fade=Math.max(0,1-progress);cx=b.x+event.x*cell;cy=b.y+event.y*cell;color=v.combat.cardColors[event.cardId]||tone(v,'gold',[1,.82,.28,1]);ring=cell*(.42+progress*.82);frame({x:cx-ring*.5,y:cy-ring*.5,w:ring,h:ring},alphaColor(color,fade),Math.max(2,cell*(.11-progress*.06)));frame({x:cx-cell*(.32+progress*.18),y:cy-cell*(.32+progress*.18),w:cell*(.64+progress*.36),h:cell*(.64+progress*.36)},alphaColor(tone(v,'frame',[.85,1,1,1]),fade*.72),Math.max(1,cell*.05));particle=Math.max(2,cell*(.10-progress*.045));distance=cell*(.16+progress*.68);for(j=0;j<8;j+=1){angle=Math.PI*.25*j;px=cx+Math.cos(angle)*distance;py=cy+Math.sin(angle)*distance;rect(px-particle*.5,py-particle*.5,particle,particle,alphaColor(j%2?color:tone(v,'frame',[.9,1,1,1]),fade));}text('升级成功',cx,cy-cell*(.82+progress*.32),.58,alphaColor(tone(v,'gold',[1,.85,.25,1]),fade),cell*2.4,'center');}}
   function attackEffects(v,b,cell){var events=v.combat.attackEvents||[],configs=v.presentation&&v.presentation.combatEffects||{},i,event,cfg,progress,fade,sx,sy,tx,ty,dx,dy,distance,steps,j,ratio,width,size,px,py,color,impactColor;for(i=0;i<events.length;i+=1){event=events[i];cfg=configs[event.type]||{};progress=Math.min(1,event.age/event.duration);fade=Math.max(0,1-progress);sx=b.x+event.fromX*cell;sy=b.y+event.fromY*cell;tx=b.x+event.toX*cell;ty=b.y+event.toY*cell;dx=tx-sx;dy=ty-sy;distance=Math.sqrt(dx*dx+dy*dy);width=Math.max(2,cell*(Number(cfg.trailWidth)||(event.type==='hero'?.12:.07)));size=cell*(Number(cfg.impactScale)||(event.type==='hero'?.30:.18));color=cfg.color||(event.type==='hero'?[1,.76,.2,1]:[.42,.94,1,1]);impactColor=cfg.impactColor||(event.type==='hero'?[1,.34,.16,1]:[.88,1,1,1]);if(event.type==='hero'){steps=Math.max(3,Math.ceil(distance/Math.max(3,cell*.14)));for(j=0;j<=steps;j+=1){ratio=j/steps;px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(.45+.55*ratio)));}frame({x:tx-size*(.55+progress*.45),y:ty-size*(.55+progress*.45),w:size*(1.1+progress*.9),h:size*(1.1+progress*.9)},alphaColor(impactColor,fade),Math.max(2,width*.55));rect(tx-width*1.4,ty-width*.45,width*2.8,width*.9,alphaColor(impactColor,fade));rect(tx-width*.45,ty-width*1.4,width*.9,width*2.8,alphaColor(impactColor,fade));}else{for(j=0;j<4;j+=1){ratio=Math.max(0,progress-j*.10);px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(1-j*.18)));}frame({x:tx-size*.5,y:ty-size*.5,w:size,h:size},alphaColor(impactColor,fade),Math.max(1,width*.45));}}}
@@ -209,10 +220,10 @@
     chamfer({x:x-10,y:y-10,w:20,h:20},[.82,.78,.60,.96],5);
     line(x-5,y,x-1,y+4,2,[.10,.14,.12,1]);line(x-1,y+4,x+6,y-5,2,[.10,.14,.12,1]);
   }
-  function loadoutHeader(l,title,hint,count,step){
+  function loadoutHeader(l,title,hint,count,step,section){
     var y=l.top+Math.max(42,Math.min(47,l.usable*.052));
     rect(0,l.top,l.w,l.usable,[.018,.022,.025,.28]);
-    text('出战准备  ·  '+step,l.w*.045,y,.54,[.77,.80,.73,1],l.w*.9,'left');
+    text((section||'出战准备')+'  ·  '+step,l.w*.045,y,.54,[.77,.80,.73,1],l.w*.9,'left');
     text(title,l.w*.045,y+23,1.42,[.97,.96,.91,1],l.w*.76,'left','title');
     text(hint,l.w*.045,y+57,.60,[.77,.79,.75,1],l.w*.76,'left');
     if(count)text(count,l.w*.955,y+28,.91,[.89,.85,.68,1],l.w*.18,'right','label');
@@ -242,23 +253,23 @@
     loadoutButton(l.pagePrev,'返回',false,true);
     loadoutButton(l.deckStart,v.deckValid?'进入英雄选择':'已选 '+v.deck.length+' / 4',true,v.deckValid);
   }
+  function loadoutHeroCard(r,h,selected){
+    var art={x:r.x+10,y:r.y+10,w:r.h-20,h:r.h-20},infoX=art.x+art.w+16,infoW=r.x+r.w-infoX-18,badge;
+    loadoutPanel(r,selected);
+    imageAssetContain(h.portraitAsset,art.x,art.y,art.w,art.h,1)||actor(art.x+art.w*.5,art.y+art.h*.5,art.h*.85,h.appearance,h.color);
+    text(heroDisplayName(h.uiName),infoX,r.y+r.h*.22,1.03,[.97,.96,.91,1],infoW-12,'left','title');
+    text(h.roleDescription||'支援全场的英雄单位',infoX,r.y+r.h*.45,.62,[.74,.79,.73,1],infoW,'left');
+    badge={x:infoX,y:r.y+r.h*.70,w:78,h:21};
+    chamfer(badge,[.30,.33,.28,.40],4);
+    text('等级 '+h.level,badge.x+9,badge.y+4,.55,[.89,.85,.68,1],badge.w-14,'left','label');
+    if(selected)loadoutCheck(r);
+  }
   function heroSelectV2(l,v){
-    var rows=l.loadoutHeroes||l.heroSelectCards,chosen={},i,r,h,art,infoX,infoW,selected,badge;
+    var rows=l.loadoutHeroes||l.heroSelectCards,chosen={},i,h;
     (v.heroes||[]).forEach(function(id){chosen[id]=true;});
     sceneBackdrop(l,v,null,1,true);
     loadoutHeader(l,'选择出战英雄','选择一名英雄，与防御塔一同守住防线',v.heroes.length+' / 1','02 / 02');
-    for(i=0;i<v.heroCards.length&&i<rows.length;i+=1){
-      r=rows[i];h=v.heroCards[i];selected=!!chosen[h.id];loadoutPanel(r,selected);
-      art={x:r.x+10,y:r.y+10,w:r.h-20,h:r.h-20};
-      imageAssetContain(h.portraitAsset,art.x,art.y,art.w,art.h,1)||actor(art.x+art.w*.5,art.y+art.h*.5,art.h*.85,h.appearance,h.color);
-      infoX=art.x+art.w+16;infoW=r.x+r.w-infoX-18;
-      text(heroDisplayName(h.uiName),infoX,r.y+r.h*.22,1.03,[.97,.96,.91,1],infoW-12,'left','title');
-      text(h.roleDescription||'支援全场的英雄单位',infoX,r.y+r.h*.45,.62,[.74,.79,.73,1],infoW,'left');
-      badge={x:infoX,y:r.y+r.h*.70,w:78,h:21};
-      chamfer(badge,[.30,.33,.28,.40],4);
-      text('等级 '+h.level,badge.x+9,badge.y+4,.55,[.89,.85,.68,1],badge.w-14,'left','label');
-      if(selected)loadoutCheck(r);
-    }
+    for(i=0;i<v.heroCards.length&&i<rows.length;i+=1){h=v.heroCards[i];loadoutHeroCard(rows[i],h,!!chosen[h.id]);}
     loadoutButton(l.heroBack,'返回',false,true);
     loadoutButton(l.heroStart,v.heroes.length===1?'消耗体力 · 开始防御':'请选择一名英雄',true,v.heroes.length===1);
   }

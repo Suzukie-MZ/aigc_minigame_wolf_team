@@ -117,18 +117,19 @@
   function mapV2(l,v){
     var p=uiPalette(v),entries=v.levelEntries||[],energyCfg=v.systems&&v.systems.M14_energy||{},
       adAmount=Number(energyCfg.ad_refill_amount)||5,shareAmount=Number(energyCfg.share_refill_amount)||3,
-      header=l.mapHeader,top=l.mapList.y,bottom=top+l.mapList.h,i,item,node,level,r,preview,info,active,accent,fill,badge,
+      header=l.mapHeader,top=l.mapList.y,bottom=top+l.mapList.h,i,item,node,level,r,preview,info,active,accent,fill,badge,action,
       total=Math.max(0,entries.length*(l.levelRowH+l.levelGap)-l.levelGap),thumbH,trackX,lockBox,titleY,dividerY,descriptionY,
       scroll=v.mapScroll||0,maxScroll=Math.max(0,total-l.mapList.h),canDown=scroll<maxScroll-1,
       first=Math.min(entries.length,Math.floor((scroll+l.levelGap)/(l.levelRowH+l.levelGap))+1),
       last=Math.min(entries.length,Math.ceil((scroll+l.mapList.h)/(l.levelRowH+l.levelGap))),
       footer=l.mapFooter,scaleX=gl.drawingBufferWidth/l.w,scaleY=gl.drawingBufferHeight/l.h,fade,arrowY,arrowDir;
     sceneBackdrop(l,v,null,1,true);
-    refinedPanel(header,p.cyan,[.022,.060,.080,.97],'button');
+    chamfer(header,[.075,.12,.18,.96],10);
+    chamferOutline(header,[.43,.64,.75,.55],1,10);
     imageAsset('ui-result-map',header.x+14,header.y+(header.h-34)*.5,34,34,1);
-    line(header.x+58,header.y+13,header.x+58,header.y+header.h-13,.8,[p.cyan[0],p.cyan[1],p.cyan[2],.23]);
-    text(copy(v,'mapTitle','潮汐战图'),header.x+73,header.y+8,1.24,p.paper,header.w-86,'left','title');
-    text('选择已解锁的关卡',header.x+73,header.y+33,.64,p.muted,header.w-86,'left');
+    line(header.x+58,header.y+15,header.x+58,header.y+header.h-15,.8,[.52,.68,.78,.25]);
+    text(copy(v,'mapTitle','潮汐战图'),header.x+73,header.y+10,1.16,[.94,.97,1,1],header.w-86,'left','title');
+    text('选择已解锁的关卡',header.x+73,header.y+34,.60,[.62,.73,.82,1],header.w-86,'left');
     mapShortcut(l.energyAd,v,'ui-result-video','广告','+'+adAmount,[.81,.65,.31,1],'video');
     mapShortcut(l.energyShare,v,'ui-map-share','分享','+'+shareAmount,p.cyan,'share');
     mapShortcut(l.energyCurrent,v,'ui-map-energy','体力',v.energy,[.87,.71,.33,1],'energy');
@@ -141,9 +142,10 @@
     for(i=0;i<entries.length;i+=1){
       item=entries[i];node=item.node||{};level=item.level||{};r=l.levelCard(i,v.mapScroll);
       if(r.y+r.h<=top||r.y>=bottom)continue;
-      active=!!node.unlocked;accent=active?p.cyan:[.35,.43,.49,1];fill=active?[.025,.085,.105,.98]:[.030,.043,.060,.97];
-      refinedPanel(r,accent,fill,'panel');
-      if(active)line(r.x+1,r.y+27,r.x+1,r.y+r.h-27,2,[p.cyan[0],p.cyan[1],p.cyan[2],.58]);
+      active=!!node.unlocked;accent=active?[.43,.79,.88,1]:[.40,.48,.57,1];fill=active?[.075,.12,.18,.97]:[.065,.085,.12,.96];
+      chamfer({x:r.x+2,y:r.y+4,w:r.w,h:r.h},[.005,.012,.025,.45],12);
+      chamfer(r,fill,12);
+      chamferOutline(r,[accent[0],accent[1],accent[2],active?.48:.25],1.2,12);
       preview={x:r.x+14,y:r.y+14,w:Math.min(r.w*.40,r.h-28),h:r.h-28};preview.y=r.y+(r.h-preview.w)*.5;preview.h=preview.w;
       mapPreview(preview,level,v);cutCorners(preview,fill,10);chamferOutline(preview,[accent[0],accent[1],accent[2],.70],1.2,10);
       if(!active){
@@ -151,20 +153,20 @@
         lockBox={x:preview.x+preview.w*.5-20,y:preview.y+preview.h*.5-22,w:40,h:44};
         chamfer(lockBox,[.025,.05,.07,.94],6);chamferOutline(lockBox,[.48,.63,.69,.35],.8,6);lockIcon(lockBox,[.64,.74,.79,1]);
       }
-      info={x:preview.x+preview.w+16,y:r.y+15,w:r.x+r.w-16-(preview.x+preview.w+16),h:r.h-30};
-      badge={x:info.x,y:info.y,w:Math.max(30,Math.min(48,String(i+1).length*12+12)),h:30};
-      chamfer(badge,[accent[0],accent[1],accent[2],active?.16:.08],5);
-      chamferOutline(badge,[accent[0],accent[1],accent[2],.46],.8,5);
-      text(String(i+1),badge.x+badge.w*.5,badge.y+7,.82,active?p.paper:p.muted,badge.w-6,'center','label');
-      text(active?'可挑战':'未解锁',badge.x+badge.w+10,info.y+8,.64,accent,info.w-badge.w-10,'left');
-      titleY=r.y+Math.max(47,r.h*.31);dividerY=titleY+29;descriptionY=dividerY+10;
-      text(node.displayName||level.uiName||('第 '+(i+1)+' 关'),info.x,titleY,1.08,active?p.paper:[.63,.70,.74,1],info.w,'left','title');
-      line(info.x,dividerY,info.x+info.w,dividerY,.8,[accent[0],accent[1],accent[2],.25]);
-      text(active?(node.description||level.description||'守住防线'):'完成上一关解锁',info.x,descriptionY,.64,active?p.accent:p.muted,info.w,'left');
-      if(active&&r.h>=150)text('进入关卡',info.x,r.y+r.h-30,.68,p.cyan,info.w-22,'left');
+      info={x:preview.x+preview.w+18,y:r.y+17,w:r.x+r.w-18-(preview.x+preview.w+18),h:r.h-34};
+      badge={x:info.x,y:info.y,w:active?51:55,h:20};
+      chamfer(badge,active?[.12,.25,.31,.86]:[.14,.18,.23,.85],4);
+      text(active?'可挑战':'未解锁',badge.x+badge.w*.5,badge.y+4,.54,active?[.57,.88,.93,1]:[.60,.68,.75,1],badge.w-6,'center');
+      titleY=info.y+27;descriptionY=titleY+26;
+      text(node.displayName||level.uiName||('第 '+(i+1)+' 关'),info.x,titleY,1.16,active?[.95,.97,1,1]:[.64,.71,.78,1],info.w,'left','title');
+      text(active?(node.description||level.description||'守住防线'):'完成上一关解锁',info.x,descriptionY,.68,active?[.67,.77,.86,1]:[.48,.57,.66,1],info.w,'left');
       if(active){
-        line(info.x+info.w-10,r.y+r.h-31,info.x+info.w-5,r.y+r.h-26,1.5,p.cyan);
-        line(info.x+info.w-5,r.y+r.h-26,info.x+info.w-10,r.y+r.h-21,1.5,p.cyan);
+        action={x:info.x,y:r.y+r.h-45,w:info.w,h:29};
+        chamfer(action,[.14,.29,.38,.94],6);
+        chamferOutline(action,[.44,.76,.85,.35],.8,6);
+        text('进入关卡',action.x+12,action.y+7,.65,[.80,.94,.98,1],action.w-30,'left');
+        line(action.x+action.w-16,action.y+10,action.x+action.w-12,action.y+14.5,1.3,[.63,.88,.94,1]);
+        line(action.x+action.w-12,action.y+14.5,action.x+action.w-16,action.y+19,1.3,[.63,.88,.94,1]);
       }
     }
     gl.disable(gl.SCISSOR_TEST);

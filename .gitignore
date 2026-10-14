@@ -4,3 +4,12 @@ node_modules/
 dist/
 build/
 *.log
+
+# Keep UI preview images local.
+/artifacts/ui-preview/**/*.jpg
+/artifacts/ui-preview/**/*.jpeg
+/artifacts/ui-preview/**/*.png
+/artifacts/ui-preview/**/*.webp
+/artifacts/ui-preview/**/*.gif
+/artifacts/ui-preview/**/*.avif
+/artifacts/ui-preview/**/*.bmp

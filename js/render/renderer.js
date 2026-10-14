@@ -87,13 +87,12 @@
   function heroSelect(l,v){var i,r,h,selected={};(v.heroes||[]).forEach(function(id){selected[id]=true;});text('选择一名英雄',l.w*.5,l.top+l.usable*.045,2.2,tone(v,'frame',[.8,1,1,1]),l.w*.9,'center');text('固定 3 名候选，局内限用一名',l.w*.5,l.top+l.usable*.12,.92,tone(v,'primary',[.3,.8,.7,1]),l.w*.9,'center');for(i=0;i<v.heroCards.length&&i<l.heroCards.length;i+=1){r=l.heroCards[i];h=v.heroCards[i];rect(r.x,r.y,r.w,r.h,tone(v,'panel',[.12,.18,.22,1]));imageAsset(h.portraitAsset,r.x+4,r.y+4,r.w-8,r.h*.60,1)||actor(r.x+r.w*.5,r.y+r.h*.33,Math.min(r.w,r.h)*.66,h.appearance,h.color);text(h.uiName,r.x+r.w*.5,r.y+r.h*.64,.95,[1,1,1,1],r.w*.9,'center');text(h.roleDescription||'支援全场的英雄单位',r.x+r.w*.5,r.y+r.h*.76,.76,tone(v,'primary',[.3,.8,.7,1]),r.w*.9,'center');text('等级 '+h.level,r.x+r.w*.5,r.y+r.h*.88,.78,tone(v,'gold',[1,.8,.3,1]),r.w*.84,'center');frame(r,selected[h.id]?tone(v,'gold',[1,.8,.3,1]):tone(v,'frame',[.7,.9,.9,1]),selected[h.id]?5:2);}rect(l.heroBack.x,l.heroBack.y,l.heroBack.w,l.heroBack.h,tone(v,'disabled',[.3,.32,.35,1]));text('返回',l.heroBack.x+l.heroBack.w*.5,l.heroBack.y+l.heroBack.h*.27,.92,[1,1,1,1],l.heroBack.w*.8,'center');rect(l.heroStart.x,l.heroStart.y,l.heroStart.w,l.heroStart.h,v.heroes.length===1?tone(v,'success',[.18,.72,.48,1]):tone(v,'disabled',[.3,.32,.35,1]));text('消耗体力开始',l.heroStart.x+l.heroStart.w*.5,l.heroStart.y+l.heroStart.h*.27,1.05,tone(v,'background',[.03,.1,.16,1]),l.heroStart.w*.88,'center');}
   function heroShowcaseCard(r,h,index,isSelected,v,p){var portrait,nameBar,cardFill=p.panelVariants[(index+1)%p.panelVariants.length],cardAccent=p.borderVariants[(index+2)%p.borderVariants.length];ornatePanel(r,v,cardAccent,isSelected,cardFill);nameBar={x:r.x+8,y:r.y+7,w:r.w-16,h:24};chamfer(nameBar,[.010,.032,.046,.88],6);line(nameBar.x+8,nameBar.y+nameBar.h-2,nameBar.x+nameBar.w-8,nameBar.y+nameBar.h-2,1,[cardAccent[0],cardAccent[1],cardAccent[2],.40]);text(heroDisplayName(h.uiName),r.x+r.w*.5,nameBar.y+3,.76,p.paper,nameBar.w*.90,'center','label');portrait={x:r.x+8,y:r.y+34,w:r.w-16,h:r.w-34};imageAsset(h.portraitAsset,portrait.x,portrait.y,portrait.w,portrait.h,1)||actor(r.x+r.w*.5,portrait.y+portrait.h*.52,Math.min(portrait.w,portrait.h)*.78,h.appearance,h.color);cutCorners(portrait,cardFill,10);chamferOutline(portrait,isSelected?p.primary:[cardAccent[0],cardAccent[1],cardAccent[2],.64],isSelected?2:1,10);text('等级  '+h.level,r.x+r.w*.5,r.y+r.h+8,.70,p.paper,r.w*.94,'center');text(h.roleDescription||'支援全场的英雄单位',r.x+r.w*.5,r.y+r.h+31,.64,p.paper,r.w*.96,'center');if(isSelected)selectionMark(r,v);edgeJewels(r,v);}
   function progression(l,v){
-    var rows=l.loadoutHeroes||l.heroSelectCards,cards=v.progressionCards||[],selected=v.selectedProgressionHero,preview=v.heroUpgradePreview,i,h,hint='选择英雄，查看升级收益',label='请选择升级英雄';
+    var rows=l.loadoutHeroes||l.heroSelectCards,cards=v.progressionCards||[],selected=v.selectedProgressionHero,preview=v.heroUpgradePreview,i,h,label='请选择升级英雄';
     sceneBackdrop(l,v,null,1,true);
     if(selected&&preview){
-      hint=preview.level>=preview.maxLevel?'当前英雄已达到最高等级':'攻击加成 '+preview.currentBonus+'% 升至 '+preview.nextBonus+'%';
-      label=preview.level>=preview.maxLevel?'已满级':(preview.canUpgrade?'升级 · ':'材料不足 · ')+preview.cost;
+      label=preview.level>=preview.maxLevel?'已满级':(preview.canUpgrade?'升级 · ':'材料不足 · ')+preview.cost+' 材料';
     }
-    loadoutHeader(l,'英雄升级',hint,null,'材料 '+v.materials,'英雄成长');
+    heroUpgradeHeader(l,v,selected,preview,rows);
     for(i=0;i<cards.length&&i<rows.length;i+=1){h=cards[i];loadoutHeroCard(rows[i],h,!!(selected&&selected.id===h.id));}
     loadoutButton(l.heroBack,'返回',false,true);
     loadoutButton(l.heroStart,label,true,!!(selected&&preview&&preview.canUpgrade));
@@ -252,6 +251,23 @@
     }
     loadoutButton(l.pagePrev,'返回',false,true);
     loadoutButton(l.deckStart,v.deckValid?'进入英雄选择':'已选 '+v.deck.length+' / 4',true,v.deckValid);
+  }
+  function heroUpgradeHeader(l,v,selected,preview,rows){
+    var margin=l.w*.045,y=l.top+Math.max(50,Math.min(58,l.usable*.065)),balance={x:l.w-margin-110,y:y-5,w:110,h:34},summary={x:margin,y:y+36,w:l.w-margin*2,h:Math.min(56,rows[0].y-y-46)},compact=summary.h<44,name=selected?heroDisplayName(selected.uiName):'选择下方英雄',level='',benefit='查看下一等级的强化效果';
+    rect(0,l.top,l.w,l.usable,[.018,.022,.025,.28]);
+    text('英雄升级',margin,y,1.36,[.97,.96,.91,1],l.w*.55,'left','title');
+    chamfer(balance,[.13,.15,.12,.65],6);
+    chamferOutline(balance,[.78,.77,.62,.30],.8,6);
+    text('材料',balance.x+10,balance.y+11,.55,[.74,.77,.70,1],36,'left');
+    text(String(v.materials||0),balance.x+balance.w-10,balance.y+7,.85,[.94,.88,.68,1],60,'right','label');
+    chamfer(summary,[.05,.065,.06,.70],7);
+    if(selected&&preview){
+      level=preview.level>=preview.maxLevel?'等级 '+preview.level+' · 已满级':'等级 '+preview.level+' 升至 '+preview.nextLevel;
+      benefit=(preview.level>=preview.maxLevel?'当前攻击加成 +':'升级后攻击加成 +')+(preview.level>=preview.maxLevel?preview.currentBonus:preview.nextBonus)+'%';
+    }
+    text(name,summary.x+12,summary.y+(compact?4:8),compact?.58:.72,[.91,.94,.88,1],summary.w*.54,'left','label');
+    if(level)text(level,summary.x+summary.w-12,summary.y+(compact?5:9),compact?.48:.55,[.69,.76,.68,1],summary.w*.43,'right');
+    text(benefit,summary.x+12,summary.y+(compact?19:32),compact?.50:.61,selected?[.88,.83,.62,1]:[.62,.70,.64,1],summary.w-24,'left');
   }
   function loadoutHeroCard(r,h,selected){
     var art={x:r.x+10,y:r.y+10,w:r.h-20,h:r.h-20},infoX=art.x+art.w+16,infoW=r.x+r.w-infoX-18,badge;

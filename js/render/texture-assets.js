@@ -1,6 +1,7 @@
 (function () {
   var M3=window.M3,entries={},handles={},sources={},fallbackEntries={};
   function remote(url){return /^https?:\/\//.test(url||'');}
+  function runtimeArtwork(key){return key==='demo-scene'||/^(tile[-_]|tower[-_]|hero[-_])/.test(key||'');}
   function start(item,cacheKey,onFail,onSuccess){
     if(remote(item.url)){
       if(M3.CdnLoader&&!handles[cacheKey])handles[cacheKey]=M3.CdnLoader.loadImage(cacheKey,item.url,'runtime-images',{onSuccess:function(image){if(onSuccess)onSuccess(image);},onFail:function(error){console.warn('[TextureAssets] remote image failed',item.key,item.url,error&&error.message||'load failed');if(onFail)onFail(error);}}).catch(function(){return null;});
@@ -24,14 +25,14 @@
       if(!listed[item.key])list.push(item);
     }
     entries={};fallbackEntries={};sources={};
-    for(i=0;i<defaults.length;i+=1){item=defaults[i];if(!item||item.type!=='image'||!item.key||!item.url)continue;sourceKey=item.url+'@'+(item.version||'1');cacheKey=sources[sourceKey]||'default:'+item.key+'@'+(item.version||'1');sources[sourceKey]=cacheKey;fallbackEntries[item.key]={cacheKey:cacheKey,item:item};start(item,cacheKey);}
+    for(i=0;i<defaults.length;i+=1){item=defaults[i];if(!item||item.type!=='image'||!item.key||!item.url||runtimeArtwork(item.key)&&listed[item.key])continue;sourceKey=item.url+'@'+(item.version||'1');cacheKey=sources[sourceKey]||'default:'+item.key+'@'+(item.version||'1');sources[sourceKey]=cacheKey;fallbackEntries[item.key]={cacheKey:cacheKey,item:item};start(item,cacheKey);}
     for(i=0;i<list.length;i+=1){
       item=list[i];
       if(!item||item.type!=='image'||!item.key||!item.url)continue;
       sourceKey=item.url+'@'+(item.version||'1');
       cacheKey=sources[sourceKey]||item.key+'@'+(item.version||'1');
       sources[sourceKey]=cacheKey;
-      fallback=fallbackEntries[fallbackKey(item,manifest)];
+      fallback=runtimeArtwork(item.key)?null:fallbackEntries[fallbackKey(item,manifest)];
       entries[item.key]={cacheKey:cacheKey,item:item,fallback:fallback||null,failed:false,ready:false};
       (function(entry,currentItem,currentCacheKey){start(currentItem,currentCacheKey,function(){entry.failed=true;entry.ready=false;},function(){entry.failed=false;entry.ready=true;});})(entries[item.key],item,cacheKey);
     }

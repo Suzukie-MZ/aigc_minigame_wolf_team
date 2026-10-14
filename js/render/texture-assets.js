@@ -14,7 +14,15 @@
     return 'hero-1';
   }
   function configure(manifest){
-    var defaults=M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[],list=manifest&&manifest.assetManifest||[],i,item,cacheKey,sourceKey,fallback;
+    var defaults=(M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[]).slice(0),list=(manifest&&manifest.assetManifest||[]).slice(0),builtin=M3.UIIconAssets&&M3.UIIconAssets.manifest||[],defaultIndex={},listed={},i,item,cacheKey,sourceKey,fallback;
+    // UI art must remain available even when a remote manifest omits it or its files fail.
+    for(i=0;i<defaults.length;i+=1)defaultIndex[defaults[i].key]=i;
+    for(i=0;i<list.length;i+=1)listed[list[i].key]=true;
+    for(i=0;i<builtin.length;i+=1){
+      item=builtin[i];
+      if(defaultIndex[item.key]!==undefined)defaults[defaultIndex[item.key]]=item;else defaults.push(item);
+      if(!listed[item.key])list.push(item);
+    }
     entries={};fallbackEntries={};sources={};
     for(i=0;i<defaults.length;i+=1){item=defaults[i];if(!item||item.type!=='image'||!item.key||!item.url)continue;sourceKey=item.url+'@'+(item.version||'1');cacheKey=sources[sourceKey]||'default:'+item.key+'@'+(item.version||'1');sources[sourceKey]=cacheKey;fallbackEntries[item.key]={cacheKey:cacheKey,item:item};start(item,cacheKey);}
     for(i=0;i<list.length;i+=1){
@@ -31,5 +39,5 @@
   function resolved(key){var entry=entries[key],fallback;if(!entry||!M3.AssetManager)return null;if(!entry.failed&&(entry.ready||M3.AssetManager.loaded(entry.cacheKey)))return{cacheKey:entry.cacheKey,item:entry.item};fallback=entry.fallback;if(fallback&&M3.AssetManager.loaded(fallback.cacheKey))return fallback;return null;}
   function get(key){var entry=resolved(key);return entry?M3.AssetManager.get(entry.cacheKey):null;}
   function tileKey(map,tileType){var key=map&&map.tileAssets&&map.tileAssets[tileType];return key&&entries[key]?key:'';}
-  M3.TextureAssets={configure:configure,get:get,tileKey:tileKey,meta:function(key){var entry=resolved(key);return entry&&entry.item||entries[key]&&entries[key].item||null;},has:function(key){return!!entries[key];}};
+  M3.TextureAssets={configure:configure,get:get,tileKey:tileKey,cacheKey:function(key){var entry=resolved(key);return entry&&entry.cacheKey||key;},meta:function(key){var entry=resolved(key);return entry&&entry.item||entries[key]&&entries[key].item||null;},has:function(key){return!!entries[key];}};
 })();

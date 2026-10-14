@@ -61,6 +61,7 @@
     require('./scene/scene-models.js');
     require('./render/glyphs.js');
     require('./render/font-cn-main-data.js');
+    require('./render/ui-icon-assets.js');
     require('./render/texture-assets.js');
     require('./render/bitmap-font.js');
     require('./render/renderer.js');

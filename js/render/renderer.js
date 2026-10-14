@@ -124,12 +124,12 @@
       last=Math.min(entries.length,Math.ceil((scroll+l.mapList.h)/(l.levelRowH+l.levelGap))),
       footer=l.mapFooter,scaleX=gl.drawingBufferWidth/l.w,scaleY=gl.drawingBufferHeight/l.h,fade,arrowY,arrowDir;
     sceneBackdrop(l,v,null,1,true);
-    chamfer(header,[.075,.12,.18,.96],10);
-    chamferOutline(header,[.43,.64,.75,.55],1,10);
+    chamfer(header,[.045,.050,.052,.68],10);
+    chamferOutline(header,[.76,.77,.71,.32],1,10);
     imageAsset('ui-result-map',header.x+14,header.y+(header.h-34)*.5,34,34,1);
-    line(header.x+58,header.y+15,header.x+58,header.y+header.h-15,.8,[.52,.68,.78,.25]);
-    text(copy(v,'mapTitle','潮汐战图'),header.x+73,header.y+10,1.16,[.94,.97,1,1],header.w-86,'left','title');
-    text('选择已解锁的关卡',header.x+73,header.y+34,.60,[.62,.73,.82,1],header.w-86,'left');
+    line(header.x+58,header.y+15,header.x+58,header.y+header.h-15,.8,[.78,.78,.71,.22]);
+    text(copy(v,'mapTitle','潮汐战图'),header.x+73,header.y+10,1.16,[.96,.95,.90,1],header.w-86,'left','title');
+    text('选择已解锁的关卡',header.x+73,header.y+34,.60,[.73,.75,.72,1],header.w-86,'left');
     mapShortcut(l.energyAd,v,'ui-result-video','广告','+'+adAmount,[.81,.65,.31,1],'video');
     mapShortcut(l.energyShare,v,'ui-map-share','分享','+'+shareAmount,p.cyan,'share');
     mapShortcut(l.energyCurrent,v,'ui-map-energy','体力',v.energy,[.87,.71,.33,1],'energy');
@@ -142,10 +142,10 @@
     for(i=0;i<entries.length;i+=1){
       item=entries[i];node=item.node||{};level=item.level||{};r=l.levelCard(i,v.mapScroll);
       if(r.y+r.h<=top||r.y>=bottom)continue;
-      active=!!node.unlocked;accent=active?[.43,.79,.88,1]:[.40,.48,.57,1];fill=active?[.075,.12,.18,.97]:[.065,.085,.12,.96];
-      chamfer({x:r.x+2,y:r.y+4,w:r.w,h:r.h},[.005,.012,.025,.45],12);
+      active=!!node.unlocked;accent=active?[.76,.79,.71,1]:[.55,.58,.56,1];fill=active?[.045,.050,.052,.72]:[.040,.045,.047,.64];
+      chamfer({x:r.x+2,y:r.y+4,w:r.w,h:r.h},[.01,.012,.012,.12],12);
       chamfer(r,fill,12);
-      chamferOutline(r,[accent[0],accent[1],accent[2],active?.48:.25],1.2,12);
+      chamferOutline(r,[accent[0],accent[1],accent[2],active?.34:.20],1.2,12);
       preview={x:r.x+14,y:r.y+14,w:Math.min(r.w*.40,r.h-28),h:r.h-28};preview.y=r.y+(r.h-preview.w)*.5;preview.h=preview.w;
       mapPreview(preview,level,v);cutCorners(preview,fill,10);chamferOutline(preview,[accent[0],accent[1],accent[2],.70],1.2,10);
       if(!active){
@@ -155,18 +155,18 @@
       }
       info={x:preview.x+preview.w+18,y:r.y+17,w:r.x+r.w-18-(preview.x+preview.w+18),h:r.h-34};
       badge={x:info.x,y:info.y,w:active?51:55,h:20};
-      chamfer(badge,active?[.12,.25,.31,.86]:[.14,.18,.23,.85],4);
-      text(active?'可挑战':'未解锁',badge.x+badge.w*.5,badge.y+4,.54,active?[.57,.88,.93,1]:[.60,.68,.75,1],badge.w-6,'center');
+      chamfer(badge,active?[.22,.27,.22,.56]:[.18,.20,.19,.48],4);
+      text(active?'可挑战':'未解锁',badge.x+badge.w*.5,badge.y+4,.54,active?[.78,.87,.74,1]:[.66,.70,.66,1],badge.w-6,'center');
       titleY=info.y+27;descriptionY=titleY+26;
-      text(node.displayName||level.uiName||('第 '+(i+1)+' 关'),info.x,titleY,1.16,active?[.95,.97,1,1]:[.64,.71,.78,1],info.w,'left','title');
-      text(active?(node.description||level.description||'守住防线'):'完成上一关解锁',info.x,descriptionY,.68,active?[.67,.77,.86,1]:[.48,.57,.66,1],info.w,'left');
+      text(node.displayName||level.uiName||('第 '+(i+1)+' 关'),info.x,titleY,1.16,active?[.97,.96,.91,1]:[.70,.73,.70,1],info.w,'left','title');
+      text(active?(node.description||level.description||'守住防线'):'完成上一关解锁',info.x,descriptionY,.68,active?[.77,.79,.74,1]:[.60,.64,.61,1],info.w,'left');
       if(active){
         action={x:info.x,y:r.y+r.h-45,w:info.w,h:29};
-        chamfer(action,[.14,.29,.38,.94],6);
-        chamferOutline(action,[.44,.76,.85,.35],.8,6);
-        text('进入关卡',action.x+12,action.y+7,.65,[.80,.94,.98,1],action.w-30,'left');
-        line(action.x+action.w-16,action.y+10,action.x+action.w-12,action.y+14.5,1.3,[.63,.88,.94,1]);
-        line(action.x+action.w-12,action.y+14.5,action.x+action.w-16,action.y+19,1.3,[.63,.88,.94,1]);
+        chamfer(action,[.32,.35,.30,.42],6);
+        chamferOutline(action,[.81,.82,.73,.38],.8,6);
+        text('进入关卡',action.x+12,action.y+7,.65,[.94,.94,.84,1],action.w-30,'left');
+        line(action.x+action.w-16,action.y+10,action.x+action.w-12,action.y+14.5,1.3,[.83,.86,.77,1]);
+        line(action.x+action.w-12,action.y+14.5,action.x+action.w-16,action.y+19,1.3,[.83,.86,.77,1]);
       }
     }
     gl.disable(gl.SCISSOR_TEST);
@@ -179,7 +179,7 @@
       rect(trackX-2,top+4,4,l.mapList.h-8,[p.cyan[0],p.cyan[1],p.cyan[2],.18]);
       chamfer({x:trackX-2,y:top+4+(l.mapList.h-8-thumbH)*scroll/maxScroll,w:4,h:thumbH},[p.cyan[0],p.cyan[1],p.cyan[2],.90],2);
     }
-    refinedPanel(footer,p.cyan,[.022,.060,.080,.97],'button');
+    chamfer(footer,[.045,.050,.052,.68],8);chamferOutline(footer,[.76,.77,.71,.30],1,8);
     arrowY=footer.y+18+(maxScroll>0?Math.sin(M3._now()*.004)*2:0);arrowDir=canDown?1:-1;
     if(maxScroll>0)for(i=0;i<2;i+=1){
       line(footer.x+13,arrowY+i*6-arrowDir*3,footer.x+18,arrowY+i*6+arrowDir*2,1.5,p.cyan);

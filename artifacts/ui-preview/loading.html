@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>启元-狼人队 · 加载页预览</title>
+<style>
+  body{margin:0;background:#080e17;color:#dcebf0;font:14px system-ui,sans-serif}
+  aside{position:fixed;top:24px;left:24px;width:180px;z-index:2}
+  button{display:block;width:150px;margin:10px 0;padding:11px;border:1px solid #42616d;border-radius:7px;background:#12222c;color:#dcebf0;cursor:pointer}
+  button[aria-pressed="true"]{border-color:#7bcdd8;background:#1c3842}
+  p{color:#8da5b0;line-height:1.7}
+  iframe{position:fixed;width:414px;height:896px;top:50%;left:50%;transform:translate(-50%,-50%) scale(var(--preview-scale,1));border:0}
+  @media(max-width:800px){aside{width:150px;left:12px}iframe{left:auto;right:12px;transform:translateY(-50%) scale(var(--preview-scale,1));transform-origin:right center}}
+</style>
+<aside>
+  <strong>加载页美术预览</strong>
+  <button data-mode="config" aria-pressed="false">读取配置</button>
+  <button data-mode="assets" aria-pressed="true">资源加载</button>
+  <button data-mode="error" aria-pressed="false">连接失败</button>
+  <button data-mode="actual" aria-pressed="false">进入实际游戏</button>
+  <p>使用游戏的实际渲染代码。此页固定加载状态，方便查看美术细节。</p>
+</aside>
+<iframe id="loading-preview" src="../../index.html?art-preview=loading" title="加载页效果"></iframe>
+<script>
+  var mode='assets',frame=document.getElementById('loading-preview');
+  function fitPreview(){document.documentElement.style.setProperty('--preview-scale',String(Math.max(.2,Math.min(1,(innerHeight-32)/896,(innerWidth-200)/414))));}
+  fitPreview();window.addEventListener('resize',fitPreview);
+  document.querySelectorAll('button').forEach(function(button){button.onclick=function(){mode=button.dataset.mode;document.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b===button));});};});
+  function connect(){
+    var M3=frame.contentWindow.M3,snapshot;
+    if(!M3||!M3.SceneModels){requestAnimationFrame(connect);return;}
+    snapshot=M3.SceneModels.snapshot;
+    M3.SceneModels.snapshot=function(){
+      var view=snapshot();
+      if(mode==='actual')return view;
+      view.state=mode==='error'?'LOAD_ERROR':'LOADING';
+      view.loadingPhase=mode==='config'?'config':'assets';
+      view.loadingProgress={loaded:7,total:10,ratio:.7};
+      view.message='';
+      return view;
+    };
+  }
+  frame.onload=connect;
+</script>
+</html>

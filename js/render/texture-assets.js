@@ -54,7 +54,8 @@
     }));
   }
   function resolved(key){var entry=entries[key],fallback;if(!entry||!M3.AssetManager)return null;if(!entry.failed&&(entry.ready||M3.AssetManager.loaded(entry.cacheKey)))return{cacheKey:entry.cacheKey,item:entry.item};fallback=entry.fallback;if(fallback&&M3.AssetManager.loaded(fallback.cacheKey))return fallback;return null;}
-  function get(key){var entry=resolved(key);return entry?M3.AssetManager.get(entry.cacheKey):null;}
+  function get(key){var entry=resolved(key);return entry?M3.AssetManager.get(entry.cacheKey):M3.LoadingAssets&&M3.LoadingAssets.get(key)||null;}
+  function progress(keys){var loaded=0,total=(keys||[]).length,i;for(i=0;i<total;i+=1)if(resolved(keys[i]))loaded+=1;return{loaded:loaded,total:total,ratio:total?loaded/total:0};}
   function tileKey(map,tileType){var key=map&&map.tileAssets&&map.tileAssets[tileType];return key&&entries[key]?key:'';}
-  M3.TextureAssets={configure:configure,waitFor:waitFor,get:get,tileKey:tileKey,cacheKey:function(key){var entry=resolved(key);return entry&&entry.cacheKey||key;},meta:function(key){var entry=resolved(key);return entry&&entry.item||entries[key]&&entries[key].item||null;},has:function(key){return!!entries[key];}};
+  M3.TextureAssets={configure:configure,waitFor:waitFor,progress:progress,get:get,tileKey:tileKey,cacheKey:function(key){var entry=resolved(key);return entry&&entry.cacheKey||M3.LoadingAssets&&M3.LoadingAssets.cacheKey(key)||key;},meta:function(key){var entry=resolved(key);return entry&&entry.item||entries[key]&&entries[key].item||M3.LoadingAssets&&M3.LoadingAssets.meta(key)||null;},has:function(key){return!!entries[key];}};
 })();

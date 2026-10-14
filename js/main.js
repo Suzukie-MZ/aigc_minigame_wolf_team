@@ -64,6 +64,7 @@
     require('./render/ui-icon-assets.js');
     require('./render/texture-assets.js');
     require('./render/bitmap-font.js');
+    require('./render/loading-assets.js');
     require('./render/renderer.js');
     require('./render/tile-render-hook.js');
     require('./play/game.js');

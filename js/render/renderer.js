@@ -209,7 +209,43 @@
     text(v.message||(maxScroll>0?(canDown?'上滑查看更多关卡':'下滑查看前面关卡'):'全部关卡已显示'),footer.x+32,footer.y+12,.64,v.message?p.paper:p.cyan,footer.w*.55-32,'left');
     text((entries.length?first:0)+'-'+last+'/'+entries.length,footer.x+footer.w-12,footer.y+12,.64,p.paper,footer.w*.40,'right','label');
   }
-  function detailV2(l,v){var p=uiPalette(v),level=v.levelPreview||{},header={x:l.w*.07,y:l.top+l.usable*.045,w:l.w*.86,h:l.usable*.09},mapFrame={x:l.detailPreview.x-9,y:l.detailPreview.y-9,w:l.detailPreview.w+18,h:l.detailPreview.h+18},desc={x:l.w*.07,y:l.detailPreview.y+l.detailPreview.h+18,w:l.w*.86,h:Math.min(86,l.usable*.10)},objective=level.objective||level.description||'守住防线',buttonHeight=Math.min(54,l.detailBack.h*.76),backButton={x:l.detailBack.x,y:l.detailBack.y+(l.detailBack.h-buttonHeight)*.5,w:Math.min(l.detailBack.w,88),h:buttonHeight},startWidth=Math.min(l.detailStart.w,210),startButton={x:l.detailStart.x+(l.detailStart.w-startWidth)*.5,y:l.detailStart.y+(l.detailStart.h-buttonHeight)*.5,w:startWidth,h:buttonHeight};sceneBackdrop(l,v,null,.50);ornatePanel(header,v,p.frame,true,p.panelVariants[1]);levelBriefIcon(header.x+27,header.y+header.h*.5,39,p);text('关卡简报',header.x+52,header.y+12,.58,p.accent,header.w-68,'left');text(level.uiName||'关卡详情',header.x+52,header.y+37,1.18,p.paper,header.w-68,'left','title');ornatePanel(mapFrame,v,p.cyan,true,p.panelVariants[0]);mapPreview(l.detailPreview,level,v);cutCorners(l.detailPreview,p.panelVariants[0],12);chamferOutline(l.detailPreview,p.cyan,2,12);edgeJewels(mapFrame,v);ornatePanel(desc,v,p.accent,false,p.panelVariants[2]);text('关卡目标',desc.x+18,desc.y+10,.62,p.accent,desc.w-36,'left');line(desc.x+18,desc.y+32,desc.x+desc.w-18,desc.y+32,1,[p.frame[0],p.frame[1],p.frame[2],.28]);text(objective,desc.x+18,desc.y+42,.96,p.paper,desc.w-36,'left');edgeJewels(desc,v);uiButton(backButton,v,copy(v,'detailBack','返回'),'back',true);uiButton(startButton,v,copy(v,'detailAction','选择四座防御塔'),'blue',true);}
+  function detailLegend(r,level,p){
+    var map=level.map||{},types=['spawn','goal','hero_slot'],labels=['敌人入口','核心基地','英雄部署'],colors=[p.violet,[.86,.71,.36,1],p.cyan],groupW=r.w/3,i,x,key;
+    for(i=0;i<types.length;i+=1){
+      x=r.x+groupW*i+10;key=map.tileAssets&&map.tileAssets[types[i]];
+      if(!imageAsset(key,x,r.y+7,24,24,1)){diamond(x+12,r.y+19,14,14,colors[i]);diamond(x+12,r.y+19,7,7,p.navy);}
+      text(labels[i],x+31,r.y+13,.61,p.muted,groupW-38,'left','body');
+    }
+  }
+  function detailV2(l,v){
+    var p=uiPalette(v),level=v.levelPreview||{},header=l.detailHeader,mapFrame=l.detailMapFrame,desc=l.detailObjective,
+      objective=level.objective||level.description||'守住防线',title=String(level.uiName||'关卡详情').replace(/\s*[·•]\s*第\s*[\d\s-]+\s*关\s*$/,''),
+      badgeWidth=Math.max(62,String(v.difficulty||1).length*14+44),badge={x:header.x+header.w-badgeWidth-16,y:header.y+14,w:badgeWidth,h:24},icon={x:header.x+16,y:header.y+(header.h-42)*.5,w:42,h:42},
+      legend={x:mapFrame.x+10,y:mapFrame.y+mapFrame.h-46,w:mapFrame.w-20,h:36},goalX=desc.x+31,goalY=desc.y+desc.h*.5;
+    sceneBackdrop(l,v,null,.92);
+    refinedPanel(header,p.cyan,[.025,.055,.075,.95],'panel');
+    chamfer(icon,[.035,.14,.18,.8],7);chamferOutline(icon,[p.cyan[0],p.cyan[1],p.cyan[2],.32],.8,7);
+    levelBriefIcon(icon.x+21,icon.y+21,28,p);
+    text('关卡简报',header.x+72,header.y+15,.64,p.muted,header.w-170,'left','label');
+    text(title||level.uiName,header.x+72,header.y+40,1.8,p.paper,header.w-88,'left','title');
+    chamfer(badge,[p.cyan[0],p.cyan[1],p.cyan[2],.13],4);chamferOutline(badge,[p.cyan[0],p.cyan[1],p.cyan[2],.38],.7,4);
+    text('第'+(v.difficulty||1)+'关',badge.x+badge.w*.5,badge.y+5,.61,p.accent,badge.w-6,'center','label');
+    refinedPanel(mapFrame,p.cyan,[.018,.048,.065,.94],'panel');
+    line(mapFrame.x+16,mapFrame.y+18,mapFrame.x+25,mapFrame.y+18,1.5,p.cyan);diamond(mapFrame.x+25,mapFrame.y+18,4,4,p.cyan);
+    text('战术地图',mapFrame.x+34,mapFrame.y+10,.64,p.accent,mapFrame.w-50,'left','label');
+    mapPreview(l.detailPreview,level,v);cutCorners(l.detailPreview,[.018,.048,.065,1],9);
+    chamferOutline(l.detailPreview,[.56,.76,.81,.64],1,9);
+    line(legend.x+5,legend.y-2,legend.x+legend.w-5,legend.y-2,.65,[p.cyan[0],p.cyan[1],p.cyan[2],.24]);
+    detailLegend(legend,level,p);
+    refinedPanel(desc,[.65,.58,.39,1],[.050,.068,.078,.95],'panel');
+    diamond(goalX,goalY,34,34,[.77,.66,.39,.13]);diamond(goalX,goalY,19,19,[.82,.73,.48,.8]);diamond(goalX,goalY,11,11,p.navy);
+    line(goalX-14,goalY,goalX+14,goalY,.8,[.94,.86,.62,.9]);line(goalX,goalY-14,goalX,goalY+14,.8,[.94,.86,.62,.9]);
+    text('关卡目标',desc.x+61,desc.y+15,.64,[.75,.71,.57,1],desc.w-78,'left','label');
+    text(objective,desc.x+61,desc.y+39,1.10,p.paper,desc.w-78,'left','body');
+    if(desc.h>=100)text('选定防御塔后即可出战',desc.x+61,desc.y+desc.h-28,.61,p.muted,desc.w-78,'left');
+    uiButton(l.detailBack,v,copy(v,'detailBack','返回'),'back',true);
+    uiButton(l.detailStart,v,copy(v,'detailAction','选择四座防御塔'),'blue',true);
+  }
   function loadoutPanel(r,selected){
     chamfer(r,selected?[.095,.10,.075,.82]:[.035,.042,.043,.72],9);
     chamferOutline(r,selected?[.88,.82,.62,.90]:[.74,.77,.72,.30],selected?1.8:1,9);
@@ -353,14 +389,42 @@
     text('暂不使用',l.itemSkip.x+l.itemSkip.w*.5,l.itemSkip.y+(l.itemSkip.h-16)*.5,1,p.paper,l.itemSkip.w*.88,'center','button');
   }
   function loadingScreen(l,v,failed){
-    var mid=l.top+l.usable*.5,width=Math.min(l.w*.7,290),x=(l.w-width)*.5,pulse=(Math.sin(M3._now()*.004)+1)*.5,label=failed?'资源加载失败':v.loadingPhase==='render'?'正在准备画面':v.loadingPhase==='assets'?'正在加载游戏':'正在读取配置';
+    var width=Math.min(l.w*.72,320),x=(l.w-width)*.5,barY=l.top+l.usable*.81,
+      phase=v.loadingPhase,progress=v.loadingProgress||{ratio:0,total:0},ratio=Math.max(0,Math.min(1,Number(progress.ratio)||0)),
+      known=phase==='assets'&&progress.total>0||phase==='render',accent=failed?[.92,.48,.39,1]:[.38,.83,.91,1],
+      gold=[.82,.74,.55,1],label=failed?'资源加载失败':phase==='render'?'正在准备画面':phase==='assets'?'正在加载游戏':'正在读取配置',
+      i,bandH=l.usable*.36/24,segment=width*.22,travel=(Math.sin(M3._now()*.0018)+1)*.5,imageReady;
     if(gl&&gl.disable)gl.disable(gl.SCISSOR_TEST);
-    rect(0,l.top,l.w,l.usable,[.018,.035,.055,.96]);
-    rect(x,mid-15,width,4,[.12,.22,.28,1]);
-    if(!failed)rect(x,mid-15,width*(.28+.68*pulse),4,[.30,.78,.91,1]);
-    text(label,l.w*.5,mid-70,1.25,[.86,.96,1,1],l.w*.86,'center');
-    text(failed?'点击屏幕重试':'请稍候，完成后自动进入游戏',l.w*.5,mid+24,.78,[.64,.79,.85,1],l.w*.88,'center');
-    if(failed&&v.loadingError)text(String(v.loadingError).slice(0,42),l.w*.5,mid+57,.56,[1,.65,.59,1],l.w*.9,'center');
+    rect(0,l.top,l.w,l.usable,[.018,.035,.055,1]);
+    imageReady=loadingBackground(l);
+    if(!imageReady)text('启元-狼人队',l.w*.5,l.top+l.usable*.24,2.4,[.87,.94,.97,1],l.w*.86,'center','title');
+    for(i=0;i<24;i+=1)rect(0,l.top+l.usable*.64+i*bandH,l.w,bandH+.5,[.008,.020,.036,.10+i*.016]);
+    line(x,barY-55,x+width*.38,barY-55,.65,[gold[0],gold[1],gold[2],.42]);
+    line(x+width*.62,barY-55,x+width,barY-55,.65,[gold[0],gold[1],gold[2],.42]);
+    diamond(l.w*.5,barY-55,5,5,[gold[0],gold[1],gold[2],.8]);
+    text(label,l.w*.5,barY-36,1.12,[.9,.95,.97,1],l.w*.82,'center','label');
+    chamfer({x:x-2,y:barY-2,w:width+4,h:10},[.008,.025,.043,.86],2);
+    chamferOutline({x:x-2,y:barY-2,w:width+4,h:10},[accent[0],accent[1],accent[2],.32],.65,2);
+    rect(x,barY,width,6,[.12,.22,.28,.7]);
+    if(!failed){
+      if(known){
+        if(phase==='render')ratio=1;
+        if(ratio>0){rect(x,barY,width*ratio,6,accent);rect(x,barY,width*ratio,1.2,[.78,.96,1,.72]);diamond(x+width*ratio,barY+3,4,8,[.9,1,1,.82]);}
+        text(Math.round(ratio*100)+'%',x+width,barY-17,.64,[.75,.87,.91,1],62,'right','label');
+      }else{
+        rect(x+(width-segment)*travel,barY,segment,6,accent);
+        rect(x+(width-segment)*travel,barY,segment,1.2,[.78,.96,1,.72]);
+      }
+    }
+    text(failed?'轻触屏幕，重新连接':'请稍候，完成后自动进入游戏',l.w*.5,barY+27,.7,[.65,.76,.80,1],l.w*.88,'center');
+    if(failed)text('请检查网络后重试',l.w*.5,barY+55,.64,[.88,.65,.56,1],l.w*.8,'center');
+  }
+  function loadingBackground(l){
+    var key='ui-loading-background',image=M3.TextureAssets&&M3.TextureAssets.get(key),iw=image&&(image.naturalWidth||image.width),ih=image&&(image.naturalHeight||image.height),aspect,boxAspect,u0=0,u1=1,v0=0,v1=1,span;
+    if(!iw||!ih)return false;
+    aspect=iw/ih;boxAspect=l.w/l.usable;
+    if(aspect>boxAspect){span=boxAspect/aspect;u0=(1-span)*.5;u1=1-u0;}else{span=aspect/boxAspect;v0=(1-span)*.5;v1=1-v0;}
+    return imageRegion(key,0,l.top,l.w,l.usable,u0,1-v0,u1,1-v1,[1,1,1,1],1,false,0);
   }
   function prepareAssets(keys){
     var i,key,error;
@@ -372,6 +436,29 @@
       if(error&&error!==gl.NO_ERROR)throw new Error('图片渲染失败: '+key+' ('+error+')');
     }
   }
-  function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]),toast,toastWidth,toastHeight;if(v&&v.state==='BATTLE'&&v.message){toastWidth=Math.min(l.board.w*.9,l.w*.82);toastHeight=58;toast={x:l.board.x+(l.board.w-toastWidth)*.5,y:l.board.y+(l.board.h-toastHeight)*.5,w:toastWidth,h:toastHeight};}init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')loadingScreen(l,v,false);else if(v.state==='LOADING'){if(v.loadingPhase==='render'){try{prepareAssets(v.assetKeys);mapV2(l,v);if(gl.getError&&gl.getError()!==gl.NO_ERROR)throw new Error('地图画面渲染失败');loadingScreen(l,v,false);if(M3.Game&&M3.Game.assetsRendered)M3.Game.assetsRendered();}catch(error){if(M3.Game&&M3.Game.assetRenderFailed)M3.Game.assetRenderFailed(error);loadingScreen(l,{loadingError:error&&error.message||'图片渲染失败'},true);}}else loadingScreen(l,v,false);}else if(v.state==='LOAD_ERROR')loadingScreen(l,v,true);else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.message){if(toast){rect(toast.x+4,toast.y+5,toast.w,toast.h,[0,0,0,.38]);rect(toast.x,toast.y,toast.w,toast.h,[.08,.035,.025,.92]);frame(toast,tone(v,'gold',[1,.85,.25,1]),2);text(v.message,toast.x+toast.w*.5,toast.y+(toast.h-20)*.5,1.25,tone(v,'gold',[1,.85,.25,1]),toast.w*.9,'center','button');}else if(v.state!=='WORLD_MAP')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
+  function battleToast(l,v){
+    var p=uiPalette(v),message=String(v.message||''),width=Math.min(l.w-40,Math.max(204,message.length*14.6+66)),
+      chars=Math.max(1,Math.floor((width-66)/14.3)),lines=[message.slice(0,chars)],height=46,r,below,above,
+      accent=v.messageFailed?[.90,.49,.39,1]:p.cyan,now=M3._now(),remaining=v.messageExpiresAt?Math.max(0,v.messageExpiresAt-now):2200,
+      opacity=v.messageExpiresAt?Math.min(1,(2200-remaining)/140,remaining/200):1,i,y,cx,cy;
+    if(!message||opacity<=0)return;
+    if(message.length>chars){lines.push(message.slice(chars,chars*2));if(message.length>chars*2)lines[1]=lines[1].slice(0,-1)+'…';height=62;}
+    below=l.heroBarY-(l.board.y+l.board.h);above=l.board.y-l.battleHudBottom;
+    if(v.itemMenuOpen)y=Math.min(l.top+l.usable-height-14,l.itemModal.y+l.itemModal.h+12);
+    else if(below>=height+12)y=l.board.y+l.board.h+(below-height)*.5;
+    else if(above>=height+12)y=l.battleHudBottom+(above-height)*.5;
+    else y=l.battleHudBottom+8;
+    r={x:(l.w-width)*.5,y:y+(1-opacity)*4,w:width,h:height};cx=r.x+25;cy=r.y+r.h*.5;
+    chamfer({x:r.x+2,y:r.y+3,w:r.w,h:r.h},[0,0,0,.24*opacity],8);
+    chamfer(r,[.022,.048,.062,.94*opacity],8);
+    chamferOutline(r,[accent[0],accent[1],accent[2],.55*opacity],.9,8);
+    line(r.x+11,r.y+2,r.x+r.w-11,r.y+2,.7,[.73,.89,.93,.15*opacity]);
+    chamfer({x:cx-12,y:cy-12,w:24,h:24},[accent[0],accent[1],accent[2],.14*opacity],5);
+    if(v.messageFailed){rect(cx-1,cy-7,2,8,alphaColor(accent,opacity));rect(cx-1,cy+4,2,2,alphaColor(accent,opacity));}
+    else{rect(cx-1,cy-7,2,2,alphaColor(accent,opacity));rect(cx-1,cy-2,2,8,alphaColor(accent,opacity));}
+    for(i=0;i<lines.length;i+=1)text(lines[i],r.x+47,r.y+(r.h-lines.length*17)*.5+i*17,.92,alphaColor(p.paper,opacity),r.w-60,'left','label');
+    line(r.x+47,r.y+r.h-5,r.x+47+(r.w-60)*Math.min(1,remaining/2200),r.y+r.h-5,.7,[accent[0],accent[1],accent[2],.28*opacity]);
+  }
+  function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]);init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')loadingScreen(l,v,false);else if(v.state==='LOADING'){if(v.loadingPhase==='render'){try{prepareAssets(v.assetKeys);mapV2(l,v);if(gl.getError&&gl.getError()!==gl.NO_ERROR)throw new Error('地图画面渲染失败');loadingScreen(l,v,false);if(M3.Game&&M3.Game.assetsRendered)M3.Game.assetsRendered();}catch(error){if(M3.Game&&M3.Game.assetRenderFailed)M3.Game.assetRenderFailed(error);loadingScreen(l,{loadingError:error&&error.message||'图片渲染失败'},true);}}else loadingScreen(l,v,false);}else if(v.state==='LOAD_ERROR')loadingScreen(l,v,true);else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.message){if(v.state==='BATTLE')battleToast(l,v);else if(v.state!=='WORLD_MAP')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
   M3.Renderer={draw:draw,rect:rect,imageRegion:imageRegion};
 })();

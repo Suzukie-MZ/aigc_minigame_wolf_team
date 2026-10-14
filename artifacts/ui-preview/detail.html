@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>关卡详情与 Toast 预览</title>
+<style>
+  body{margin:0;background:#080e17;color:#dcebf0;font:14px system-ui,sans-serif}
+  aside{position:fixed;top:24px;left:24px;width:180px;z-index:2}
+  button{display:block;width:155px;margin:10px 0;padding:11px;border:1px solid #42616d;border-radius:7px;background:#12222c;color:#dcebf0;cursor:pointer}
+  button[aria-pressed="true"]{border-color:#7bcdd8;background:#1c3842}
+  p{color:#8da5b0;line-height:1.7}
+  iframe{position:fixed;width:414px;height:896px;top:50%;left:50%;transform:translate(-50%,-50%) scale(var(--preview-scale,1));border:0}
+  @media(max-width:800px){aside{width:155px;left:12px}iframe{left:auto;right:12px;transform:translateY(-50%) scale(var(--preview-scale,1));transform-origin:right center}}
+</style>
+</head>
+<body>
+<aside>
+  <strong>详情与提示美术预览</strong>
+  <button data-mode="detail" aria-pressed="true">关卡详情</button>
+  <button data-mode="hero" aria-pressed="false">英雄选中</button>
+  <button data-mode="error" aria-pressed="false">错误提示</button>
+  <p id="source">正在准备…</p>
+  <p>采用游戏实际渲染代码，提示固定显示以便检查布局。</p>
+</aside>
+<iframe id="detail-preview" src="../../index.html?art-preview=detail" title="详情和提示效果"></iframe>
+<script>
+  var mode='detail',frame=document.getElementById('detail-preview');
+  function fitPreview(){document.documentElement.style.setProperty('--preview-scale',String(Math.max(.2,Math.min(1,(innerHeight-32)/896,(innerWidth-210)/414))));}
+  fitPreview();window.addEventListener('resize',fitPreview);
+  document.querySelectorAll('button').forEach(function(button){button.onclick=function(){mode=button.dataset.mode;document.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b===button));});};});
+  function connect(){
+    var game=frame.contentWindow,M3=game.M3,manifest,level,id,deck,heroes,combat,snapshot,remote,uiManifest;
+    if(!M3||!M3.Game||!M3.Combat){requestAnimationFrame(connect);return;}
+    remote=!!M3.RuntimeConfig.getManifest();
+    manifest=remote?M3.RuntimeConfig.getManifest():JSON.parse(JSON.stringify(M3.NeutralConfig.manifest));
+    id=manifest.worldMap.nodes[0].levelId;
+    level=remote?M3.RuntimeConfig.getLevel(id):JSON.parse(JSON.stringify(M3.NeutralConfig.levels[id]));
+    if(!remote){
+      uiManifest={assetManifest:manifest.assetManifest.filter(function(asset){return /^(ui-|font-cn-main-)/.test(asset.key);})};
+      M3.TextureAssets.configure(uiManifest);M3.BitmapFont.configure(manifest);
+      manifest.presentation.sceneAssets={};
+    }
+    deck=M3.Deck.allowedCards(manifest).slice(0,4).map(function(card){return card.id;});
+    heroes=manifest.systems.M5_hero.hero_unit_pool.slice(0,1).map(function(hero){return hero.id;});
+    M3.UILayout.setGrid(level.map.width,level.map.height);
+    combat=M3.Combat.create(level,manifest,deck,heroes);snapshot=M3.SceneModels.snapshot;
+    M3.SceneModels.snapshot=function(){
+      var view=snapshot();
+      view.presentation=manifest.presentation;view.systems=manifest.systems;view.levelPreview=level;view.difficulty=1;view.message='';
+      view.state=mode==='detail'?'LEVEL_DETAIL':'BATTLE';view.itemMenuOpen=false;view.paused=false;
+      if(mode!=='detail'){if(mode==='hero')combat.selectHero(heroes[0]);view.combat=combat.view();view.message=mode==='error'?'英雄只能部署在英雄地块':'';view.messageFailed=mode==='error';view.messageExpiresAt=mode==='error'?M3._now()+1700:0;}
+      return view;
+    };
+    document.getElementById('source').textContent=remote?'使用实际关卡配置':'远程配置暂不可用，当前为内置示例关卡布局预览。';
+  }
+  frame.onload=connect;
+</script>
+</body>
+</html>

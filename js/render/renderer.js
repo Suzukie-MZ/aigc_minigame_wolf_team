@@ -189,8 +189,68 @@
     text((entries.length?first:0)+'-'+last+'/'+entries.length,footer.x+footer.w-12,footer.y+12,.64,p.paper,footer.w*.40,'right','label');
   }
   function detailV2(l,v){var p=uiPalette(v),level=v.levelPreview||{},header={x:l.w*.07,y:l.top+l.usable*.045,w:l.w*.86,h:l.usable*.09},mapFrame={x:l.detailPreview.x-9,y:l.detailPreview.y-9,w:l.detailPreview.w+18,h:l.detailPreview.h+18},desc={x:l.w*.07,y:l.detailPreview.y+l.detailPreview.h+18,w:l.w*.86,h:Math.min(86,l.usable*.10)},objective=level.objective||level.description||'守住防线',buttonHeight=Math.min(54,l.detailBack.h*.76),backButton={x:l.detailBack.x,y:l.detailBack.y+(l.detailBack.h-buttonHeight)*.5,w:Math.min(l.detailBack.w,88),h:buttonHeight},startWidth=Math.min(l.detailStart.w,210),startButton={x:l.detailStart.x+(l.detailStart.w-startWidth)*.5,y:l.detailStart.y+(l.detailStart.h-buttonHeight)*.5,w:startWidth,h:buttonHeight};sceneBackdrop(l,v,null,.50);ornatePanel(header,v,p.frame,true,p.panelVariants[1]);levelBriefIcon(header.x+27,header.y+header.h*.5,39,p);text('关卡简报',header.x+52,header.y+12,.58,p.accent,header.w-68,'left');text(level.uiName||'关卡详情',header.x+52,header.y+37,1.18,p.paper,header.w-68,'left','title');ornatePanel(mapFrame,v,p.cyan,true,p.panelVariants[0]);mapPreview(l.detailPreview,level,v);cutCorners(l.detailPreview,p.panelVariants[0],12);chamferOutline(l.detailPreview,p.cyan,2,12);edgeJewels(mapFrame,v);ornatePanel(desc,v,p.accent,false,p.panelVariants[2]);text('关卡目标',desc.x+18,desc.y+10,.62,p.accent,desc.w-36,'left');line(desc.x+18,desc.y+32,desc.x+desc.w-18,desc.y+32,1,[p.frame[0],p.frame[1],p.frame[2],.28]);text(objective,desc.x+18,desc.y+42,.96,p.paper,desc.w-36,'left');edgeJewels(desc,v);uiButton(backButton,v,copy(v,'detailBack','返回'),'back',true);uiButton(startButton,v,copy(v,'detailAction','选择四座防御塔'),'blue',true);}
-  function deckV2(l,v){var p=uiPalette(v),i,r,c,portrait,cardAccent,selected={},header={x:l.w*.10,y:l.top+l.usable*.05,w:l.w*.80,h:l.usable*.065},progress={x:l.w*.14,y:l.top+l.usable*.118,w:l.w*.72,h:l.usable*.035},cardFill,countLabel;(v.deck||[]).forEach(function(id){selected[id]=true;});sceneBackdrop(l,v,null,.48);ornatePanel(header,v,p.frame,true,p.panelVariants[1]);diamond(l.w*.5,header.y,15,15,p.primary);text(copy(v,'deckTitle','选择四座防御塔'),l.w*.5,header.y+header.h*.24,1.48,p.paper,header.w*.88,'center','title');ornatePanel(progress,v,p.accent,false,p.panelVariants[0]);text(copy(v,'deckHint','固定阵容，局内不可更换'),progress.x+16,progress.y+progress.h*.20,.62,p.accent,progress.w*.64,'left');countLabel=String(v.deck.length)+' / '+String(v.cardTotal);text(countLabel,progress.x+progress.w-14,progress.y+progress.h*.12,.86,v.deckValid?p.paper:p.frame,progress.w*.25,'right','label');for(i=0;i<l.cards.length;i+=1){r=l.cards[i];c=v.cards[i];cardFill=p.panelVariants[i%p.panelVariants.length];cardAccent=p.borderVariants[i%p.borderVariants.length];ornatePanel(r,v,cardAccent,!!(c&&selected[c.id]),cardFill);if(c){portrait={x:r.x+8,y:r.y+8,w:r.w-16,h:r.w-16};imageAsset(c.portraitAsset,portrait.x,portrait.y,portrait.w,portrait.h,1)||actor(r.x+r.w*.5,r.y+r.h*.30,Math.min(r.w,r.h)*.62,c.appearance,c.color);cutCorners(portrait,cardFill,9);chamferOutline(portrait,selected[c.id]?p.primary:[cardAccent[0],cardAccent[1],cardAccent[2],.62],selected[c.id]?2:1,9);rect(r.x+5,r.y+r.h*.57,r.w-10,r.h*.40,[cardFill[0],cardFill[1],cardFill[2],.94]);line(r.x+13,r.y+r.h*.59,r.x+r.w-13,r.y+r.h*.59,1,[cardAccent[0],cardAccent[1],cardAccent[2],.28]);text(c.uiName||('防御塔 '+(i+1)),r.x+r.w*.5,r.y+r.h*.62,.90,p.paper,r.w*.88,'center');text(c.roleDescription||'通用防御单位',r.x+r.w*.5,r.y+r.h*.74,.64,cardAccent,r.w*.88,'center');text(copy(v,'purchaseCost','花费')+'  '+c.purchaseCost,r.x+r.w*.5,r.y+r.h*.86,.70,p.resource,r.w*.82,'center');if(selected[c.id])selectionMark(r,v);}}uiButton(l.pagePrev,v,'返回','back',true);uiButton(l.deckStart,v,v.deckValid?'进入英雄选择':'请选择四座防御塔','blue',v.deckValid);}
-  function heroSelectV2(l,v){var p=uiPalette(v),i,r,h,selected={},heroRects=l.heroSelectCards||l.heroCards,header={x:l.w*.10,y:l.top+l.usable*.05,w:l.w*.80,h:l.usable*.065},rule={x:l.w*.14,y:l.top+l.usable*.12,w:l.w*.72,h:l.usable*.045};(v.heroes||[]).forEach(function(id){selected[id]=true;});sceneBackdrop(l,v,null,.46);ornatePanel(header,v,p.frame,true,p.panelVariants[1]);diamond(l.w*.5,header.y,15,15,p.primary);text('选择一名英雄',l.w*.5,header.y+header.h*.24,1.48,p.paper,header.w*.88,'center','title');ornatePanel(rule,v,p.accent,false,p.panelVariants[0]);text('固定 3 名候选 · 局内限用一名',l.w*.5,rule.y+rule.h*.25,.68,p.accent,rule.w*.90,'center');for(i=0;i<v.heroCards.length&&i<heroRects.length;i+=1){r=heroRects[i];h=v.heroCards[i];heroShowcaseCard(r,h,i,!!selected[h.id],v,p);}uiButton(l.heroBack,v,'返回','back',true);uiButton(l.heroStart,v,'消耗体力开始','gold',v.heroes.length===1);}
+  function loadoutPanel(r,selected){
+    chamfer(r,selected?[.095,.10,.075,.82]:[.035,.042,.043,.72],9);
+    chamferOutline(r,selected?[.88,.82,.62,.90]:[.74,.77,.72,.30],selected?1.8:1,9);
+  }
+  function loadoutCheck(r){
+    var x=r.x+r.w-22,y=r.y+16;
+    chamfer({x:x-10,y:y-10,w:20,h:20},[.82,.78,.60,.96],5);
+    line(x-5,y,x-1,y+4,2,[.10,.14,.12,1]);line(x-1,y+4,x+6,y-5,2,[.10,.14,.12,1]);
+  }
+  function loadoutHeader(l,title,hint,count,step){
+    var y=l.top+Math.max(42,Math.min(47,l.usable*.052));
+    rect(0,l.top,l.w,l.usable,[.018,.022,.025,.28]);
+    text('出战准备  ·  '+step,l.w*.045,y,.54,[.77,.80,.73,1],l.w*.9,'left');
+    text(title,l.w*.045,y+23,1.42,[.97,.96,.91,1],l.w*.76,'left','title');
+    text(hint,l.w*.045,y+57,.60,[.77,.79,.75,1],l.w*.76,'left');
+    if(count)text(count,l.w*.955,y+28,.91,[.89,.85,.68,1],l.w*.18,'right','label');
+  }
+  function loadoutButton(r,label,primary,enabled){
+    var available=enabled!==false;
+    chamfer(r,primary?(available?[.30,.32,.24,.82]:[.065,.075,.075,.78]):[.04,.05,.05,.72],8);
+    chamferOutline(r,primary&&available?[.86,.82,.64,.68]:[.68,.73,.69,.28],1,8);
+    text(label,r.x+r.w*.5,r.y+(r.h-18)*.5,.90,available?[.96,.95,.88,1]:[.52,.58,.55,1],r.w*.9,'center','button');
+  }
+  function deckV2(l,v){
+    var rows=l.loadoutCards||l.cards,chosen={},i,r,c,art,selected;
+    (v.deck||[]).forEach(function(id){chosen[id]=true;});
+    sceneBackdrop(l,v,null,1,true);
+    loadoutHeader(l,'选择防御塔','搭配四座防御塔，组成你的出战阵容',v.deck.length+' / 4','01 / 02');
+    for(i=0;i<rows.length;i+=1){
+      r=rows[i];c=v.cards[i];if(!c)continue;selected=!!chosen[c.id];
+      loadoutPanel(r,selected);
+      art={x:r.x+8,y:r.y+7,w:r.w-16,h:r.h*.55};
+      imageAssetContain(c.portraitAsset,art.x,art.y,art.w,art.h,1)||actor(r.x+r.w*.5,art.y+art.h*.5,Math.min(art.w,art.h)*.8,c.appearance,c.color);
+      rect(r.x+10,r.y+r.h*.59,r.w-20,1,[.77,.80,.72,.16]);
+      text(c.uiName||('防御塔 '+(i+1)),r.x+12,r.y+r.h*.63,.81,[.97,.96,.91,1],r.w-24,'left','label');
+      text(c.roleDescription||'通用防御单位',r.x+12,r.y+r.h*.76,.55,[.72,.77,.72,1],r.w-24,'left');
+      text('部署  '+c.purchaseCost,r.x+12,r.y+r.h*.88,.56,[.88,.82,.64,1],r.w-24,'left');
+      if(selected)loadoutCheck(r);
+    }
+    loadoutButton(l.pagePrev,'返回',false,true);
+    loadoutButton(l.deckStart,v.deckValid?'进入英雄选择':'已选 '+v.deck.length+' / 4',true,v.deckValid);
+  }
+  function heroSelectV2(l,v){
+    var rows=l.loadoutHeroes||l.heroSelectCards,chosen={},i,r,h,art,infoX,infoW,selected,badge;
+    (v.heroes||[]).forEach(function(id){chosen[id]=true;});
+    sceneBackdrop(l,v,null,1,true);
+    loadoutHeader(l,'选择出战英雄','选择一名英雄，与防御塔一同守住防线',v.heroes.length+' / 1','02 / 02');
+    for(i=0;i<v.heroCards.length&&i<rows.length;i+=1){
+      r=rows[i];h=v.heroCards[i];selected=!!chosen[h.id];loadoutPanel(r,selected);
+      art={x:r.x+10,y:r.y+10,w:r.h-20,h:r.h-20};
+      imageAssetContain(h.portraitAsset,art.x,art.y,art.w,art.h,1)||actor(art.x+art.w*.5,art.y+art.h*.5,art.h*.85,h.appearance,h.color);
+      infoX=art.x+art.w+16;infoW=r.x+r.w-infoX-18;
+      text(heroDisplayName(h.uiName),infoX,r.y+r.h*.22,1.03,[.97,.96,.91,1],infoW-12,'left','title');
+      text(h.roleDescription||'支援全场的英雄单位',infoX,r.y+r.h*.45,.62,[.74,.79,.73,1],infoW,'left');
+      badge={x:infoX,y:r.y+r.h*.70,w:78,h:21};
+      chamfer(badge,[.30,.33,.28,.40],4);
+      text('等级 '+h.level,badge.x+9,badge.y+4,.55,[.89,.85,.68,1],badge.w-14,'left','label');
+      if(selected)loadoutCheck(r);
+    }
+    loadoutButton(l.heroBack,'返回',false,true);
+    loadoutButton(l.heroStart,v.heroes.length===1?'消耗体力 · 开始防御':'请选择一名英雄',true,v.heroes.length===1);
+  }
   function progressionV2(l,v){progression(l,v);}
   function resultV2(l,v){
     var p=uiPalette(v),win=v.result==='win',data=v.resultData||{},accent=win?tone(v,'success',[.18,.8,.5,1]):tone(v,'accent',[.92,.33,.28,1]),rewardGold=tone(v,'gold',[1,.75,.25,1]),panel=l.resultPanel,rewards=l.resultRewards,i,r,iconSize,titleY=panel.y+panel.h*.26,center=l.w*.5,ornamentY=titleY+12,badgeY=l.resultBadge.y-l.usable*.03,button=l.resultDouble,back=l.resultButton;

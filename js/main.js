@@ -22,6 +22,7 @@
     require('../api/kwai-render.js');// 帧率控制
     require('../api/kwai-network.js');
     require('../api/kwai-storage.js');
+    require('../api/kwai-subpackage.js'); // 怪物资源子包
     // ↓ 其他平台能力模块按需引入（根据游戏功能选择）
     // require('../api/kwai-ui.js');         // Toast / Modal / Loading / 胶囊按钮布局
     // require('../api/kwai-network.js');    // HTTP 请求 / 下载 / 上传 / WebSocket
@@ -62,6 +63,8 @@
     require('./render/glyphs.js');
     require('./render/font-cn-main-data.js');
     require('./render/ui-icon-assets.js');
+    require('./render/enemy-animations.js');
+    require('./render/death-particles.js');
     require('./render/texture-assets.js');
     require('./render/bitmap-font.js');
     require('./render/loading-assets.js');

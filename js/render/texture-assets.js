@@ -15,7 +15,7 @@
     return 'hero-1';
   }
   function configure(manifest){
-    var defaults=(M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[]).slice(0),list=(manifest&&manifest.assetManifest||[]).slice(0),builtin=M3.UIIconAssets&&M3.UIIconAssets.manifest||[],defaultIndex={},listed={},required=[],i,item,cacheKey,sourceKey,fallback;
+    var defaults=(M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[]).slice(0),list=(manifest&&manifest.assetManifest||[]).slice(0),builtin=(M3.UIIconAssets&&M3.UIIconAssets.manifest||[]).concat(M3.EnemyAnimations&&M3.EnemyAnimations.manifest||[],M3.DeathParticles&&M3.DeathParticles.manifest||[]),defaultIndex={},listed={},required=[],i,item,cacheKey,sourceKey,fallback;
     // UI art must remain available even when a remote manifest omits it or its files fail.
     for(i=0;i<defaults.length;i+=1)defaultIndex[defaults[i].key]=i;
     for(i=0;i<list.length;i+=1)listed[list[i].key]=true;
@@ -34,7 +34,7 @@
       sources[sourceKey]=cacheKey;
       fallback=runtimeArtwork(item.key)?null:fallbackEntries[fallbackKey(item,manifest)];
       entries[item.key]={cacheKey:cacheKey,item:item,fallback:fallback||null,failed:false,ready:false};
-      if(runtimeArtwork(item.key))required.push(item.key);
+      if(runtimeArtwork(item.key)||/^subpackages\/monsters\//.test(item.url))required.push(item.key);
       (function(entry,currentItem,currentCacheKey){start(currentItem,currentCacheKey,function(){entry.failed=true;entry.ready=false;},function(){entry.failed=false;entry.ready=true;});})(entries[item.key],item,cacheKey);
     }
     return required;

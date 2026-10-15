@@ -3,6 +3,14 @@
   function loadConfig(){
     var attempt=++loadAttempt;
     state='LOADING';loadingPhase='config';loadingError='';assetKeys=[];
+    if(typeof ks!=='undefined'&&M3.SubpackageLoader&&!M3.SubpackageLoader.isLoaded('monsters')){
+      loadingPhase='assets';
+      M3.SubpackageLoader.load('monsters',{
+        onSuccess:function(){if(attempt===loadAttempt)loadConfig();},
+        onFail:function(error){if(attempt===loadAttempt){loadingError=error&&(error.errorMsg||error.message)||'怪物资源加载失败';state='LOAD_ERROR';}}
+      });
+      return;
+    }
     M3.RuntimeConfig.init(function(){
       if(attempt!==loadAttempt)return;
       manifest=M3.RuntimeConfig.getManifest();

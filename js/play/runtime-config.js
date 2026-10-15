@@ -22,7 +22,7 @@
     }
     return level;
   }
-  function levelUrl(id) { return LEVEL_URL_TEMPLATE.replace('{levelId}', encodeURIComponent(id)); }
+  function levelUrl(manifest, id) { var ref = manifest.levels && manifest.levels[id]; return ref && typeof ref.url === 'string' && /^https:\/\//.test(ref.url) ? ref.url : LEVEL_URL_TEMPLATE.replace('{levelId}', encodeURIComponent(id)); }
   function applyPresentationFallback(manifest, levels) {
     var defaults = M3.NeutralConfig.manifest.presentation, supplied = manifest.presentation || {}, dc = defaults.colors, sc = supplied.colors || {}, cards = manifest.cards || [], rolePalette, enemyPalette, roleAppearances, enemyAppearances, cardByUnit = {}, assetKeys = {}, fallbackAssets = M3.NeutralConfig.manifest.assetManifest || [], key, i, j, units, enemyIndex, fallbackAppearance;
     manifest.presentation = clone(defaults); manifest.presentation.themeId = supplied.themeId || defaults.themeId; manifest.presentation.displayName = supplied.displayName || defaults.displayName;
@@ -120,7 +120,7 @@
       validation = M3.ConfigValidator.validateManifest(manifest); if (!validation.ok) { fallback(validation.errors.join(',')); done(); return; }
       Object.keys(manifest.levels || {}).forEach(function (id) { refs.push(id); }); pending = refs.length;
       if (!pending) { fallback('no levels'); done(); return; }
-      refs.forEach(function (id) { request(levelUrl(id), function (levelErr, level) {
+      refs.forEach(function (id) { request(levelUrl(manifest, id), function (levelErr, level) {
         var levelValidation;
         if (!levelErr) {
           level = normalizeRoleContracts(manifest,normalizeLevelCompatibility(level));

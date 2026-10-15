@@ -10,7 +10,15 @@
         {
             "name": "subpackage2",
             "root": "subpackages/subpackage2/"
+        },
+        {
+            "name": "monsters",
+            "root": "subpackages/monsters/"
         }
     ],
-    "parallelPreloadSubpackages": []
+    "parallelPreloadSubpackages": [
+        {
+            "name": "monsters"
+        }
+    ]
 }

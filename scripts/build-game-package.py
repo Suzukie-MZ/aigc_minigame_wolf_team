@@ -52,8 +52,18 @@ def check_references(paths):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path, default=ROOT / 'dist/aigc_minigame_wolf_team.zip')
+    parser.add_argument('--output', type=Path, default=ROOT.parent / 'outputs/builds/aigc_minigame_wolf_team.zip')
     args = parser.parse_args()
+    if args.output.resolve().is_relative_to(ROOT):
+        raise SystemExit('Build output must be outside package/ to avoid including the ZIP in the next upload')
+    config = json.loads((ROOT / 'game.json').read_text())
+    package_roots = [ROOT / item['root'] for item in config.get('subpackages', [])]
+    directory_files = [path for path in ROOT.rglob('*') if path.is_file()]
+    directory_main_size = sum(path.stat().st_size for path in directory_files
+                              if not any(path.is_relative_to(root) for root in package_roots))
+    directory_total_size = sum(path.stat().st_size for path in directory_files)
+    if directory_main_size > LIMIT:
+        raise SystemExit(f'Actual source-directory main package exceeds budget: {directory_main_size:,} > {LIMIT:,} bytes')
     paths = runtime_files()
     check_references(paths)
     raw_size = sum(path.stat().st_size for path in paths)
@@ -75,10 +85,19 @@ def main():
         if archive.testzip() is not None:
             raise SystemExit('ZIP integrity check failed')
     temporary.replace(args.output)
-    report = {'limit_bytes': LIMIT, 'runtime_bytes': raw_size, 'zip_bytes': zip_size,
+    config = json.loads((ROOT / 'game.json').read_text())
+    subpackage_sizes = {item['name']: sum(path.stat().st_size for path in paths
+                        if path.is_relative_to(ROOT / item['root']))
+                        for item in config.get('subpackages', [])}
+    main_size = raw_size - sum(subpackage_sizes.values())
+    report = {'directory_main_bytes': directory_main_size, 'directory_total_bytes': directory_total_size,
+              'main_package_bytes': main_size, 'subpackage_bytes': subpackage_sizes,
+              'limit_bytes': LIMIT, 'runtime_bytes': raw_size, 'zip_bytes': zip_size,
               'file_count': len(paths), 'files': [path.relative_to(ROOT).as_posix() for path in paths]}
     args.output.with_suffix('.size.json').write_text(json.dumps(report, indent=2) + '\n')
     print(f'Runtime content: {raw_size:,} bytes; ZIP: {zip_size:,} bytes; limit: {LIMIT:,} bytes')
+    print(f'Main package: {main_size:,} bytes; subpackages: {subpackage_sizes}')
+    print(f'Actual directory: main {directory_main_size:,} bytes; total {directory_total_size:,} bytes (no hidden-file exclusions)')
     print(args.output)
 
 

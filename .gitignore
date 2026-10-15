@@ -13,3 +13,7 @@ build/
 /artifacts/ui-preview/**/*.gif
 /artifacts/ui-preview/**/*.avif
 /artifacts/ui-preview/**/*.bmp
+
+# Local Python bytecode is not part of the game.
+__pycache__/
+*.py[cod]

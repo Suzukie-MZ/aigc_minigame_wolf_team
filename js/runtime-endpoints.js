@@ -1,8 +1,8 @@
 (function () {
-  // 支持直接注入完整接口，避免服务端 gameId 与快手 appId 不一致时错误拼接路由。
+  // 清单中的关卡 URL 优先；模板兼容未提供 URL 的清单。
   window.RUNTIME_CONFIG_BASE_URL = window.RUNTIME_CONFIG_BASE_URL || '';
   window.RUNTIME_CONFIG_ENDPOINTS = window.RUNTIME_CONFIG_ENDPOINTS || {
-    manifestUrl: 'http://172.23.136.112:8080/api/runtime-manifest',
-    levelUrlTemplate: 'http://172.23.136.112:8080/api/levels/{levelId}'
+    manifestUrl: 'https://p1-ad.adkwai.com/udata/pkg/KS-GAME/ksgame_wolves/runtime-manifest.json',
+    levelUrlTemplate: 'https://p1-ad.adkwai.com/udata/pkg/KS-GAME/ksgame_wolves/releases/ksgame-wolves-20261015-002/levels/{levelId}.json'
   };
 })();

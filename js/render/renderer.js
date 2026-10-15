@@ -219,37 +219,48 @@
     for(i=0;i<types.length;i+=1){
       x=r.x+groupW*i+10;key=map.tileAssets&&map.tileAssets[types[i]];
       if(!imageAsset(key,x,r.y+7,24,24,1)){diamond(x+12,r.y+19,14,14,colors[i]);diamond(x+12,r.y+19,7,7,p.navy);}
-      text(labels[i],x+31,r.y+13,.61,p.muted,groupW-38,'left','body');
+      text(labels[i],x+31,r.y+13,.61,[.82,.87,.80,1],groupW-38,'left','body');
     }
+  }
+  function detailGlassPanel(r,opacity,warm){
+    chamfer({x:r.x+1,y:r.y+2,w:r.w,h:r.h},[.015,.018,.015,.07],10);
+    chamfer(r,warm?[.10,.095,.075,opacity]:[.035,.045,.040,opacity],10);
+    chamferOutline(r,warm?[.86,.81,.65,.34]:[.82,.87,.80,.28],1,10);
+    line(r.x+15,r.y+1,r.x+r.w-15,r.y+1,.7,[.96,.97,.89,.23]);
+  }
+  function detailGlassButton(r,label,primary){
+    chamfer(r,primary?[.68,.69,.56,.22]:[.15,.18,.16,.18],8);
+    chamferOutline(r,primary?[.88,.86,.69,.48]:[.82,.87,.80,.30],1,8);
+    text(label,r.x+r.w*.5,r.y+(r.h-18)*.5,1.02,[.97,.97,.91,1],r.w*.88,'center','button');
   }
   function detailV2(l,v){
     var p=uiPalette(v),level=v.levelPreview||{},header=l.detailHeader,mapFrame=l.detailMapFrame,desc=l.detailObjective,
       objective=level.objective||level.description||'守住防线',title=String(level.uiName||'关卡详情').replace(/\s*[·•]\s*第\s*[\d\s-]+\s*关\s*$/,''),
       badgeWidth=Math.max(62,String(v.difficulty||1).length*14+44),badge={x:header.x+header.w-badgeWidth-16,y:header.y+14,w:badgeWidth,h:24},icon={x:header.x+16,y:header.y+(header.h-42)*.5,w:42,h:42},
       legend={x:mapFrame.x+10,y:mapFrame.y+mapFrame.h-46,w:mapFrame.w-20,h:36},goalX=desc.x+31,goalY=desc.y+desc.h*.5;
-    sceneBackdrop(l,v,null,.92);
-    refinedPanel(header,p.cyan,[.025,.055,.075,.95],'panel');
-    chamfer(icon,[.035,.14,.18,.8],7);chamferOutline(icon,[p.cyan[0],p.cyan[1],p.cyan[2],.32],.8,7);
+    sceneBackdrop(l,v,null,1,true);
+    detailGlassPanel(header,.38,false);
+    chamfer(icon,[.18,.23,.19,.32],7);chamferOutline(icon,[.82,.87,.80,.25],.8,7);
     levelBriefIcon(icon.x+21,icon.y+21,28,p);
-    text('关卡简报',header.x+72,header.y+15,.64,p.muted,header.w-170,'left','label');
-    text(title||level.uiName,header.x+72,header.y+40,1.8,p.paper,header.w-88,'left','title');
-    chamfer(badge,[p.cyan[0],p.cyan[1],p.cyan[2],.13],4);chamferOutline(badge,[p.cyan[0],p.cyan[1],p.cyan[2],.38],.7,4);
-    text('第'+(v.difficulty||1)+'关',badge.x+badge.w*.5,badge.y+5,.61,p.accent,badge.w-6,'center','label');
-    refinedPanel(mapFrame,p.cyan,[.018,.048,.065,.94],'panel');
+    text('关卡简报',header.x+72,header.y+15,.64,[.78,.84,.77,1],header.w-170,'left','label');
+    text(title||level.uiName,header.x+72,header.y+40,1.8,[.97,.97,.91,1],header.w-88,'left','title');
+    chamfer(badge,[.78,.82,.69,.12],4);chamferOutline(badge,[.84,.87,.75,.28],.7,4);
+    text('第'+(v.difficulty||1)+'关',badge.x+badge.w*.5,badge.y+5,.61,[.88,.91,.81,1],badge.w-6,'center','label');
+    detailGlassPanel(mapFrame,.28,false);
     line(mapFrame.x+16,mapFrame.y+18,mapFrame.x+25,mapFrame.y+18,1.5,p.cyan);diamond(mapFrame.x+25,mapFrame.y+18,4,4,p.cyan);
-    text('战术地图',mapFrame.x+34,mapFrame.y+10,.64,p.accent,mapFrame.w-50,'left','label');
-    mapPreview(l.detailPreview,level,v);cutCorners(l.detailPreview,[.018,.048,.065,1],9);
-    chamferOutline(l.detailPreview,[.56,.76,.81,.64],1,9);
+    text('战术地图',mapFrame.x+34,mapFrame.y+10,.64,[.85,.90,.82,1],mapFrame.w-50,'left','label');
+    mapPreview(l.detailPreview,level,v);cutCorners(l.detailPreview,[.035,.045,.040,.28],9);
+    chamferOutline(l.detailPreview,[.82,.87,.80,.36],1,9);
     line(legend.x+5,legend.y-2,legend.x+legend.w-5,legend.y-2,.65,[p.cyan[0],p.cyan[1],p.cyan[2],.24]);
     detailLegend(legend,level,p);
-    refinedPanel(desc,[.65,.58,.39,1],[.050,.068,.078,.95],'panel');
+    detailGlassPanel(desc,.42,true);
     diamond(goalX,goalY,34,34,[.77,.66,.39,.13]);diamond(goalX,goalY,19,19,[.82,.73,.48,.8]);diamond(goalX,goalY,11,11,p.navy);
     line(goalX-14,goalY,goalX+14,goalY,.8,[.94,.86,.62,.9]);line(goalX,goalY-14,goalX,goalY+14,.8,[.94,.86,.62,.9]);
-    text('关卡目标',desc.x+61,desc.y+15,.64,[.75,.71,.57,1],desc.w-78,'left','label');
-    text(objective,desc.x+61,desc.y+39,1.10,p.paper,desc.w-78,'left','body');
-    if(desc.h>=100)text('选定防御塔后即可出战',desc.x+61,desc.y+desc.h-28,.61,p.muted,desc.w-78,'left');
-    uiButton(l.detailBack,v,copy(v,'detailBack','返回'),'back',true);
-    uiButton(l.detailStart,v,copy(v,'detailAction','选择四座防御塔'),'blue',true);
+    text('关卡目标',desc.x+61,desc.y+15,.64,[.88,.83,.67,1],desc.w-78,'left','label');
+    text(objective,desc.x+61,desc.y+39,1.10,[.97,.97,.91,1],desc.w-78,'left','body');
+    if(desc.h>=100)text('选定防御塔后即可出战',desc.x+61,desc.y+desc.h-28,.61,[.78,.84,.77,1],desc.w-78,'left');
+    detailGlassButton(l.detailBack,copy(v,'detailBack','返回'),false);
+    detailGlassButton(l.detailStart,copy(v,'detailAction','选择四座防御塔'),true);
   }
   function loadoutPanel(r,selected){
     chamfer(r,selected?[.095,.10,.075,.82]:[.035,.042,.043,.72],9);

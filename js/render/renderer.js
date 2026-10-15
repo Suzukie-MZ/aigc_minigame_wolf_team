@@ -67,15 +67,15 @@
   function text(value,x,y,size,color,maxWidth,align,styleKind){var dark=color&&color[0]+color[1]+color[2]<.75,kind=styleKind||(dark?'button':(size>1.8?'title':'body'));if(!M3.BitmapFont||!M3.BitmapFont.drawText(M3.Renderer,value,x,y,size,color,maxWidth,align,kind))M3.Glyphs.drawText(M3.Renderer,value,x,y,size,color,maxWidth,align);}
   function cardTextLines(value,r,y,maxLines,color,fontSize,lineHeight,kind){var source=String(value||''),maxWidth=Math.max(20,r.w-6),size=fontSize||.76,textKind=kind||'body',glyphSize=textKind==='cardBody'?Math.max(10,size*16):Math.max(13.5,size*16),glyphWidth=glyphSize*.86+(textKind==='cardBody'?.3:.4),perLine=Math.max(1,Math.floor(maxWidth/glyphWidth)),limit=Math.max(1,maxLines||1),lines=[],i,line;while(source.length&&lines.length<limit){line=source.slice(0,perLine);source=source.slice(perLine);lines.push(line);}if(source.length&&lines.length){line=lines[lines.length-1];line=(line.length>1?line.slice(0,line.length-1):line)+'…';lines[lines.length-1]=line;}for(i=0;i<lines.length;i+=1)text(lines[i],r.x+r.w*.5,y+i*(lineHeight||15.5),size,color,maxWidth,'center',textKind);return lines.length;}
   function battleCardArt(r,key,appearance,color,artH,v,selected){
-    var infoY=r.y+artH,art={x:r.x+5,y:r.y+5,w:r.w-10,h:artH-9},edge=selected?[.65,.49,.25,.96]:[.96,.96,.90,.65];
-    chamfer({x:r.x+1,y:r.y+2,w:r.w,h:r.h},[.12,.10,.065,.18],7);
-    chamfer(r,selected?[.98,.92,.76,.58]:[.98,.95,.88,.44],7);
+    var infoY=r.y+artH,art={x:r.x+5,y:r.y+5,w:r.w-10,h:artH-9},edge=selected?[.65,.49,.25,.65]:[.96,.96,.90,.28];
+    chamfer({x:r.x+1,y:r.y+2,w:r.w,h:r.h},[.12,.10,.065,.06],7);
+    chamfer(r,selected?[.98,.92,.76,.36]:[.98,.95,.88,.24],7);
     chamferOutline(r,edge,selected?1.8:1,7);
-    line(r.x+9,r.y+2,r.x+r.w-9,r.y+2,.8,[1,1,.96,.65]);
+    line(r.x+9,r.y+2,r.x+r.w-9,r.y+2,.8,[1,1,.96,.25]);
     if(!imageAssetContain(key,art.x,art.y,art.w,art.h,1))actor(r.x+r.w*.5,r.y+artH*.5,Math.min(art.w,art.h)*.90,appearance,color);
-    chamfer({x:r.x+3,y:infoY,w:r.w-6,h:r.h-artH-3},[.99,.98,.94,.70],4);
-    line(r.x+9,infoY,r.x+r.w-9,infoY,.7,[.40,.39,.29,.20]);
-    if(selected)line(r.x+12,r.y+2,r.x+r.w-12,r.y+2,1.6,[1,.97,.80,.92]);
+    chamfer({x:r.x+3,y:infoY,w:r.w-6,h:r.h-artH-3},[.99,.98,.94,.38],4);
+    line(r.x+9,infoY,r.x+r.w-9,infoY,.7,[.40,.39,.29,.12]);
+    if(selected)line(r.x+12,r.y+2,r.x+r.w-12,r.y+2,1.6,[1,.97,.80,.55]);
     return infoY;
   }
   function actor(cx,cy,size,a,fallback){var sx=(a&&a.bodyScaleX)||.62,sy=(a&&a.bodyScaleY)||.68,hs=(a&&a.headScale)||.32,primary=(a&&a.primaryColor)||fallback,secondary=(a&&a.secondaryColor)||[.2,.25,.3],accent=(a&&a.accentColor)||[.9,.95,1],bx=cx-size*sx*.5,by=cy-size*sy*.34,bw=size*sx,bh=size*sy*.62,hx=cx-size*hs*.5,hy=by-size*hs*.62,shape=a&&a.bodyShape,tool=a&&a.accessory;rect(cx-size*.34,cy+size*.27,size*.68,size*.10,[0,0,0,.24]);if(shape==='wide'||shape==='armored'||shape==='giant')rect(bx-size*.08,by+bh*.14,bw+size*.16,bh*.66,secondary);rect(bx,by,bw,bh,primary);if(shape==='robe')rect(bx-size*.06,by+bh*.56,bw+size*.12,bh*.34,secondary);else if(shape==='blob')rect(bx+size*.08,by+bh*.58,bw-size*.16,bh*.30,secondary);else rect(bx+bw*.18,by+bh*.58,bw*.64,bh*.18,secondary);rect(hx,hy,size*hs,size*hs,secondary);rect(hx+size*hs*.2,hy+size*hs*.22,size*hs*.6,size*hs*.18,accent);if(tool==='blade')rect(cx+bw*.38,by-size*.05,size*.08,bh*.92,accent);else if(tool==='bow'){rect(cx+bw*.30,by+bh*.08,size*.07,bh*.76,accent);rect(cx+bw*.18,by+bh*.42,size*.28,size*.06,accent);}else if(tool==='orb')rect(cx+bw*.28,by+bh*.18,size*.20,size*.20,accent);else if(tool==='staff')rect(cx+bw*.34,by-size*.14,size*.07,bh*1.08,accent);else if(tool==='fan'){rect(cx+bw*.16,by+bh*.18,size*.30,size*.08,accent);rect(cx+bw*.24,by+bh*.08,size*.08,size*.30,accent);}else if(tool==='shell')frame({x:bx+bw*.16,y:by+bh*.16,w:bw*.68,h:bh*.52},accent,Math.max(1,size*.05));else if(tool==='eyes'){rect(hx+size*hs*.16,hy+size*hs*.28,size*.07,size*.07,accent);rect(hx+size*hs*.64,hy+size*hs*.28,size*.07,size*.07,accent);}else if(tool==='horns'){rect(hx-size*.08,hy-size*.12,size*.09,size*.22,accent);rect(hx+size*hs-size*.01,hy-size*.12,size*.09,size*.22,accent);}else if(tool==='crown'){rect(hx,hy-size*.13,size*hs,size*.12,accent);rect(hx+size*hs*.42,hy-size*.24,size*hs*.16,size*.18,accent);}}

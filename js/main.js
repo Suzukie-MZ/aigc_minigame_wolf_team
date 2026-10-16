@@ -70,6 +70,10 @@
     require('./render/loading-assets.js');
     require('./render/renderer.js');
     require('./render/tile-render-hook.js');
+    require('./render/route-guide.js');
+    require('./render/deployment-hints.js');
+    require('./render/tutorial-overlay.js');
+    require('./play/tutorial.js');
     require('./play/game.js');
     require('./play/game-features.js');
     require('./play/input.js');

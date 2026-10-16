@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>frames</key>
+  <dict>
+    <key>walk-01</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{7,-1}</string>
+      <key>spriteSize</key><string>{244,228}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{0,0},{244,228}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-03</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{7,10}</string>
+      <key>spriteSize</key><string>{243,228}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{246,0},{243,228}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-04</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-15,8}</string>
+      <key>spriteSize</key><string>{226,228}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{491,0},{226,228}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-02</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-19,-1}</string>
+      <key>spriteSize</key><string>{218,227}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{719,0},{218,227}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+  </dict>
+  <key>metadata</key>
+  <dict>
+    <key>format</key><integer>3</integer>
+    <key>pixelFormat</key><string>RGBA8888</string>
+    <key>premultiplyAlpha</key><false/>
+    <key>realTextureFileName</key><string>流亡掠夺者_left.png</string>
+    <key>size</key><string>{1024,256}</string>
+    <key>textureFileName</key><string>流亡掠夺者_left.png</string>
+  </dict>
+</dict>
+</plist>

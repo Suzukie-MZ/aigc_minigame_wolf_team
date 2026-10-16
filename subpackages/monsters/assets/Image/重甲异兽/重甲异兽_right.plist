@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>frames</key>
+  <dict>
+    <key>walk-03</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{0,15}</string>
+      <key>spriteSize</key><string>{257,207}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{0,0},{257,207}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-01</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{1,-2}</string>
+      <key>spriteSize</key><string>{247,168}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{259,0},{247,168}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-04</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{4,0}</string>
+      <key>spriteSize</key><string>{250,165}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{508,0},{250,165}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-02</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-1,0}</string>
+      <key>spriteSize</key><string>{247,167}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{760,0},{247,167}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+  </dict>
+  <key>metadata</key>
+  <dict>
+    <key>format</key><integer>3</integer>
+    <key>pixelFormat</key><string>RGBA8888</string>
+    <key>premultiplyAlpha</key><false/>
+    <key>realTextureFileName</key><string>重甲异兽_right.png</string>
+    <key>size</key><string>{1024,256}</string>
+    <key>textureFileName</key><string>重甲异兽_right.png</string>
+  </dict>
+</dict>
+</plist>

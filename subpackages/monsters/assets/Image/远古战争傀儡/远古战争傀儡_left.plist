@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>frames</key>
+  <dict>
+    <key>walk-01</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{3,-8}</string>
+      <key>spriteSize</key><string>{251,242}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{0,0},{251,242}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-02</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-12,-7}</string>
+      <key>spriteSize</key><string>{233,244}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{0,244},{233,244}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-04</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-9,11}</string>
+      <key>spriteSize</key><string>{238,234}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{253,0},{238,234}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-03</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-3,10}</string>
+      <key>spriteSize</key><string>{236,235}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{493,0},{236,235}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+  </dict>
+  <key>metadata</key>
+  <dict>
+    <key>format</key><integer>3</integer>
+    <key>pixelFormat</key><string>RGBA8888</string>
+    <key>premultiplyAlpha</key><false/>
+    <key>realTextureFileName</key><string>远古战争傀儡_left.png</string>
+    <key>size</key><string>{1024,512}</string>
+    <key>textureFileName</key><string>远古战争傀儡_left.png</string>
+  </dict>
+</dict>
+</plist>

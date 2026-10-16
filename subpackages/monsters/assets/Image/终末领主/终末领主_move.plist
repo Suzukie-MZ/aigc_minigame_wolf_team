@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>frames</key>
+  <dict>
+    <key>walk-02</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{0,-5}</string>
+      <key>spriteSize</key><string>{257,249}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{0,0},{257,249}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-04</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{0,5}</string>
+      <key>spriteSize</key><string>{257,246}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{259,0},{257,246}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-01</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{3,-3}</string>
+      <key>spriteSize</key><string>{252,228}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{518,0},{252,228}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>walk-03</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-4,3}</string>
+      <key>spriteSize</key><string>{238,238}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{772,0},{238,238}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+  </dict>
+  <key>metadata</key>
+  <dict>
+    <key>format</key><integer>3</integer>
+    <key>pixelFormat</key><string>RGBA8888</string>
+    <key>premultiplyAlpha</key><false/>
+    <key>realTextureFileName</key><string>终末领主_move.png</string>
+    <key>size</key><string>{1024,256}</string>
+    <key>textureFileName</key><string>终末领主_move.png</string>
+  </dict>
+</dict>
+</plist>

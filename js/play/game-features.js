@@ -1,8 +1,29 @@
 (function(){
-  var M3=window.M3,PAGE_SIZE=6,HERO_POOL_SIZE=3,state='BOOT',started=false,last=0,manifest,levelId,selectedNodeId,level,cards=[],deck=[],heroes=[],heroPool=[],cardPage=0,heroPage=0,progressionPage=0,selectedProgressionHero=null,mapScroll=0,mapVelocity=0,combat,result,resultData,message='',messageFailed=false,messageExpiresAt=0,nodes=[],paused=false,itemMenuOpen=false,loadingPhase='config',loadingError='',assetKeys=[],loadAttempt=0;
+  var M3=window.M3,PAGE_SIZE=6,HERO_POOL_SIZE=3,state='BOOT',started=false,last=0,manifest,levelId,selectedNodeId,level,cards=[],deck=[],heroes=[],heroPool=[],cardPage=0,heroPage=0,progressionPage=0,selectedProgressionHero=null,mapScroll=0,mapVelocity=0,combat,result,resultData,message='',messageFailed=false,messageExpiresAt=0,nodes=[],paused=false,itemMenuOpen=false,loadingPhase='config',loadingError='',assetKeys=[],loadAttempt=0,nodeSelection=0,visibleLevelRequests={};
+  function initialAssetKeys(){
+    var keys={}, scenes=manifest.presentation&&manifest.presentation.sceneAssets||{};
+    function add(key){if(key)keys[key]=true;}
+    function unitAssets(unit){add(unit.imageAsset);(unit.levelAssetKeys||[]).forEach(add);}
+    add(scenes.homeBackground);add(scenes.worldMapBackground);
+    (manifest.cards||[]).forEach(function(card){add(card.portraitAsset);});
+    heroPool.forEach(function(hero){add(hero.portraitAsset);});
+    nodes.forEach(function(node){var current=M3.RuntimeConfig.getLevel(node.levelId),map;if(!current)return;map=current.map;add(map.backgroundAsset);Object.keys(map.tileAssets||{}).forEach(function(key){add(map.tileAssets[key]);});(current.units||[]).forEach(function(unit){if(unit.kind!=='enemy')unitAssets(unit);});});
+    (manifest.assetManifest||[]).forEach(function(item){if(/^(tower[-_]|hero[-_]|font-cn-main-|ui-)/.test(item.key))add(item.key);});
+    return Object.keys(keys);
+  }
+  function selectNode(node){
+    var attempt=loadAttempt,selection=++nodeSelection;
+    if(M3.RuntimeConfig.getLevel(node.levelId)){levelId=node.levelId;selectedNodeId=node.id;setState('LEVEL_DETAIL');return;}
+    message='关卡加载中…';
+    M3.RuntimeConfig.ensureLevel(node.levelId,function(error){
+      if(attempt!==loadAttempt||selection!==nodeSelection||state!=='WORLD_MAP')return;
+      if(error){message='关卡加载失败，请点击重试';return;}
+      levelId=node.levelId;selectedNodeId=node.id;setState('LEVEL_DETAIL');
+    });
+  }
   function loadConfig(){
-    var attempt=++loadAttempt;
-    state='LOADING';loadingPhase='config';loadingError='';assetKeys=[];
+    var attempt=++loadAttempt,layout=M3.UILayout.get(),initialLevelCount=Math.max(1,Math.ceil(layout.mapList?layout.mapList.h/(layout.levelRowH+layout.levelGap):4));
+    state='LOADING';loadingPhase='config';loadingError='';assetKeys=[];visibleLevelRequests={};
     if(typeof ks!=='undefined'&&M3.SubpackageLoader&&!M3.SubpackageLoader.isLoaded('monsters')){
       loadingPhase='assets';
       M3.SubpackageLoader.load('monsters',{
@@ -23,20 +44,32 @@
         nodes=M3.WorldMap.nodes(manifest);
         levelId=nodes.length?nodes[0].levelId:null;
         selectedNodeId=nodes.length?nodes[0].id:null;
-        assetKeys=M3.TextureAssets?M3.TextureAssets.configure(manifest):[];
+        assetKeys=M3.TextureAssets?M3.TextureAssets.configure(manifest,initialAssetKeys()):[];
         loadingPhase='assets';
         Promise.resolve(M3.TextureAssets?M3.TextureAssets.waitFor(assetKeys):null).then(function(){
           if(attempt===loadAttempt&&state==='LOADING')loadingPhase='render';
         },function(error){
-          if(attempt===loadAttempt){loadingError=error&&error.message||'图片加载失败';state='LOAD_ERROR';}
+          if(attempt===loadAttempt){loadingError=error&&error.message||'图片加载失败';console.error('[Game] startup assets failed',loadingError);state='LOAD_ERROR';}
         });
-      }catch(error){loadingError=error&&error.message||'资源初始化失败';state='LOAD_ERROR';}
-    });
+      }catch(error){loadingError=error&&error.message||'资源初始化失败';console.error('[Game] startup initialization failed',loadingError);state='LOAD_ERROR';}
+    },{initialLevelCount:initialLevelCount});
   }
   function start(){if(started)return;started=true;if(M3.KwaiPlatform)M3.KwaiPlatform.init();if(M3.GameLogger)M3.GameLogger.init('configurable-merge-defense','ks654147848546150500');M3.SaveData.load();loadConfig();}
-  function assetsRendered(){if(state==='LOADING'&&loadingPhase==='render'){loadingPhase='done';state='WORLD_MAP';}}
+  function loadExtraContent(){
+    var attempt=loadAttempt;
+    if(!M3.RuntimeConfig.loadRemaining)return;
+    M3.RuntimeConfig.loadRemaining(function(error){
+      if(attempt!==loadAttempt)return;
+      if(error){message='其余关卡加载失败，点击底部重试';return;}
+      manifest=M3.RuntimeConfig.getManifest();
+      nodes=M3.WorldMap.nodes(manifest);
+      if(M3.TextureAssets&&M3.TextureAssets.addAssets)M3.TextureAssets.addAssets(manifest.assetManifest);
+      if(message==='其余关卡加载失败，点击底部重试')message='';
+    });
+  }
+  function assetsRendered(){if(state==='LOADING'&&loadingPhase==='render'){loadingPhase='done';state='WORLD_MAP';loadExtraContent();}}
   function assetRenderFailed(error){if(state==='LOADING'){loadingError=error&&error.message||'图片渲染失败';state='LOAD_ERROR';}}
-  function setState(s){mapVelocity=0;state=s;message='';messageFailed=false;messageExpiresAt=0;}
+  function setState(s){nodeSelection+=1;mapVelocity=0;state=s;message='';messageFailed=false;messageExpiresAt=0;}
   function showBattleMessage(value,failed){message=value||'';messageFailed=!!failed;messageExpiresAt=message?M3._now()+2200:0;}
   function beginDeck(){deck=[];cardPage=0;state='DECK_SELECT';}
   function toggleCard(id){var at=deck.indexOf(id),size=manifest.deckRules.deckSize||4;if(at>=0)deck.splice(at,1);else if(deck.length<size)deck.push(id);}
@@ -55,7 +88,7 @@
     if(state==='LOADING')return;
     if(state==='LOAD_ERROR'){loadConfig();return;}
     if(state==='BATTLE'&&combat&&(combat.selectedTower||combat.selectedObstacle)&&!M3.UILayout.contains(l.board,x,y)&&!M3.UILayout.contains(l.towerUpgrade,x,y)){combat.clearInspection();showBattleMessage('');}
-    if(state==='WORLD_MAP'){if(M3.UILayout.contains(l.energyAd,x,y)){M3.RewardSystem.refillEnergyAd(manifest,function(){message='体力补充成功';},function(){message='广告未完成';});return;}if(M3.UILayout.contains(l.energyShare,x,y)){M3.RewardSystem.refillEnergyShare(manifest,function(){message='分享补充成功';},function(){message='分享未完成';});return;}if(M3.UILayout.contains(l.mapUpgrade,x,y)){progressionPage=0;selectedProgressionHero=null;setState('PROGRESSION');return;}if(!M3.UILayout.contains(l.mapList,x,y))return;nodes=M3.WorldMap.nodes(manifest);for(i=0;i<nodes.length;i+=1){r=l.levelCard(i,mapScroll);if(r.y+r.h>l.mapList.y&&r.y<l.mapList.y+l.mapList.h&&M3.UILayout.contains(r,x,y)){if(!nodes[i].unlocked){message='请先通关上一关';return;}levelId=nodes[i].levelId;selectedNodeId=nodes[i].id;setState('LEVEL_DETAIL');return;}}}
+    if(state==='WORLD_MAP'){if(l.mapFooter&&M3.UILayout.contains(l.mapFooter,x,y)&&M3.RuntimeConfig.getExtraStatus&&M3.RuntimeConfig.getExtraStatus()==='error'){message='正在补充关卡目录…';loadExtraContent();return;}if(M3.UILayout.contains(l.energyAd,x,y)){M3.RewardSystem.refillEnergyAd(manifest,function(){message='体力补充成功';},function(){message='广告未完成';});return;}if(M3.UILayout.contains(l.energyShare,x,y)){M3.RewardSystem.refillEnergyShare(manifest,function(){message='分享补充成功';},function(){message='分享未完成';});return;}if(M3.UILayout.contains(l.mapUpgrade,x,y)){progressionPage=0;selectedProgressionHero=null;setState('PROGRESSION');return;}if(!M3.UILayout.contains(l.mapList,x,y))return;nodes=M3.WorldMap.nodes(manifest);for(i=0;i<nodes.length;i+=1){r=l.levelCard(i,mapScroll);if(r.y+r.h>l.mapList.y&&r.y<l.mapList.y+l.mapList.h&&M3.UILayout.contains(r,x,y)){if(!nodes[i].unlocked){message='请先通关上一关';return;}selectNode(nodes[i]);return;}}}
     else if(state==='LEVEL_DETAIL'){if(M3.UILayout.contains(l.detailBack,x,y))setState('WORLD_MAP');else if(M3.UILayout.contains(l.detailStart,x,y))beginDeck();}
     else if(state==='PROGRESSION'){visible=heroPool;r=l.loadoutHeroes||l.heroSelectCards||l.heroCards;for(i=0;i<r.length;i+=1){if(visible[i]&&M3.UILayout.contains(r[i],x,y)){selectedProgressionHero=selectedProgressionHero===visible[i].id?null:visible[i].id;message='';return;}}if(selectedProgressionHero&&M3.UILayout.contains(l.heroStart,x,y)){message=M3.Progression.upgradeHero(manifest,selectedProgressionHero)?'英雄升级成功':'材料不足或已满级';return;}if(M3.UILayout.contains(l.heroBack,x,y)){selectedProgressionHero=null;setState('WORLD_MAP');}}
     else if(state==='DECK_SELECT'){visible=M3.Deck.page(cards,cardPage,PAGE_SIZE);var cardRects=l.loadoutCards||l.cards;for(i=0;i<cardRects.length;i+=1){r=cardRects[i];if(visible[i]&&M3.UILayout.contains(r,x,y)){toggleCard(visible[i].id);return;}}if(M3.UILayout.contains(l.pagePrev,x,y)){if(cardPage===0)setState('LEVEL_DETAIL');else cardPage-=1;}else if(M3.UILayout.contains(l.pageNext,x,y))cardPage=Math.min(M3.Deck.pageCount(cards,PAGE_SIZE)-1,cardPage+1);else if(M3.UILayout.contains(l.deckStart,x,y))beginHeroes();}
@@ -76,9 +109,22 @@
     }
     else if(state==='RESULT'){if(M3.UILayout.contains(l.resultDouble,x,y)&&resultData&&!resultData.doubled){M3.RewardSystem.doubleSettlement(M3.SaveData.get(),resultData.outerCurrency,function(amount){resultData.outerCurrency+=amount;resultData.doubled=true;message='结算奖励已翻倍';},function(){message='广告未完成';});return;}if(M3.UILayout.contains(l.resultButton,x,y)){nodes=M3.WorldMap.nodes(manifest);setState('WORLD_MAP');}}
   }
-  function shiftMap(delta){var l,max;if(state!=='WORLD_MAP')return;l=M3.UILayout.get();max=Math.max(0,nodes.length*(l.levelRowH+l.levelGap)-l.levelGap-l.mapList.h);mapScroll=Math.max(0,Math.min(max,mapScroll+delta));}
+  function loadVisibleLevels(){
+    var l=M3.UILayout.get(),step=l.levelRowH+l.levelGap,first=Math.max(0,Math.floor(mapScroll/step)),last=Math.min(nodes.length,Math.ceil((mapScroll+l.mapList.h)/step)),attempt=loadAttempt,i,id;
+    if(!M3.RuntimeConfig.ensureLevel)return;
+    for(i=first;i<last;i+=1){
+      id=nodes[i].levelId;
+      if(M3.RuntimeConfig.getLevel(id)||visibleLevelRequests[id])continue;
+      visibleLevelRequests[id]=true;
+      M3.RuntimeConfig.ensureLevel(id,function(error,current){
+        if(attempt!==loadAttempt||error)return;
+        if(M3.TextureAssets&&M3.TextureAssets.addAssets)M3.TextureAssets.addAssets(current.assetManifest,true);
+      });
+    }
+  }
+  function shiftMap(delta){var l,max;if(state!=='WORLD_MAP')return;l=M3.UILayout.get();max=Math.max(0,nodes.length*(l.levelRowH+l.levelGap)-l.levelGap-l.mapList.h);mapScroll=Math.max(0,Math.min(max,mapScroll+delta));loadVisibleLevels();}
   function scrollMap(delta){if(state!=='WORLD_MAP')return;mapVelocity=0;shiftMap(delta);message='';}
   function beginMapDrag(x,y){if(state!=='WORLD_MAP'||!M3.UILayout.contains(M3.UILayout.get().mapList,x,y))return false;mapVelocity=0;return true;}
   function endMapDrag(velocity){if(state==='WORLD_MAP')mapVelocity=Math.max(-1800,Math.min(1800,Number(velocity)||0));}
-  M3.Game={ensureStarted:start,update:update,assetsRendered:assetsRendered,assetRenderFailed:assetRenderFailed,handlePointer:pointer,handleMapScroll:scrollMap,beginMapDrag:beginMapDrag,endMapDrag:endMapDrag,getViewModel:function(){var save=M3.SaveData.get(),current=levelId?M3.RuntimeConfig.getLevel(levelId):null,index=nodes.map(function(n){return n.id;}).indexOf(selectedNodeId)+1,selectedHero=selectedProgressionHero&&heroPool.filter(function(h){return h.id===selectedProgressionHero;})[0];return{state:state,loadingPhase:loadingPhase,loadingError:loadingError,loadingProgress:M3.TextureAssets&&M3.TextureAssets.progress?M3.TextureAssets.progress(assetKeys):null,assetKeys:assetKeys,source:M3.RuntimeConfig.getSource(),presentation:manifest?manifest.presentation:null,systems:manifest?manifest.systems:null,levelPreview:current,levelEntries:nodes.map(function(n){return{node:n,level:M3.RuntimeConfig.getLevel(n.levelId)};}),mapScroll:mapScroll,cards:cards.map(cardView),heroCards:heroPool.map(heroView),heroTotal:heroPool.length,heroPage:0,heroPageCount:1,progressionCards:heroPool.map(heroView),selectedProgressionHero:selectedHero?heroView(selectedHero):null,heroUpgradePreview:selectedHero?M3.Progression.heroUpgradePreview(manifest,selectedHero.id):null,materials:save.outerCurrency,energy:save.energy,highestDifficulty:save.highestDifficulty,progressionPage:0,cardTotal:cards.length,cardPage:0,cardPageCount:1,deck:deck,heroes:heroes,deckValid:manifest?M3.Deck.validate(manifest,deck).ok:false,nodes:nodes,combat:combat?combat.view():null,paused:paused,itemMenuOpen:itemMenuOpen,battleItemChoices:manifest?battleItemChoices():[],result:result,resultData:resultData,message:message,messageFailed:messageFailed,messageExpiresAt:messageExpiresAt,difficulty:index||1,balance:current?M3.FeatureSystem.balanceReport(current,manifest):null,dailySeed:M3.FeatureSystem.dayKey()};},restart:function(){mapVelocity=0;paused=false;itemMenuOpen=false;selectedProgressionHero=null;message='';messageFailed=false;state='WORLD_MAP';combat=null;result=null;}};
+  M3.Game={ensureStarted:start,update:update,assetsRendered:assetsRendered,assetRenderFailed:assetRenderFailed,handlePointer:pointer,handleMapScroll:scrollMap,beginMapDrag:beginMapDrag,endMapDrag:endMapDrag,getViewModel:function(){var save=M3.SaveData.get(),current=levelId?M3.RuntimeConfig.getLevel(levelId):null,index=nodes.map(function(n){return n.id;}).indexOf(selectedNodeId)+1,selectedHero=selectedProgressionHero&&heroPool.filter(function(h){return h.id===selectedProgressionHero;})[0];return{state:state,loadingPhase:loadingPhase,loadingError:loadingError,loadingProgress:M3.TextureAssets&&M3.TextureAssets.progress?M3.TextureAssets.progress(assetKeys):null,assetKeys:assetKeys,source:M3.RuntimeConfig.getSource(),presentation:manifest?manifest.presentation:null,systems:manifest?manifest.systems:null,levelPreview:current,totalLevelCount:manifest?Math.max(nodes.length,Number(manifest.totalLevelCount)||0):0,levelEntries:nodes.map(function(n){return{node:n,level:M3.RuntimeConfig.getLevel(n.levelId)};}),mapScroll:mapScroll,cards:cards.map(cardView),heroCards:heroPool.map(heroView),heroTotal:heroPool.length,heroPage:0,heroPageCount:1,progressionCards:heroPool.map(heroView),selectedProgressionHero:selectedHero?heroView(selectedHero):null,heroUpgradePreview:selectedHero?M3.Progression.heroUpgradePreview(manifest,selectedHero.id):null,materials:save.outerCurrency,energy:save.energy,highestDifficulty:save.highestDifficulty,progressionPage:0,cardTotal:cards.length,cardPage:0,cardPageCount:1,deck:deck,heroes:heroes,deckValid:manifest?M3.Deck.validate(manifest,deck).ok:false,nodes:nodes,combat:combat?combat.view():null,paused:paused,itemMenuOpen:itemMenuOpen,battleItemChoices:manifest?battleItemChoices():[],result:result,resultData:resultData,message:message,messageFailed:messageFailed,messageExpiresAt:messageExpiresAt,difficulty:index||1,balance:current?M3.FeatureSystem.balanceReport(current,manifest):null,dailySeed:M3.FeatureSystem.dayKey()};},restart:function(){mapVelocity=0;paused=false;itemMenuOpen=false;selectedProgressionHero=null;message='';messageFailed=false;state='WORLD_MAP';combat=null;result=null;}};
 })();

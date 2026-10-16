@@ -57,6 +57,12 @@
     manifest.presentation.roleAppearances = roleAppearances.map(function (a, index) { return appearance(a, defaults.roleAppearances[index % defaults.roleAppearances.length], manifest.presentation.rolePalette[index % manifest.presentation.rolePalette.length]); });
     manifest.presentation.enemyAppearances = enemyAppearances.map(function (a, index) { return appearance(a, defaults.enemyAppearances[index % defaults.enemyAppearances.length], manifest.presentation.enemyPalette[index % manifest.presentation.enemyPalette.length]); });
     for (i = 0; i < cards.length; i += 1) { cards[i].color = color(cards[i].color, manifest.presentation.rolePalette[i % manifest.presentation.rolePalette.length]); cards[i].symbol = cards[i].symbol || (i % 9) + 1; cards[i].uiName = cards[i].uiName || cards[i].displayName || ('守卫' + (i + 1)); if (typeof cards[i].portraitAsset !== 'string') cards[i].portraitAsset = ''; fallbackAppearance = manifest.presentation.roleAppearances[i % manifest.presentation.roleAppearances.length]; cards[i].appearance = appearance(cards[i].appearance, fallbackAppearance, cards[i].color); cardByUnit[cards[i].unitId] = cards[i]; }
+    applyLevelPresentation(manifest,levels);
+    return { manifest: manifest, levels: levels };
+  }
+  function applyLevelPresentation(manifest,levels){
+    var cards=manifest.cards||[],cardByUnit={},key,i,j,units,enemyIndex,fallbackAppearance;
+    for(i=0;i<cards.length;i+=1)cardByUnit[cards[i].unitId]=cards[i];
     for (key in levels) if (Object.prototype.hasOwnProperty.call(levels, key)) {
       levels[key].map.presentation = merge({ groundColor: manifest.presentation.colors.ground, routeColor: manifest.presentation.colors.route, obstacleColor: manifest.presentation.colors.obstacle, waterColor: manifest.presentation.colors.background }, levels[key].map.presentation || {});
       levels[key].map.presentation.style = merge(manifest.presentation.mapStyle, levels[key].map.presentation.style || {});
@@ -64,14 +70,14 @@
       units = levels[key].units || []; enemyIndex = 0;
       for (j = 0; j < units.length; j += 1) { if (typeof units[j].attack === 'number') { fallbackAppearance = cardByUnit[units[j].id] ? cardByUnit[units[j].id].appearance : manifest.presentation.roleAppearances[j % manifest.presentation.roleAppearances.length]; units[j].color = color(units[j].color, fallbackAppearance.primaryColor); units[j].appearance = appearance(units[j].appearance, fallbackAppearance, units[j].color); } else { fallbackAppearance = manifest.presentation.enemyAppearances[enemyIndex % manifest.presentation.enemyAppearances.length]; units[j].color = color(units[j].color, manifest.presentation.enemyPalette[enemyIndex % manifest.presentation.enemyPalette.length]); units[j].appearance = appearance(units[j].appearance, fallbackAppearance, units[j].color); enemyIndex += 1; } }
     }
-    return { manifest: manifest, levels: levels };
+    return levels;
   }
   function accept(manifest, levels, source, errors) { var bundle = applyPresentationFallback(clone(manifest), clone(levels)); state.manifest = bundle.manifest; state.levels = bundle.levels; state.source = source; state.errors = errors || [];  }
   function validBundle(manifest, levels) {
     var refs = manifest && manifest.levels, nodes = manifest && manifest.worldMap && manifest.worldMap.nodes, cards = (manifest&&manifest.cards||[]).filter(function(card){var banned=manifest&&manifest.deckRules&&manifest.deckRules.bannedCardIds||[];return card.unlocked!==false&&banned.indexOf(card.id)<0;}).slice(0,6), heroes=(manifest&&manifest.systems&&manifest.systems.M5_hero&&manifest.systems.M5_hero.hero_unit_pool||[]).slice(0,3), economyId=manifest&&manifest.systems&&manifest.systems.M4_economy_unit&&manifest.systems.M4_economy_unit.unit_id, key, i, j, unit, unitIds;
     if (!M3.ConfigValidator.validateManifest(manifest).ok || !refs || !levels) return false;
-    for (key in refs) if (Object.prototype.hasOwnProperty.call(refs, key)) {
-      if (!levels[key] || !M3.ConfigValidator.validateLevel(levels[key]).ok) return false;
+    for (key in levels) if (Object.prototype.hasOwnProperty.call(levels, key)) {
+      if (!refs[key] || !levels[key] || !M3.ConfigValidator.validateLevel(levels[key]).ok) return false;
       // 素材引用只影响对应图片的表现，不再作为整套远程配置的回退条件。
       // TextureAssets / Renderer 会对未声明或加载失败的单个素材使用默认资源或程序化兜底。
       unitIds = {}; for (i = 0; i < levels[key].units.length; i += 1) { unit=levels[key].units[i];unitIds[unit.id] = true; }
@@ -79,8 +85,8 @@
       for (j = 0; j < heroes.length; j += 1) if (!unitIds[heroes[j].unitId]) return false;
       if (economyId && !unitIds[economyId]) return false;
     }
-    for (i = 0; i < nodes.length; i += 1) if (!refs[nodes[i].levelId] || !levels[nodes[i].levelId]) return false;
-    return Object.keys(refs).length > 0;
+    for (i = 0; i < nodes.length; i += 1) if (!refs[nodes[i].levelId]) return false;
+    return Object.keys(refs).length > 0 && Object.keys(levels).length > 0;
   }
   function fallback(reason) {
     state.manifest = null;
@@ -88,58 +94,138 @@
     state.source = 'error';
     state.errors = [reason || '配置加载失败'];
   }
-  function completeMissingLevels(manifest, levels, errors) {
-    var refs = manifest.levels || {}, nodes = manifest.worldMap && manifest.worldMap.nodes || [], firstId = '', seed, nodeByLevel = {}, id, i, copy;
-    for (i = 0; i < nodes.length; i += 1) nodeByLevel[nodes[i].levelId] = nodes[i];
-    for (id in refs) if (Object.prototype.hasOwnProperty.call(refs, id) && levels[id]) { firstId = id; break; }
-    seed = firstId && levels[firstId];
-    if (!seed) return false;
-    for (id in refs) if (Object.prototype.hasOwnProperty.call(refs, id) && !levels[id]) {
-      copy = clone(seed);
-      if (Object.prototype.hasOwnProperty.call(copy, 'id')) copy.id = id;
-      if (nodeByLevel[id]) {
-        copy.name = nodeByLevel[id].displayName || copy.name;
-        copy.uiName = nodeByLevel[id].displayName || copy.uiName;
-        copy.description = nodeByLevel[id].description || copy.description;
-      }
-      levels[id] = copy;
-      errors.push('level fallback: ' + id);
-    }
-    return true;
-  }
   function request(url, callback, retried) {
     KwaiNetwork.request({ url: url, method: 'GET', timeout: 5000, onSuccess: function (res) {
       if (res.statusCode >= 200 && res.statusCode < 300) callback(null, res.data); else if (res.statusCode >= 500 && !retried) setTimeout(function () { request(url, callback, true); }, 500); else callback(new Error('HTTP ' + res.statusCode));
     }, onFail: function (err) { if (!retried) setTimeout(function () { request(url, callback, true); }, 500); else callback(new Error((err && err.errMsg) || 'network')); } });
   }
-  function loadRemote(done) {
+  var session = 0, inFlight = {}, backgroundStarted = false, extraStatus = 'idle', extraCallbacks = [], EXTRA_CACHE_KEY = 'ks0987654321.runtime-extra.v1';
+  function ensureLevel(id, done) {
+    var attempt = session, target = state, manifest = state.manifest;
+    done = done || function () {};
+    if (state.levels[id]) { done(null, state.levels[id]); return; }
+    if (!manifest || !manifest.levels[id]) { done(new Error('关卡配置不可用')); return; }
+    if (inFlight[id]) { inFlight[id].push(done); return; }
+    var callbacks = inFlight[id] = [done];
+    request(levelUrl(manifest, id), function (err, level) {
+      var levels = {}, bundle;
+      if (attempt !== session || target !== state) return;
+      if (!err) {
+        level = normalizeRoleContracts(manifest, normalizeLevelCompatibility(level));
+        levels[id] = level;
+        if (manifest.deliveryProfile === 'startup' && level.releaseId !== manifest.releaseId) err = new Error('关卡发布版本不一致: ' + id);
+        else if (!validBundle(manifest, levels)) err = new Error('关卡配置校验失败: ' + id);
+        else {
+          bundle = applyLevelPresentation(manifest, clone(levels));
+          state.levels[id] = bundle[id];
+        }
+      }
+      delete inFlight[id];
+      if (err) state.errors.push('level ' + id + ': ' + err.message);
+      callbacks.forEach(function (callback) { callback(err, state.levels[id]); });
+    });
+  }
+  function loadBackgroundLevels() {
+    if (backgroundStarted || !state.manifest) return;
+    backgroundStarted = true;
+    var attempt = session, queue = Object.keys(state.manifest.levels).filter(function (id) { return !state.levels[id]; });
+    function next() {
+      if (attempt !== session || !queue.length) return;
+      ensureLevel(queue.shift(), function () { setTimeout(next, 0); });
+    }
+    next(); next();
+  }
+  function mergeExtra(extra) {
+    var manifest = state.manifest, combined, nodeById = {}, nodeByLevel = {}, assets = {}, list = [], nodes = [], i;
+    if (!extra || extra.deliveryVersion !== 1 || extra.deliveryProfile !== 'extra' || extra.releaseId !== manifest.releaseId || extra.gameId !== manifest.gameId) throw new Error('扩展清单发布版本不一致');
+    if (!extra.levels || !extra.worldMap || !Array.isArray(extra.worldMap.nodes) || !Array.isArray(extra.assetManifest)) throw new Error('扩展清单格式错误');
+    combined = clone(manifest);
+    combined.levels = merge(manifest.levels, extra.levels);
+    (manifest.worldMap.nodes || []).concat(extra.worldMap.nodes).forEach(function (node) {
+      if (nodeById[node.id] || nodeByLevel[node.levelId]) throw new Error('扩展关卡目录重复: ' + node.levelId);
+      nodeById[node.id] = true; nodeByLevel[node.levelId] = true; nodes.push(clone(node));
+    });
+    nodes.sort(function (a, b) { return (a.levelNumber || combined.levels[a.levelId].levelNumber || 0) - (b.levelNumber || combined.levels[b.levelId].levelNumber || 0); });
+    (manifest.assetManifest || []).concat(extra.assetManifest).forEach(function (asset) {
+      if (!assets[asset.key]) list.push(asset.key);
+      assets[asset.key] = clone(asset);
+    });
+    combined.worldMap.nodes = nodes;
+    combined.assetManifest = list.map(function (id) { return assets[id]; });
+    if (!M3.ConfigValidator.validateManifest(combined).ok) throw new Error('扩展清单配置校验失败');
+    for (i = 0; i < nodes.length; i += 1) if (!combined.levels[nodes[i].levelId]) throw new Error('扩展关卡入口缺失');
+    if (manifest.totalLevelCount && nodes.length !== manifest.totalLevelCount) throw new Error('扩展关卡数量不匹配');
+    // Keep the manifest object shared with the game, updating only the directory and asset references.
+    manifest.levels = combined.levels;
+    manifest.worldMap.nodes = combined.worldMap.nodes;
+    manifest.assetManifest = combined.assetManifest;
+  }
+  function loadRemaining(done) {
+    var manifest = state.manifest, attempt = session, cached, callbacks;
+    done = done || function () {};
+    if (!manifest) { done(new Error('配置尚未就绪')); return; }
+    // Complete manifests can start immediately; split delivery waits until the extra directory is merged.
+    if (!manifest.extraManifestUrl) { loadBackgroundLevels(); done(null); return; }
+    if (extraStatus === 'ready') { done(null); setTimeout(function () { if (attempt === session) loadBackgroundLevels(); }, 0); return; }
+    extraCallbacks.push(done);
+    if (extraStatus === 'loading') return;
+    extraStatus = 'loading';
+    function finish(err) {
+      if (attempt !== session) return;
+      extraStatus = err ? 'error' : 'ready';
+      if (err) state.errors.push('extra manifest: ' + err.message);
+      callbacks = extraCallbacks; extraCallbacks = [];
+      callbacks.forEach(function (callback) { callback(err); });
+      if (!err) setTimeout(function () { if (attempt === session) loadBackgroundLevels(); }, 0);
+    }
+    try {
+      cached = typeof KwaiStorage !== 'undefined' && KwaiStorage.getSync(EXTRA_CACHE_KEY);
+      if (cached && cached.releaseId === manifest.releaseId && cached.url === manifest.extraManifestUrl) {
+        try { mergeExtra(cached.manifest); finish(null); return; } catch (cacheError) { cached = null; }
+      }
+    } catch (storageError) { cached = null; }
+    if (!/^https:\/\//.test(manifest.extraManifestUrl)) { finish(new Error('扩展清单地址无效')); return; }
+    request(manifest.extraManifestUrl, function (err, extra) {
+      if (attempt !== session) return;
+      if (!err) {
+        try { extra = normalizeAssetUrls(extra); mergeExtra(extra); }
+        catch (error) { err = error; }
+        if (!err) try {
+          if (typeof KwaiStorage !== 'undefined') KwaiStorage.setSync(EXTRA_CACHE_KEY, { releaseId: manifest.releaseId, url: manifest.extraManifestUrl, manifest: extra });
+        } catch (storageError) { /* Cache failure must not block the live response. */ }
+      }
+      finish(err);
+    });
+  }
+  function loadRemote(done, options) {
+    var attempt = ++session;
+    state = { source: 'loading', manifest: null, levels: {}, errors: [] };
+    inFlight = {}; backgroundStarted = false; extraStatus = 'idle'; extraCallbacks = [];
     request(MANIFEST_URL, function (err, manifest) {
-      var validation, refs = [], levels = {}, pending, remoteCount = 0, levelErrors = [];
+      var validation, refs, pending, levelErrors = [];
+      if (attempt !== session) return;
       if (err) { fallback(err.message); done(); return; }
       manifest = normalizeAssetUrls(manifest);
-      validation = M3.ConfigValidator.validateManifest(manifest); if (!validation.ok) { fallback(validation.errors.join(',')); done(); return; }
-      Object.keys(manifest.levels || {}).forEach(function (id) { refs.push(id); }); pending = refs.length;
+      validation = M3.ConfigValidator.validateManifest(manifest);
+      if (!validation.ok) { fallback(validation.errors.join(',')); done(); return; }
+      refs = manifest.worldMap.nodes.slice(0, Math.max(1, options && options.initialLevelCount || 4)).map(function (node) { return node.levelId; }).filter(function (id, index, ids) { return ids.indexOf(id) === index; });
+      pending = refs.length;
       if (!pending) { fallback('no levels'); done(); return; }
-      refs.forEach(function (id) { request(levelUrl(manifest, id), function (levelErr, level) {
-        var levelValidation;
-        if (!levelErr) {
-          level = normalizeRoleContracts(manifest,normalizeLevelCompatibility(level));
-          levelValidation = M3.ConfigValidator.validateLevel(level);
-        }
+      accept(manifest, {}, 'loading', []);
+      refs.forEach(function (id) { ensureLevel(id, function (levelErr) {
         if (levelErr) levelErrors.push('level ' + id + ': ' + levelErr.message);
-        else if (!levelValidation.ok) levelErrors.push('level ' + id + ': ' + levelValidation.errors.join(','));
-        else { levels[id] = level; remoteCount += 1; }
         pending -= 1;
         if (!pending) {
-          if (remoteCount !== refs.length || !validBundle(manifest, levels)) fallback('level load failed: ' + levelErrors.join('; '));
-          else accept(manifest, levels, 'remote', levelErrors);
+          if (levelErrors.length) fallback('level load failed: ' + levelErrors.join('; '));
+          else state.source = 'remote';
           done();
         }
       }); });
     });
   }
   M3.RuntimeConfig = {
-    init: function (done) { if (!MANIFEST_URL || !LEVEL_URL_TEMPLATE) { fallback('runtime endpoints empty'); setTimeout(done, 0); } else loadRemote(done); },
+    init: function (done, options) { if (!MANIFEST_URL || !LEVEL_URL_TEMPLATE) { fallback('runtime endpoints empty'); setTimeout(done, 0); } else loadRemote(done, options); },
+    ensureLevel: ensureLevel, loadRemaining: loadRemaining, getExtraStatus: function () { return extraStatus; },
     getManifest: function () { return state.manifest; }, getLevel: function (id) { return state.levels[id]; },
     getSource: function () { return state.source; }, getErrors: function () { return state.errors.slice(0); }, getBaseUrl: function () { return BASE; }, getManifestUrl: function () { return MANIFEST_URL; }, normalizeLevelCompatibility: normalizeLevelCompatibility, normalizeRoleContracts: normalizeRoleContracts
   };

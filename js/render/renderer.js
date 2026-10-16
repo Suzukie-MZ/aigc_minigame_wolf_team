@@ -162,7 +162,7 @@
     mapShortcut(l.energyCurrent,v,'ui-map-energy','体力',v.energy,[.87,.71,.33,1],'energy');
     mapShortcut(l.mapUpgrade,v,'ui-map-hero-upgrade','英雄强化',null,p.violet,'hero');
     text('全部关卡',l.mapSection.x+2,l.mapSection.y+2,.68,p.paper,l.mapSection.w*.45,'left','label');
-    text('共 '+entries.length+' 关',l.mapSection.x+l.mapSection.w-2,l.mapSection.y+2,.68,p.cyan,l.mapSection.w*.45,'right','label');
+    text('共 '+(v.totalLevelCount||entries.length)+' 关',l.mapSection.x+l.mapSection.w-2,l.mapSection.y+2,.68,p.cyan,l.mapSection.w*.45,'right','label');
     // Clip the moving list rather than hiding cards that cross its edges.
     gl.enable(gl.SCISSOR_TEST);
     gl.scissor(Math.floor((l.mapList.x-5)*scaleX),Math.floor((l.h-bottom)*scaleY),Math.ceil((l.mapList.w+10)*scaleX),Math.ceil(l.mapList.h*scaleY));
@@ -213,7 +213,7 @@
       line(footer.x+18,arrowY+i*6+arrowDir*2,footer.x+23,arrowY+i*6-arrowDir*3,1.5,p.cyan);
     }
     text(v.message||(maxScroll>0?(canDown?'上滑查看更多关卡':'下滑查看前面关卡'):'全部关卡已显示'),footer.x+32,footer.y+12,.64,v.message?p.paper:p.cyan,footer.w*.55-32,'left');
-    text((entries.length?first:0)+'-'+last+'/'+entries.length,footer.x+footer.w-12,footer.y+12,.64,p.paper,footer.w*.40,'right','label');
+    text((entries.length?first:0)+'-'+last+'/'+(v.totalLevelCount||entries.length),footer.x+footer.w-12,footer.y+12,.64,p.paper,footer.w*.40,'right','label');
   }
   function detailLegend(r,level,p){
     var map=level.map||{},types=['spawn','goal','hero_slot'],labels=['敌人入口','核心基地','英雄部署'],colors=[p.violet,[.86,.71,.36,1],p.cyan],groupW=r.w/3,i,x,key;
@@ -434,7 +434,7 @@
       }
     }
     text(failed?'轻触屏幕，重新连接':'请稍候，完成后自动进入游戏',l.w*.5,barY+27,.7,[.65,.76,.80,1],l.w*.88,'center');
-    if(failed)text('请检查网络后重试',l.w*.5,barY+55,.64,[.88,.65,.56,1],l.w*.8,'center');
+    if(failed)text(String(v.loadingError||'请检查网络后重试').slice(0,64),l.w*.5,barY+55,.64,[.88,.65,.56,1],l.w*.88,'center');
   }
   function loadingBackground(l){
     var key='ui-loading-background',image=M3.TextureAssets&&M3.TextureAssets.get(key),iw=image&&(image.naturalWidth||image.width),ih=image&&(image.naturalHeight||image.height),aspect,boxAspect,u0=0,u1=1,v0=0,v1=1,span;

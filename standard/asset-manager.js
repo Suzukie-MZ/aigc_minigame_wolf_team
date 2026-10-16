@@ -160,6 +160,21 @@
       });
     },
 
+    // Retry a failed image while retaining references held by startup/runtime groups.
+    retry: function (key) {
+      var entry = _registry[key], next, refs, groups;
+      if (!entry || !entry.failed) return entry && entry.resource;
+      refs = entry.refCount;
+      groups = entry.groups.slice();
+      _destroy(entry);
+      delete _registry[key];
+      next = _ensure(key, entry.type, entry.src);
+      if (!next) return null;
+      next.refCount = refs;
+      next.groups = groups;
+      return next.resource;
+    },
+
     preload: function (items) {
       var self = this;
       var handles = [];

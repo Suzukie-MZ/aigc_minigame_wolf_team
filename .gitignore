@@ -17,3 +17,8 @@ build/
 # Local Python bytecode is not part of the game.
 __pycache__/
 *.py[cod]
+
+# Local design iterations and unrelated skill experiments, not runtime inputs.
+/docs/ui-reference/
+/assets/home-asset/home-loading-qiyuan.source.md
+/skill_review/

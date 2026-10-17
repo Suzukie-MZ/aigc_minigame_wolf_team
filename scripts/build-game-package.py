@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Build the runtime upload ZIP and enforce a strict 6,000,000-byte budget."""
+"""Build a runtime-only ZIP with a strict 6,000,000-byte main-package budget.
+
+Deploy the extracted ZIP, never the source repository (which contains local
+design files, tests and Git history). Declared subpackages are counted separately.
+"""
 import argparse
 import json
 from pathlib import Path
@@ -71,17 +75,13 @@ def main():
         raise SystemExit('Build output must be outside package/ to avoid including the ZIP in the next upload')
     config = json.loads((ROOT / 'game.json').read_text())
     package_roots = [ROOT / item['root'] for item in config.get('subpackages', [])]
-    directory_files = [path for path in ROOT.rglob('*') if path.is_file()]
-    directory_main_size = sum(path.stat().st_size for path in directory_files
-                              if not any(path.is_relative_to(root) for root in package_roots))
-    directory_total_size = sum(path.stat().st_size for path in directory_files)
-    if directory_main_size > LIMIT:
-        raise SystemExit(f'Actual source-directory main package exceeds budget: {directory_main_size:,} > {LIMIT:,} bytes')
     paths = runtime_files()
     check_references(paths)
     raw_size = sum(path.stat().st_size for path in paths)
-    if raw_size > LIMIT:
-        raise SystemExit(f'Runtime content exceeds budget: {raw_size:,} > {LIMIT:,} bytes')
+    main_size = sum(path.stat().st_size for path in paths
+                    if not any(path.is_relative_to(root) for root in package_roots))
+    if main_size > LIMIT:
+        raise SystemExit(f'Main package exceeds budget: {main_size:,} > {LIMIT:,} bytes')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix('.zip.tmp')
     with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
@@ -91,9 +91,6 @@ def main():
             info.external_attr = 0o644 << 16
             archive.writestr(info, path.read_bytes(), compresslevel=9)
     zip_size = temporary.stat().st_size
-    if zip_size > LIMIT:
-        temporary.unlink()
-        raise SystemExit(f'ZIP exceeds budget: {zip_size:,} > {LIMIT:,} bytes')
     with zipfile.ZipFile(temporary) as archive:
         if archive.testzip() is not None:
             raise SystemExit('ZIP integrity check failed')
@@ -103,14 +100,13 @@ def main():
                         if path.is_relative_to(ROOT / item['root']))
                         for item in config.get('subpackages', [])}
     main_size = raw_size - sum(subpackage_sizes.values())
-    report = {'directory_main_bytes': directory_main_size, 'directory_total_bytes': directory_total_size,
-              'main_package_bytes': main_size, 'subpackage_bytes': subpackage_sizes,
+    report = {'main_package_bytes': main_size, 'subpackage_bytes': subpackage_sizes,
               'limit_bytes': LIMIT, 'runtime_bytes': raw_size, 'zip_bytes': zip_size,
               'file_count': len(paths), 'files': [path.relative_to(ROOT).as_posix() for path in paths]}
     args.output.with_suffix('.size.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(f'Runtime content: {raw_size:,} bytes; ZIP: {zip_size:,} bytes; limit: {LIMIT:,} bytes')
+    print(f'Runtime content: {raw_size:,} bytes; ZIP: {zip_size:,} bytes; main limit: {LIMIT:,} bytes')
     print(f'Main package: {main_size:,} bytes; subpackages: {subpackage_sizes}')
-    print(f'Actual directory: main {directory_main_size:,} bytes; total {directory_total_size:,} bytes (no hidden-file exclusions)')
+    print('Deploy the extracted runtime ZIP, not the source repository.')
     print(args.output)
 
 

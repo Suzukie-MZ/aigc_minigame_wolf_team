@@ -87,6 +87,14 @@
   function pointerAction(x,y){var l=M3.UILayout.get(),i,r,gx,gy,visible,item,actionOk;
     if(state==='LOADING')return;
     if(state==='LOAD_ERROR'){loadConfig();return;}
+    // The visible inspection panel owns input above battle controls.
+    if(state==='BATTLE'&&combat&&!paused&&!itemMenuOpen&&(combat.selectedTower||combat.selectedObstacle)&&(M3.UILayout.contains(l.towerPanel,x,y)||M3.UILayout.contains(l.towerUpgrade,x,y))){
+      if(M3.UILayout.contains(l.towerUpgrade,x,y)){
+        if(combat.selectedTower){actionOk=combat.upgradeSelected();showBattleMessage(actionOk?'升级成功':'资源不足或已满级',!actionOk);}
+        else{actionOk=combat.clearSelectedObstacle();showBattleMessage(actionOk?'障碍已清除，可在此建塔':'局内资源不足',!actionOk);}
+      }
+      return;
+    }
     if(state==='BATTLE'&&combat&&(combat.selectedTower||combat.selectedObstacle)&&!M3.UILayout.contains(l.board,x,y)&&!M3.UILayout.contains(l.towerUpgrade,x,y)){combat.clearInspection();showBattleMessage('');}
     if(state==='WORLD_MAP'){if(l.mapFooter&&M3.UILayout.contains(l.mapFooter,x,y)&&M3.RuntimeConfig.getExtraStatus&&M3.RuntimeConfig.getExtraStatus()==='error'){message='正在补充关卡目录…';loadExtraContent();return;}if(M3.UILayout.contains(l.energyAd,x,y)){M3.RewardSystem.refillEnergyAd(manifest,function(){message='体力补充成功';},function(){message='广告未完成';});return;}if(M3.UILayout.contains(l.energyShare,x,y)){M3.RewardSystem.refillEnergyShare(manifest,function(){message='分享补充成功';},function(){message='分享未完成';});return;}if(M3.UILayout.contains(l.mapUpgrade,x,y)){progressionPage=0;selectedProgressionHero=null;setState('PROGRESSION');return;}if(!M3.UILayout.contains(l.mapList,x,y))return;nodes=M3.WorldMap.nodes(manifest);for(i=0;i<nodes.length;i+=1){r=l.levelCard(i,mapScroll);if(r.y+r.h>l.mapList.y&&r.y<l.mapList.y+l.mapList.h&&M3.UILayout.contains(r,x,y)){if(!nodes[i].unlocked){message='请先通关上一关';return;}selectNode(nodes[i]);return;}}}
     else if(state==='LEVEL_DETAIL'){if(M3.UILayout.contains(l.detailBack,x,y))setState('WORLD_MAP');else if(M3.UILayout.contains(l.detailStart,x,y))beginDeck();}
@@ -97,11 +105,6 @@
       if(itemMenuOpen){for(i=0;i<2;i+=1)if(M3.UILayout.contains(l.itemChoices[i],x,y)){useBattleItem(i);return;}if(M3.UILayout.contains(l.itemSkip,x,y)){itemMenuOpen=false;showBattleMessage('');}return;}
       if(M3.UILayout.contains(l.pauseButton,x,y)){paused=!paused;showBattleMessage('');return;}
       if(paused)return;
-      if(M3.UILayout.contains(l.towerUpgrade,x,y)&&(combat.selectedTower||combat.selectedObstacle)){
-        if(combat.selectedTower){actionOk=combat.upgradeSelected();showBattleMessage(actionOk?'升级成功':'资源不足或已满级',!actionOk);}
-        else{actionOk=combat.clearSelectedObstacle();showBattleMessage(actionOk?'障碍已清除，可在此建塔':'局内资源不足',!actionOk);}
-        return;
-      }
       if(M3.UILayout.contains(l.battleItems,x,y)){itemMenuOpen=true;showBattleMessage('');return;}
       for(i=0;i<combat.heroIds.length;i+=1)if(M3.UILayout.contains(l.battleHeroCard(i,combat.heroIds.length,combat.deckIds.length),x,y)){combat.selectHero(combat.heroIds[i]);showBattleMessage('');return;}
       if(y>=l.cardBarY){for(i=0;i<combat.deckIds.length;i+=1){r=l.battleTowerCard(i,combat.deckIds.length);if(M3.UILayout.contains(r,x,y)){combat.selectCard(combat.deckIds[i]);showBattleMessage('');return;}}}

@@ -21,9 +21,10 @@
   function startEntry(entry){
     start(entry.item,entry.cacheKey,function(){entry.failed=true;entry.ready=false;},function(){entry.failed=false;entry.ready=true;});
   }
-  function loadRemaining(){Object.keys(entries).forEach(function(key){startEntry(entries[key]);});}
+  function loadRemaining(){Object.keys(entries).forEach(function(key){if(!entries[key].item.lazy)startEntry(entries[key]);});}
   function configure(manifest,initialKeys){
-    var defaults=(M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[]).slice(0),list=(manifest&&manifest.assetManifest||[]).slice(0),builtin=(M3.UIIconAssets&&M3.UIIconAssets.manifest||[]).concat(M3.EnemyAnimations&&M3.EnemyAnimations.manifest||[],M3.DeathParticles&&M3.DeathParticles.manifest||[],M3.CombatProjection&&M3.CombatProjection.manifest||[],M3.BattleMessages&&M3.BattleMessages.assets||[]),defaultIndex={},listed={},required=[],i,item,cacheKey,sourceKey,fallback;
+    if(M3.DefenderAnimations&&M3.DefenderAnimations.configure)M3.DefenderAnimations.configure(manifest);
+    var defaults=(M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[]).slice(0),list=(manifest&&manifest.assetManifest||[]).slice(0),builtin=(M3.UIIconAssets&&M3.UIIconAssets.manifest||[]).concat(M3.EnemyAnimations&&M3.EnemyAnimations.manifest||[],M3.DeathParticles&&M3.DeathParticles.manifest||[],M3.CombatProjection&&M3.CombatProjection.manifest||[],M3.BattleMessages&&M3.BattleMessages.assets||[],M3.DefenderAnimations&&M3.DefenderAnimations.manifest||[]),defaultIndex={},listed={},required=[],i,item,cacheKey,sourceKey,fallback;
     // Only bundled files may be fallback resources. Snapshot network URLs belong to
     // old development releases; missing split-manifest keys must wait for the extra manifest.
     // UI art must remain available even when a remote manifest omits it or its files fail.
@@ -35,17 +36,17 @@
       if(!listed[item.key])list.push(item);else if(M3.UIIconAssets&&M3.UIIconAssets.manifest.indexOf(item)!==-1){for(var li=0;li<list.length;li+=1)if(list[li].key===item.key)list[li]=item;}
     }
     entries={};fallbackEntries={};sources={};
-    for(i=0;i<defaults.length;i+=1){item=defaults[i];if(!item||item.type!=='image'||!item.key||!item.url||remote(item.url)||runtimeArtwork(item.key)&&listed[item.key]||initialKeys&&initialKeys.indexOf(item.key)<0)continue;sourceKey=item.url+'@'+(item.version||'1');cacheKey=sources[sourceKey]||'default:'+item.key+'@'+(item.version||'1');sources[sourceKey]=cacheKey;fallbackEntries[item.key]={cacheKey:cacheKey,item:item};start(item,cacheKey);}
+    for(i=0;i<defaults.length;i+=1){item=defaults[i];if(!item||item.type!=='image'||!item.key||!item.url||item.lazy||remote(item.url)||runtimeArtwork(item.key)&&listed[item.key]||initialKeys&&initialKeys.indexOf(item.key)<0)continue;sourceKey=item.url+'@'+(item.version||'1');cacheKey=sources[sourceKey]||'default:'+item.key+'@'+(item.version||'1')+'@'+item.url;sources[sourceKey]=cacheKey;fallbackEntries[item.key]={cacheKey:cacheKey,item:item};start(item,cacheKey);}
     for(i=0;i<list.length;i+=1){
       item=list[i];
       if(!item||item.type!=='image'||!item.key||!item.url)continue;
       sourceKey=item.url+'@'+(item.version||'1');
-      cacheKey=sources[sourceKey]||item.key+'@'+(item.version||'1');
+      cacheKey=sources[sourceKey]||item.key+'@'+(item.version||'1')+'@'+item.url;
       sources[sourceKey]=cacheKey;
-      fallback=runtimeArtwork(item.key)?null:fallbackEntries[fallbackKey(item,manifest)];
+      fallback=item.lazy||runtimeArtwork(item.key)?null:fallbackEntries[fallbackKey(item,manifest)];
       entries[item.key]={cacheKey:cacheKey,item:item,fallback:fallback||null,failed:false,ready:false};
       if(initialKeys?initialKeys.indexOf(item.key)>=0:runtimeArtwork(item.key)||/^subpackages\/monsters(-light|-heavy)?\//.test(item.url))required.push(item.key);
-      if(!initialKeys||initialKeys.indexOf(item.key)>=0)startEntry(entries[item.key]);
+      if(!item.lazy&&(!initialKeys||initialKeys.indexOf(item.key)>=0))startEntry(entries[item.key]);
     }
     return required;
   }
@@ -59,7 +60,7 @@
       if(onlyMissing&&existing)return;
       if(existing&&existing.item.url===item.url&&(existing.item.version||'1')===(item.version||'1'))return;
       sourceKey=item.url+'@'+(item.version||'1');
-      cacheKey=sources[sourceKey]||item.key+'@'+(item.version||'1');sources[sourceKey]=cacheKey;
+      cacheKey=sources[sourceKey]||item.key+'@'+(item.version||'1')+'@'+item.url;sources[sourceKey]=cacheKey;
       // Registration stores addresses only. Rendering/waitFor starts the actual image request.
       entries[item.key]={cacheKey:cacheKey,item:item,fallback:null,failed:false,ready:false};
     });

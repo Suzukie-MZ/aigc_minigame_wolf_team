@@ -1,8 +1,7 @@
 (function () {
-  // 清单中的关卡 URL 优先；模板兼容未提供 URL 的清单。
+  // 固定入口指向最新发布；关卡和素材地址由清单提供，不绑定历史版本。
   window.RUNTIME_CONFIG_BASE_URL = window.RUNTIME_CONFIG_BASE_URL || '';
   window.RUNTIME_CONFIG_ENDPOINTS = window.RUNTIME_CONFIG_ENDPOINTS || {
-    manifestUrl: 'https://p1-ad.adkwai.com/udata/pkg/KS-GAME/ksgame_wolves/runtime-manifest.json',
-    levelUrlTemplate: 'https://p1-ad.adkwai.com/udata/pkg/KS-GAME/ksgame_wolves/releases/ksgame-wolves-split-20261016-103813/levels/{levelId}.json'
+    manifestUrl: 'https://p1-ad.adkwai.com/udata/pkg/KS-GAME/ksgame_wolves/runtime-manifest.json'
   };
 })();

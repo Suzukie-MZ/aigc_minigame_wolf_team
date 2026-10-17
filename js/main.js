@@ -66,6 +66,7 @@
     require('./render/ui-icon-assets.js');
     require('./render/enemy-animations.js');
     require('./render/death-particles.js');
+    require('./render/defender-animations.js');
     require('./render/texture-assets.js');
     require('./render/bitmap-font.js');
     require('./render/image-compatibility.js');

@@ -40,14 +40,22 @@ test('startup images remain in main; H5 reads subpackage URLs without native dow
   const web=setup(false);web.M3.AssetManager.acquire('image','a','subpackages/ui-images/assets/a.png');
   assert.equal(web.requests.length,0);assert.equal(web.images[0].src,'subpackages/ui-images/assets/a.png');
 });
-function files(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.name==='.git'?[]:e.isDirectory()?files(path.join(dir,e.name)):[path.join(dir,e.name)]);}
-test('actual main directory and every declared image package stay below 6 MB',()=>{
-  const config=JSON.parse(fs.readFileSync(path.join(root,'game.json'),'utf8'));
-  const roots=config.subpackages.map(p=>path.join(root,p.root));const all=files(root);
-  const size=list=>list.reduce((total,p)=>total+fs.statSync(p).size,0);
-  const main=all.filter(p=>!roots.some(r=>p.startsWith(r)));
-  assert.ok(size(main)<6000000,'main exceeds 6,000,000 bytes');
-  for(const pkg of config.subpackages){const dir=path.join(root,pkg.root);assert.ok(size(files(dir))<6000000,pkg.name+' exceeds 6 MB');}
-  for(const name of ['ui-images','battle-images','monsters','monsters-light','monsters-heavy'])assert.ok(config.subpackages.some(p=>p.name===name));
-  assert.ok(fs.existsSync(path.join(root,'assets/home-asset/home-loading-qiyuan.webp')));
+test('actual staged release and ZIP enforce all package budgets and omit development combat sources',()=>{
+  const os=require('node:os'),cp=require('node:child_process');
+  const output=fs.mkdtempSync(path.join(os.tmpdir(),'wolves-release-test-'));
+  try {
+    const zip=path.join(output,'game.zip');
+    cp.execFileSync('python3',[path.join(root,'scripts/build-game-package.py'),'--output',zip],{stdio:'pipe'});
+    const report=JSON.parse(fs.readFileSync(path.join(output,'game.size.json'),'utf8'));
+    assert.ok(report.main_package_bytes<6000000);assert.ok(report.runtime_bytes<30000000);
+    for(const size of Object.values(report.subpackage_bytes))assert.ok(size<6000000);
+    assert.ok(report.lossless_png_savings>0);
+    assert.ok(!report.files.some(p=>p.startsWith('subpackages/combat/')||p==='js/render/combat-atlas-data.js'));
+    assert.ok(report.files.includes('assets/home-asset/home-loading-qiyuan.webp'));
+    assert.ok(report.files.includes('js/render/defender-animations.js'));
+    const stage=path.join(output,'game');
+    const sum=report.files.reduce((total,p)=>total+fs.statSync(path.join(stage,p)).size,0);
+    assert.equal(sum,report.runtime_bytes);
+    cp.execFileSync('python3',['-c',`import zipfile, pathlib; z=zipfile.ZipFile(${JSON.stringify(zip)}); root=pathlib.Path(${JSON.stringify(stage)}); assert all(z.read(n)==(root/n).read_bytes() for n in z.namelist())`]);
+  } finally {fs.rmSync(output,{recursive:true,force:true});}
 });

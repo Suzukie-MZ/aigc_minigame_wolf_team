@@ -149,6 +149,15 @@
     if(!imageAsset(key,r.x,r.y,r.w,r.h,1))drawRect(r.x,r.y,r.w,r.h,tile==='road'?[.27,.32,.35,1]:[.05,.22,.22,1]);
   }
   function groundShadow(x,y,w,h){var vertices=[],i,a,b;for(i=0;i<16;i+=1){a=i*Math.PI/8;b=(i+1)*Math.PI/8;vertices.push(x,y,x+Math.cos(a)*w,y+Math.sin(a)*h,x+Math.cos(b)*w,y+Math.sin(b)*h);}solid(vertices,[0,0,0,.35]);}
+  // Project effect endpoints, not the atlas pixels: keep sprites square on a compressed board.
+  function projectedCombatEffect(event,g,projection){
+    if(!M3.DefenderAnimations)return false;
+    var from=projection.point(g,event.fromX,event.fromY),to=projection.point(g,event.toX,event.toY),projected={},key,income=event.type==='income';
+    for(key in event)if(Object.prototype.hasOwnProperty.call(event,key))projected[key]=event[key];
+    projected.fromX=from.x/g.cx;projected.fromY=from.y/g.cx-(income?.30:.58);
+    projected.toX=to.x/g.cx;projected.toY=to.y/g.cx-(income?.30:.28);
+    return M3.DefenderAnimations.drawEffect(imageRegion,projected,{x:0,y:0},g.cx);
+  }
   function obliqueWorld(l,v){
     var c=v.combat,projection=M3.CombatProjection,g=projection.geometry(l,c.board),map=c.board.level&&c.board.level.map||v.levelPreview.map,amber=[.957,.718,.173,1],x,y,tile,p,unit,i,r,objects=[];
     // The gameplay board remains an m*n matrix. Only its screen projection changes.
@@ -176,13 +185,14 @@
         if(unit.unitId==='tower-6')w=h*.70;
         d=projection.directional(unit.unitId)?(unit.aimX!==undefined?projection.facing(unit.aimX,unit.aimY):projection.direction(unit,c.enemies)):0;
         r={x:p.x-w/2,y:p.y-h*.91,w:w,h:h};
-        if(!pixelUnit(unit.unitId,d,r))imageAssetContain(c.unitAssets[unit.unitId],r.x,r.y,r.w,r.h,1);
+        // Attack atlases retain their authored square canvas; static portrait proportions stay unchanged.
+        if(!(M3.DefenderAnimations&&M3.DefenderAnimations.draw(imageRegion,unit,c.elapsed,p.x-h/2,r.y,h,h,1))&&!pixelUnit(unit.unitId,d,r))imageAssetContain(c.unitAssets[unit.unitId],r.x,r.y,r.w,r.h,1);
         if(c.selectedTower&&unit.x===c.selectedTower.x&&unit.y===c.selectedTower.y&&o.kind==='tower')chamferOutline({x:p.x-g.cx*.40,y:p.y-g.cy*.4,w:g.cx*.8,h:g.cy*.55},amber,2,4);
         if((unit.level||1)>1)mapLabel('Lv'+unit.level,{x:p.x-16,y:p.y+1,w:32,h:14},10,amber);
       }
     }
     if(M3.DeathParticles&&(c.deathEffects||[]).length){gl.blendFunc(M3.DeathParticles.blendSource,M3.DeathParticles.blendDestination);try{M3.DeathParticles.draw(c.deathEffects,{x:g.x,y:g.y},g.cx,function(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharp){return imageRegion(key,x,g.y+(y-g.y)*g.cy/g.cx,w,h,u0,v0,u1,v1,tint,alpha,sharp);});}finally{gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}}
-    for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i],from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
+    for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i],from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(projectedCombatEffect(ev,g,projection))continue;if(ev.type==='income'){var pulse=g.cx*(.25+(1-alpha)*.3);frame({x:from.x-pulse*.5,y:from.y-g.cx*.30-pulse*.5,w:pulse,h:pulse},[1,.82,.22,alpha],2);continue;}if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
     for(i=0;i<(c.damageEvents||[]).length;i+=1){var ev=c.damageEvents[i];p=projection.point(g,ev.x,ev.y);mapLabel(String(ev.value),{x:p.x-18,y:p.y-g.cx*.65-ev.age*16,w:36,h:18},12,[1,.72,.30,Math.max(0,1-ev.age/ev.duration)]);}
   }
   // Share the exact armor skins used by the hero selection screen. Fixed corner sizes never stretch.

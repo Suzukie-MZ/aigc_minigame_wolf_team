@@ -69,31 +69,43 @@
       if (!_isMini && /^https?:\/\//.test(src || '')) {
         entry.resource.crossOrigin = 'anonymous';
       }
+      var image=entry.resource,compatibilityTried=false,activeSource=src;
+      function beginSource(imageSrc){
+        activeSource=imageSrc;
+        var packageMatch=_isKwai&&/^subpackages\/([^/]+)\//.exec(imageSrc||'');
+        function assign(){
+          if(entry.resource!==image)return;
+          try{image.src=imageSrc;}catch(error){image.onerror(error);}
+        }
+        if(packageMatch){
+          if(!M3.SubpackageLoader)image.onerror(new Error('Subpackage loader unavailable: '+packageMatch[1]));
+          else M3.SubpackageLoader.load(packageMatch[1],{onSuccess:assign,onFail:function(error){if(entry.resource===image)image.onerror(error);}});
+        }else assign();
+      }
       entry.resource.onload = function () {
         entry.loaded = true;
         entry.failed = false;
         entry.error = null;
+        entry.onError = [];
         var cbs = entry.onLoad;
         entry.onLoad = [];
         for (var i = 0; i < cbs.length; i++) cbs[i](entry.resource);
       };
-      entry.resource.onerror = function (error) {
+      entry.resource.onerror = function (cause) {
+        if(entry.resource!==image)return;
+        var fallback=M3.ImageCompatibility&&M3.ImageCompatibility[src],reason=cause&&(cause.message||cause.errMsg||cause.errorMsg)||'图片读取或解码失败';
+        if(!compatibilityTried&&fallback){compatibilityTried=true;beginSource(fallback);return;}
+        var error=new Error('图片加载失败: '+key+' ('+activeSource+') '+reason);
+        error.assetKey=key;error.url=activeSource;error.reason=reason;error.cause=cause;
         entry.loaded = false;
         entry.failed = true;
-        entry.error = error || new Error('image load failed');
+        entry.error = error;
         var cbs = entry.onError;
+        entry.onLoad = [];
         entry.onError = [];
-        for (var i = 0; i < cbs.length; i++) cbs[i](entry.error);
+        for (var i = 0; i < cbs.length; i++) cbs[i](error);
       };
-      var image=entry.resource,packageMatch=_isKwai&&/^subpackages\/([^/]+)\//.exec(src||'');
-      function assignSource(){if(entry.resource===image)image.src=src;}
-      if(packageMatch){
-        if(!M3.SubpackageLoader)image.onerror(new Error('Subpackage loader unavailable: '+packageMatch[1]));
-        else M3.SubpackageLoader.load(packageMatch[1],{
-          onSuccess:assignSource,
-          onFail:function(error){if(entry.resource===image)image.onerror(error);}
-        });
-      }else assignSource();
+      beginSource(src);
     } else {
       return null;
     }

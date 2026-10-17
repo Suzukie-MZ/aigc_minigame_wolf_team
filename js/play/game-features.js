@@ -53,7 +53,7 @@
         Promise.resolve(readiness).then(function(){
           if(attempt===loadAttempt&&state==='LOADING')loadingPhase='render';
         },function(error){
-          if(attempt===loadAttempt){loadingError=error&&error.message||'图片加载失败';console.error('[Game] startup assets failed',loadingError);state='LOAD_ERROR';}
+          if(attempt===loadAttempt){loadingError=error&&error.message||'图片加载失败';console.error('[Game] startup assets failed',loadingError,error&&error.assetKey||'',error&&error.url||'');state='LOAD_ERROR';}
         });
       }catch(error){loadingError=error&&error.message||'资源初始化失败';console.error('[Game] startup initialization failed',loadingError);state='LOAD_ERROR';}
     },{initialLevelCount:initialLevelCount});

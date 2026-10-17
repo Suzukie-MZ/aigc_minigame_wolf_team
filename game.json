@@ -30,6 +30,14 @@
         {
             "name": "monsters-heavy",
             "root": "subpackages/monsters-heavy/"
+        },
+        {
+            "name": "ui-compat-map",
+            "root": "subpackages/ui-compat-map/"
+        },
+        {
+            "name": "ui-compat-panels",
+            "root": "subpackages/ui-compat-panels/"
         }
     ],
     "parallelPreloadSubpackages": [

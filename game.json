@@ -14,9 +14,31 @@
         {
             "name": "monsters",
             "root": "subpackages/monsters/"
+        },
+        {
+            "name": "ui-images",
+            "root": "subpackages/ui-images/"
+        },
+        {
+            "name": "battle-images",
+            "root": "subpackages/battle-images/"
+        },
+        {
+            "name": "monsters-light",
+            "root": "subpackages/monsters-light/"
+        },
+        {
+            "name": "monsters-heavy",
+            "root": "subpackages/monsters-heavy/"
         }
     ],
     "parallelPreloadSubpackages": [
+        {
+            "name": "ui-images"
+        },
+        {
+            "name": "battle-images"
+        },
         {
             "name": "monsters"
         }

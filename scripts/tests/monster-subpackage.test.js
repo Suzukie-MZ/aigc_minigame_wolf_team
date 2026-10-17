@@ -16,18 +16,22 @@ function setup(native){
   return{M3,events,requests,load};
 }
 async function flush(){for(let i=0;i<8;i++)await Promise.resolve();}
-test('native waits for monsters subpackage success before initializing image resources',async()=>{
+test('native waits for all initial image subpackages before initializing image resources',async()=>{
   const {M3,events,requests}=setup(true);M3.Game.ensureStarted();
-  assert.deepEqual(events,['subpackage']);assert.equal(requests[0].name,'monsters');
-  requests[0].success({});await flush();
-  assert.deepEqual(events,['subpackage','config','textures']);
+  assert.deepEqual(events,['subpackage','subpackage','subpackage']);
+  assert.deepEqual(requests.map(r=>r.name),['ui-images','battle-images','monsters']);
+  requests[0].success({});requests[1].success({});await flush();
+  assert.equal(events.includes('textures'),false);
+  requests[2].success({});await flush();
+  assert.deepEqual(events,['subpackage','subpackage','subpackage','config','textures']);
   assert.equal(M3.Game.getViewModel().loadingPhase,'render');
 });
 test('subpackage failure prevents asset access and existing error-page action retries',async()=>{
   const {M3,events,requests}=setup(true);M3.Game.ensureStarted();requests[0].fail({errorMsg:'network unavailable'});await flush();
-  assert.equal(M3.Game.getViewModel().state,'LOAD_ERROR');assert.deepEqual(events,['subpackage']);
-  M3.Game.handlePointer(0,0);assert.equal(requests.length,2);requests[1].success({});await flush();
-  assert.deepEqual(events,['subpackage','subpackage','config','textures']);
+  assert.equal(M3.Game.getViewModel().state,'LOAD_ERROR');assert.deepEqual(events,['subpackage','subpackage','subpackage']);
+  M3.Game.handlePointer(0,0);assert.equal(requests.length,4);
+  requests[1].success({});requests[2].success({});requests[3].success({});await flush();
+  assert.deepEqual(events,['subpackage','subpackage','subpackage','subpackage','config','textures']);
 });
 test('H5 initializes without invoking native subpackage API',async()=>{
   const {M3,events,requests}=setup(false);M3.Game.ensureStarted();await flush();

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the runtime upload ZIP and enforce a strict 6,000,000-byte budget."""
+"""Build the upload ZIP; enforce the 6,000,000-byte main and individual subpackage budgets."""
 import argparse
 import json
 from pathlib import Path
@@ -15,26 +15,13 @@ ENTRY_FILES = (
 RUNTIME_DIRS = ('js', 'api', 'standard', 'subpackages', 'assets')
 
 
-def atlas_source_files():
-    """Keep editable icon originals in the repo, but ship their shared runtime atlas once."""
-    if not (ROOT / 'assets/Image/ui/ui-icons.webp').exists():
-        return set()
-    atlas = (ROOT / 'js/render/ui-icon-assets.js').read_text()
-    keys = {entry['key'] for entry in json.loads(re.search(r'var entries=(.*);', atlas).group(1))}
-    source = (ROOT / 'js/play/neutral-config.js').read_text()
-    manifest = json.loads(re.search(r'var manifest = (.*);', source).group(1))
-    return {ROOT / entry['url'] for entry in manifest['assetManifest']
-            if entry['key'] in keys and entry['url'].startswith('assets/')
-            and entry['url'] != 'assets/Image/ui/ui-icons.webp'} | {ROOT / 'assets/Image/ui/ui-icons.png'}
-
-
 def runtime_files():
     paths = [ROOT / name for name in ENTRY_FILES]
     for directory in RUNTIME_DIRS:
         paths.extend(path for path in (ROOT / directory).rglob('*')
                      if path.is_file() and not any(part.startswith('.') for part in path.relative_to(ROOT).parts)
                      and path.name != 'README.md' and not path.name.endswith(('.prompt.txt', '.source.md')))
-    return sorted(set(paths) - atlas_source_files())
+    return sorted(set(paths))
 
 
 def check_references(paths):
@@ -56,7 +43,17 @@ def check_references(paths):
                 candidate = candidate.with_suffix('.js')
             if candidate.is_relative_to(ROOT) and candidate.relative_to(ROOT).as_posix() not in included:
                 raise ValueError(f'Unpackaged reference in {path.relative_to(ROOT)}: {name}')
-    required = ['assets/home-asset/home-loading-qiyuan.webp', 'assets/Image/ui/ui-icons.webp', 'assets/Image/ui/ui-map-reference.webp', 'assets/Image/ui/ui-tower-interface-v1.webp', 'assets/Image/ui/ui-hero-interface-v1.webp', 'assets/Image/ui/ui-level-briefing-v1.webp', 'assets/Image/ui/pixel-units-25d-v1.webp', 'assets/Image/ui/battle-scene-surround.webp', 'assets/Font/font-cn-ui-hd.png']
+    # Manifests loaded later can switch UI icons back to their original images.
+    # Preserve and verify every explicit local image path, including those originals.
+    for path in paths:
+        if path.suffix != '.js':
+            continue
+        source = re.sub(r'/\*.*?\*/', '', path.read_text(), flags=re.DOTALL)
+        source = re.sub(r'^\s*//.*$', '', source, flags=re.MULTILINE)
+        for name in re.findall(r"""['\"]((?:assets|subpackages)/[^'\"]+?\.(?:png|webp|jpe?g))(?:\?[^'\"]*)?['\"]""", source):
+            if name not in included:
+                raise ValueError(f'Unpackaged image reference in {path.relative_to(ROOT)}: {name}')
+    required = ['assets/home-asset/home-loading-qiyuan.webp', 'subpackages/ui-images/assets/Image/ui/ui-icons.webp', 'subpackages/ui-images/assets/Image/ui/ui-map-reference.webp', 'subpackages/ui-images/assets/Image/ui/ui-tower-interface-v1.webp', 'subpackages/ui-images/assets/Image/ui/ui-hero-interface-v1.webp', 'subpackages/ui-images/assets/Image/ui/ui-level-briefing-v1.webp', 'subpackages/battle-images/assets/Image/ui/pixel-units-25d-v1.webp', 'subpackages/battle-images/assets/Image/ui/battle-scene-surround.webp', 'assets/Font/font-cn-ui-hd.png']
     required += [f'assets/Font/font-cn-main-{index}.png' for index in range(9)]
     for name in required:
         if name not in included:
@@ -80,8 +77,18 @@ def main():
     paths = runtime_files()
     check_references(paths)
     raw_size = sum(path.stat().st_size for path in paths)
-    if raw_size > LIMIT:
-        raise SystemExit(f'Runtime content exceeds budget: {raw_size:,} > {LIMIT:,} bytes')
+    subpackage_sizes = {item['name']: sum(path.stat().st_size for path in paths
+                        if path.is_relative_to(ROOT / item['root']))
+                        for item in config.get('subpackages', [])}
+    directory_subpackage_sizes = {item['name']: sum(path.stat().st_size for path in directory_files
+                                  if path.is_relative_to(ROOT / item['root']))
+                                  for item in config.get('subpackages', [])}
+    main_size = raw_size - sum(subpackage_sizes.values())
+    if main_size > LIMIT:
+        raise SystemExit(f'Runtime main package exceeds budget: {main_size:,} > {LIMIT:,} bytes')
+    for name, size in directory_subpackage_sizes.items():
+        if size > LIMIT:
+            raise SystemExit(f'Subpackage {name} exceeds budget: {size:,} > {LIMIT:,} bytes')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix('.zip.tmp')
     with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
@@ -91,9 +98,6 @@ def main():
             info.external_attr = 0o644 << 16
             archive.writestr(info, path.read_bytes(), compresslevel=9)
     zip_size = temporary.stat().st_size
-    if zip_size > LIMIT:
-        temporary.unlink()
-        raise SystemExit(f'ZIP exceeds budget: {zip_size:,} > {LIMIT:,} bytes')
     with zipfile.ZipFile(temporary) as archive:
         if archive.testzip() is not None:
             raise SystemExit('ZIP integrity check failed')
@@ -105,10 +109,11 @@ def main():
     main_size = raw_size - sum(subpackage_sizes.values())
     report = {'directory_main_bytes': directory_main_size, 'directory_total_bytes': directory_total_size,
               'main_package_bytes': main_size, 'subpackage_bytes': subpackage_sizes,
+              'directory_subpackage_bytes': directory_subpackage_sizes,
               'limit_bytes': LIMIT, 'runtime_bytes': raw_size, 'zip_bytes': zip_size,
               'file_count': len(paths), 'files': [path.relative_to(ROOT).as_posix() for path in paths]}
     args.output.with_suffix('.size.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(f'Runtime content: {raw_size:,} bytes; ZIP: {zip_size:,} bytes; limit: {LIMIT:,} bytes')
+    print(f'Runtime total: {raw_size:,} bytes; ZIP: {zip_size:,} bytes; per-package limit: {LIMIT:,} bytes')
     print(f'Main package: {main_size:,} bytes; subpackages: {subpackage_sizes}')
     print(f'Actual directory: main {directory_main_size:,} bytes; total {directory_total_size:,} bytes (no hidden-file exclusions)')
     print(args.output)

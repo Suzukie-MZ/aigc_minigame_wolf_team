@@ -13,5 +13,5 @@
   function directional(id){return /^hero-/.test(id)||id==='tower-2'||id==='tower-4';}
   var ys=[0,207,430,606,805,979,1181,1374,1577,1881];
   function region(id,d){var r=row(id);if(r<0||r>8)return null;var c=directional(id)?d:0;return[c/4,ys[r]/1881,(c+1)/4,ys[r+1]/1881];}
-  M3.CombatProjection={manifest:[{key:'battle-scene-surround',url:'assets/Image/ui/battle-scene-surround.webp',type:'image',version:'1',preload:true},{key:'pixel-terrain-25d',url:'assets/Image/ui/pixel-terrain-25d-v1.webp',type:'image',version:'1',preload:true},{key:'pixel-units-25d',url:'assets/Image/ui/pixel-units-25d-v1.webp',type:'image',version:'1',preload:true}],geometry:geometry,point:point,pick:pick,facing:facing,direction:direction,directional:directional,region:region};
+  M3.CombatProjection={manifest:[{key:'battle-scene-surround',url:'subpackages/battle-images/assets/Image/ui/battle-scene-surround.webp',type:'image',version:'1',preload:true},{key:'pixel-terrain-25d',url:'subpackages/battle-images/assets/Image/ui/pixel-terrain-25d-v1.webp',type:'image',version:'1',preload:true},{key:'pixel-units-25d',url:'subpackages/battle-images/assets/Image/ui/pixel-units-25d-v1.webp',type:'image',version:'1',preload:true}],geometry:geometry,point:point,pick:pick,facing:facing,direction:direction,directional:directional,region:region};
 })();

@@ -85,7 +85,15 @@
         entry.onError = [];
         for (var i = 0; i < cbs.length; i++) cbs[i](entry.error);
       };
-      entry.resource.src = src;
+      var image=entry.resource,packageMatch=_isKwai&&/^subpackages\/([^/]+)\//.exec(src||'');
+      function assignSource(){if(entry.resource===image)image.src=src;}
+      if(packageMatch){
+        if(!M3.SubpackageLoader)image.onerror(new Error('Subpackage loader unavailable: '+packageMatch[1]));
+        else M3.SubpackageLoader.load(packageMatch[1],{
+          onSuccess:assignSource,
+          onFail:function(error){if(entry.resource===image)image.onerror(error);}
+        });
+      }else assignSource();
     } else {
       return null;
     }

@@ -51,8 +51,10 @@
   }
   function addAssets(list,onlyMissing){
     (list||[]).forEach(function(item){
-      var existing,sourceKey,cacheKey;
+      var existing,sourceKey,cacheKey,i,builtin=M3.UIIconAssets&&M3.UIIconAssets.manifest||[];
       if(!item||item.type!=='image'||!item.key||!item.url)return;
+      // Extra manifests must preserve the same local atlas and UVs as configure().
+      for(i=0;i<builtin.length;i+=1)if(builtin[i].key===item.key){item=builtin[i];break;}
       existing=entries[item.key];
       if(onlyMissing&&existing)return;
       if(existing&&existing.item.url===item.url&&(existing.item.version||'1')===(item.version||'1'))return;

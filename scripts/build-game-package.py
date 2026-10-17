@@ -21,7 +21,7 @@ RUNTIME_DIRS = ('js', 'api', 'standard', 'subpackages', 'assets')
 
 def atlas_source_files():
     """Keep editable icon originals in the repo, but ship their shared runtime atlas once."""
-    if not (ROOT / 'assets/Image/ui/ui-icons.webp').exists():
+    if not (ROOT / 'assets/Image/ui/ui-icons.png').exists():
         return set()
     atlas = (ROOT / 'js/render/ui-icon-assets.js').read_text()
     keys = {entry['key'] for entry in json.loads(re.search(r'var entries=(.*);', atlas).group(1))}
@@ -29,7 +29,7 @@ def atlas_source_files():
     manifest = json.loads(re.search(r'var manifest = (.*);', source).group(1))
     return {ROOT / entry['url'] for entry in manifest['assetManifest']
             if entry['key'] in keys and entry['url'].startswith('assets/')
-            and entry['url'] != 'assets/Image/ui/ui-icons.webp'} | {ROOT / 'assets/Image/ui/ui-icons.png'}
+            and entry['url'] != 'assets/Image/ui/ui-icons.png'} | {ROOT / 'assets/Image/ui/ui-icons.webp'}
 
 
 def runtime_files():
@@ -60,7 +60,7 @@ def check_references(paths):
                 candidate = candidate.with_suffix('.js')
             if candidate.is_relative_to(ROOT) and candidate.relative_to(ROOT).as_posix() not in included:
                 raise ValueError(f'Unpackaged reference in {path.relative_to(ROOT)}: {name}')
-    required = ['assets/home-asset/home-loading-qiyuan.webp', 'assets/Image/ui/ui-icons.webp', 'assets/Image/ui/ui-map-reference.webp', 'assets/Image/ui/ui-tower-interface-v1.webp', 'assets/Image/ui/ui-hero-interface-v1.webp', 'assets/Image/ui/ui-level-briefing-v1.webp', 'assets/Image/ui/pixel-units-25d-v1.webp', 'assets/Image/ui/battle-scene-surround.webp', 'assets/Font/font-cn-ui-hd.png']
+    required = ['assets/home-asset/home-loading-qiyuan.webp', 'assets/Image/ui/ui-icons.png', 'assets/Image/ui/ui-map-reference.webp', 'assets/Image/ui/ui-tower-interface-v1.webp', 'assets/Image/ui/ui-hero-interface-v1.webp', 'assets/Image/ui/ui-level-briefing-v1.webp', 'assets/Image/ui/pixel-units-25d-v1.webp', 'assets/Image/ui/battle-scene-surround.webp', 'assets/Font/font-cn-ui-hd.png']
     required += [f'assets/Font/font-cn-main-{index}.png' for index in range(9)]
     for name in required:
         if name not in included:

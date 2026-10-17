@@ -18,20 +18,20 @@ function setup(native){
 async function flush(){for(let i=0;i<8;i++)await Promise.resolve();}
 test('native waits for all initial image subpackages before initializing image resources',async()=>{
   const {M3,events,requests}=setup(true);M3.Game.ensureStarted();
-  assert.deepEqual(events,['subpackage','subpackage','subpackage']);
-  assert.deepEqual(requests.map(r=>r.name),['ui-images','battle-images','monsters']);
-  requests[0].success({});requests[1].success({});await flush();
+  assert.deepEqual(events,['subpackage','subpackage','subpackage','subpackage','subpackage']);
+  assert.deepEqual(requests.map(r=>r.name),['ui-images','battle-images','monsters','monsters-light','monsters-heavy']);
+  requests[0].success({});requests[1].success({});requests[2].success({});requests[3].success({});await flush();
   assert.equal(events.includes('textures'),false);
-  requests[2].success({});await flush();
-  assert.deepEqual(events,['subpackage','subpackage','subpackage','config','textures']);
+  requests[4].success({});await flush();
+  assert.deepEqual(events,['subpackage','subpackage','subpackage','subpackage','subpackage','config','textures']);
   assert.equal(M3.Game.getViewModel().loadingPhase,'render');
 });
 test('subpackage failure prevents asset access and existing error-page action retries',async()=>{
   const {M3,events,requests}=setup(true);M3.Game.ensureStarted();requests[0].fail({errorMsg:'network unavailable'});await flush();
-  assert.equal(M3.Game.getViewModel().state,'LOAD_ERROR');assert.deepEqual(events,['subpackage','subpackage','subpackage']);
-  M3.Game.handlePointer(0,0);assert.equal(requests.length,4);
-  requests[1].success({});requests[2].success({});requests[3].success({});await flush();
-  assert.deepEqual(events,['subpackage','subpackage','subpackage','subpackage','config','textures']);
+  assert.equal(M3.Game.getViewModel().state,'LOAD_ERROR');assert.deepEqual(events,['subpackage','subpackage','subpackage','subpackage','subpackage']);
+  M3.Game.handlePointer(0,0);assert.equal(requests.length,6);
+  requests[1].success({});requests[2].success({});requests[3].success({});requests[4].success({});requests[5].success({});await flush();
+  assert.deepEqual(events,['subpackage','subpackage','subpackage','subpackage','subpackage','subpackage','config','textures']);
 });
 test('H5 initializes without invoking native subpackage API',async()=>{
   const {M3,events,requests}=setup(false);M3.Game.ensureStarted();await flush();
@@ -44,7 +44,7 @@ test('all local monster assets live in declared monsters package and are require
   const entries=s.M3.EnemyAnimations.manifest.concat(s.M3.DeathParticles.manifest);
   const required=Array.from(s.M3.TextureAssets.configure({assetManifest:[]}));
   assert.equal(entries.length, 29);
-  for(const item of entries){assert.ok(item.url.startsWith('subpackages/monsters/'));assert.ok(fs.existsSync(path.join(root,item.url)));assert.ok(required.includes(item.key));}
+  for(const item of entries){assert.ok(/^subpackages\/monsters(-light|-heavy)?\//.test(item.url));assert.ok(fs.existsSync(path.join(root,item.url)));assert.ok(required.includes(item.key));}
   const config=JSON.parse(fs.readFileSync(path.join(root,'game.json'),'utf8'));
   assert.ok(config.subpackages.some(item=>item.name==='monsters'&&item.root==='subpackages/monsters/'));
   assert.equal(fs.existsSync(path.join(root,'assets/Image/enemies')),false);

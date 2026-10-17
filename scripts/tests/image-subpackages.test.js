@@ -40,7 +40,7 @@ test('startup images remain in main; H5 reads subpackage URLs without native dow
   const web=setup(false);web.M3.AssetManager.acquire('image','a','subpackages/ui-images/assets/a.png');
   assert.equal(web.requests.length,0);assert.equal(web.images[0].src,'subpackages/ui-images/assets/a.png');
 });
-function files(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(path.join(dir,e.name)):[path.join(dir,e.name)]);}
+function files(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.name==='.git'?[]:e.isDirectory()?files(path.join(dir,e.name)):[path.join(dir,e.name)]);}
 test('actual main directory and every declared image package stay below 6 MB',()=>{
   const config=JSON.parse(fs.readFileSync(path.join(root,'game.json'),'utf8'));
   const roots=config.subpackages.map(p=>path.join(root,p.root));const all=files(root);

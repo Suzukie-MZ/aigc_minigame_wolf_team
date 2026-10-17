@@ -24,7 +24,7 @@
   function loadConfig(){
     var attempt=++loadAttempt,layout=M3.UILayout.get(),initialLevelCount=Math.max(1,Math.ceil(layout.mapList?layout.mapList.h/(layout.levelRowH+layout.levelGap):4)*(layout.mapColumns||1));
     state='LOADING';loadingPhase='config';loadingError='';assetKeys=[];visibleLevelRequests={};
-    var pendingPackages=['ui-images','battle-images','monsters'].filter(function(name){return M3.SubpackageLoader&&!M3.SubpackageLoader.isLoaded(name);});
+    var pendingPackages=['ui-images','battle-images','monsters','monsters-light','monsters-heavy'].filter(function(name){return M3.SubpackageLoader&&!M3.SubpackageLoader.isLoaded(name);});
     if(typeof ks!=='undefined'&&pendingPackages.length){
       loadingPhase='assets';
       Promise.all(pendingPackages.map(function(name){return new Promise(function(resolve,reject){

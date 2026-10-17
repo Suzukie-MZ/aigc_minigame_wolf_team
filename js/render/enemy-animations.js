@@ -1,9 +1,14 @@
 (function () {
-  var M3 = window.M3, FPS = 8, ROOT = 'subpackages/monsters/assets/Image/';
+  var M3 = window.M3, FPS = 8;
   var monsters = {
     'monster-1': '裂隙爬兽', 'monster-2': '流亡掠夺者', 'monster-3': '幽影飞袭者',
     'monster-4': '远古战争傀儡', 'monster-5': '重甲异兽', 'monster-6': '咒印潜伏者', 'boss-1': '终末领主'
   }, atlases = {}, manifest = [];
+  var packs = {
+    '裂隙爬兽': 'monsters', '流亡掠夺者': 'monsters-light', '幽影飞袭者': 'monsters-light',
+    '咒印潜伏者': 'monsters-light', '远古战争傀儡': 'monsters-heavy', '重甲异兽': 'monsters-heavy',
+    '终末领主': 'monsters-heavy'
+  };
   var raw = {
     '裂隙爬兽': {move:[1024,256,'742,0,246,202,0,-5;496,0,244,204,0,3;249,0,245,219,0,3;0,0,247,220,-1,6'],up:[512,1024,'0,0,242,229,8,-10;0,465,228,236,0,-4;0,231,238,232,5,4;230,465,220,233,-4,11'],left:[1024,512,'498,0,244,165,0,-8;0,0,243,174,0,-6;245,0,251,164,1,0;0,176,236,178,5,8'],'right':[2048,256,'771,0,257,186,0,-10;259,0,251,195,-3,-9;512,0,257,187,0,0;0,0,257,199,0,-3']},
     '流亡掠夺者': {move:[1024,1024,'0,505,242,257,8,-1;0,251,252,252,-2,2;259,0,257,246,0,5;0,0,257,249,0,3'],up:[1024,512,'0,251,243,251,7,-4;0,0,251,249,-3,-3;483,0,221,243,12,6;253,0,228,243,0,6'],left:[1024,256,'0,0,244,228,7,-1;719,0,218,227,-19,-1;246,0,243,228,7,10;491,0,226,228,-15,8'],'right':[1024,256,'753,0,225,243,16,6;0,0,257,248,0,4;518,0,233,243,12,6;259,0,257,245,0,5']},
@@ -22,7 +27,7 @@
     ['move','up','left','right'].forEach(function (direction) {
       var d = raw[name][direction], atlas = parse(name, direction, d[2], d[0], d[1]);
       atlases[name + ':' + direction] = atlas;
-      manifest.push({key:atlas.key,type:'image',url:ROOT + name + '/' + name + '_' + direction + '.png',version:'1'});
+      manifest.push({key:atlas.key,type:'image',url:'subpackages/' + packs[name] + '/assets/Image/' + name + '/' + name + '_' + direction + '.png',version:'1'});
     });
   });
   function direction(enemy) {

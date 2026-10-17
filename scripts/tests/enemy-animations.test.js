@@ -17,7 +17,7 @@ test('manifest registers 28 directional atlases under monster asset folders', ()
   const a = setup().EnemyAnimations;
   assert.equal(a.manifest.length, 28);
   for (const item of a.manifest) {
-    assert.match(item.url, /^subpackages\/monsters\/assets\/Image\/[^/]+\/[^/]+_(move|up|left|right)\.png$/);
+    assert.match(item.url, /^subpackages\/monsters(-light|-heavy)?\/assets\/Image\/[^/]+\/[^/]+_(move|up|left|right)\.png$/);
     assert.ok(fs.existsSync(path.join(root, item.url)));
   }
 });

@@ -44,7 +44,7 @@
       sources[sourceKey]=cacheKey;
       fallback=runtimeArtwork(item.key)?null:fallbackEntries[fallbackKey(item,manifest)];
       entries[item.key]={cacheKey:cacheKey,item:item,fallback:fallback||null,failed:false,ready:false};
-      if(initialKeys?initialKeys.indexOf(item.key)>=0:runtimeArtwork(item.key)||/^subpackages\/monsters\//.test(item.url))required.push(item.key);
+      if(initialKeys?initialKeys.indexOf(item.key)>=0:runtimeArtwork(item.key)||/^subpackages\/monsters(-light|-heavy)?\//.test(item.url))required.push(item.key);
       if(!initialKeys||initialKeys.indexOf(item.key)>=0)startEntry(entries[item.key]);
     }
     return required;

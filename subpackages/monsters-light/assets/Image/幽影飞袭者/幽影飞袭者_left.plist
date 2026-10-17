@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>frames</key>
+  <dict>
+    <key>fly-01</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-7,5}</string>
+      <key>spriteSize</key><string>{222,245}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{0,0},{222,245}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>fly-04</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-5,8}</string>
+      <key>spriteSize</key><string>{232,213}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{224,0},{232,213}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>fly-02</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{3,-14}</string>
+      <key>spriteSize</key><string>{235,206}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{458,0},{235,206}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+    <key>fly-03</key>
+    <dict>
+      <key>aliases</key><array/>
+      <key>spriteOffset</key><string>{-4,-9}</string>
+      <key>spriteSize</key><string>{235,178}</string>
+      <key>spriteSourceSize</key><string>{256,256}</string>
+      <key>textureRect</key><string>{{695,0},{235,178}}</string>
+      <key>textureRotated</key><false/>
+    </dict>
+  </dict>
+  <key>metadata</key>
+  <dict>
+    <key>format</key><integer>3</integer>
+    <key>pixelFormat</key><string>RGBA8888</string>
+    <key>premultiplyAlpha</key><false/>
+    <key>realTextureFileName</key><string>幽影飞袭者_left.png</string>
+    <key>size</key><string>{1024,256}</string>
+    <key>textureFileName</key><string>幽影飞袭者_left.png</string>
+  </dict>
+</dict>
+</plist>

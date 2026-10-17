@@ -8,7 +8,6 @@
     "subpackages/ui-images/assets/Image/ui/ui-tower-interface-v1.webp": "subpackages/ui-compat-panels/assets/ui-tower-interface-v1.png",
     "subpackages/ui-images/assets/Image/ui/ui-hero-interface-v1.webp": "subpackages/ui-compat-panels/assets/ui-hero-interface-v1.png",
     "subpackages/battle-images/assets/Image/ui/pixel-terrain-25d-v1.webp": "subpackages/battle-images/assets/Image/ui/pixel-terrain-25d-v1.png",
-    "subpackages/battle-images/assets/Image/ui/pixel-units-25d-v1.webp": "subpackages/battle-images/assets/Image/ui/pixel-units-25d-v1.png",
     "subpackages/battle-images/assets/Image/ui/battle-scene-surround.webp": "subpackages/battle-images/assets/Image/ui/battle-scene-surround.png"
   };
 })();

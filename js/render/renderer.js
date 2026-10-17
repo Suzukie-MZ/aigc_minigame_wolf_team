@@ -6,7 +6,7 @@
   function solid(points,c){var v=new Float32Array(points);gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(posLoc);gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);gl.uniform2f(resLoc,M3.Layout.w,M3.Layout.h);gl.uniform4f(colorLoc,c[0],c[1],c[2],c.length>3?c[3]:1);gl.drawArrays(gl.TRIANGLES,0,v.length/2);}
   function diamond(cx,cy,w,h,c){solid([cx,cy-h*.5,cx+w*.5,cy,cx,cy+h*.5,cx,cy-h*.5,cx,cy+h*.5,cx-w*.5,cy],c);}
   function line(x1,y1,x2,y2,width,c){var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1,px=-dy/len*width*.5,py=dx/len*width*.5;solid([x1+px,y1+py,x2+px,y2+py,x1-px,y1-py,x1-px,y1-py,x2+px,y2+py,x2-px,y2-py],c);}
-  function imageRegion(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharpen,clip,rotation){var image,cached,texture,v,textureKey;if(!key||!M3.TextureAssets||(image=M3.TextureAssets.get(key))===null)return false;textureKey=M3.TextureAssets.cacheKey?M3.TextureAssets.cacheKey(key):key;cached=textures[textureKey];if(!cached||cached.image!==image){if(cached&&cached.texture&&gl.deleteTexture)gl.deleteTexture(cached.texture);texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,key==='pixel-units-25d'||key==='battle-scene-surround'||/monster.*atlas/.test(key)?gl.NEAREST:gl.LINEAR);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);cached=textures[textureKey]={texture:texture,image:image};}texture=cached.texture;tint=tint||[1,1,1,1];v=new Float32Array([x,y,u0,v0,x+w,y,u1,v0,x,y+h,u0,v1,x,y+h,u0,v1,x+w,y,u1,v0,x+w,y+h,u1,v1]);if(rotation){var ci,px,py,cs=Math.cos(rotation),sn=Math.sin(rotation),cx=x+w*.5,cy=y+h*.5;for(ci=0;ci<v.length;ci+=4){px=v[ci]-cx;py=v[ci+1]-cy;v[ci]=cx+px*cs-py*sn;v[ci+1]=cy+px*sn+py*cs;}}gl.useProgram(imageProgram);gl.bindBuffer(gl.ARRAY_BUFFER,imageBuffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(imagePosLoc);gl.vertexAttribPointer(imagePosLoc,2,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(imageUvLoc);gl.vertexAttribPointer(imageUvLoc,2,gl.FLOAT,false,16,8);gl.uniform2f(imageResLoc,M3.Layout.w,M3.Layout.h);gl.uniform1f(imageAlphaLoc,alpha===undefined?1:alpha);gl.uniform1f(imageSharpLoc,sharpen?1:0);gl.uniform1f(imageClipLoc,clip||0);gl.uniform4f(imageUvBoundsLoc,u0,v0,u1,v1);gl.uniform4f(imageTintLoc,tint[0],tint[1],tint[2],tint.length>3?tint[3]:1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.drawArrays(gl.TRIANGLES,0,6);return true;} function imageAsset(key,x,y,w,h,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1;return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,0);} function imageAssetContain(key,x,y,w,h,alpha){var image=M3.TextureAssets&&M3.TextureAssets.get(key),meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region||[0,0,1,1],sourceW=image&&(image.naturalWidth||image.width),sourceH=image&&(image.naturalHeight||image.height),aspect,boxAspect,drawW,drawH;if(!image||!sourceW||!sourceH)return false;sourceW*=Math.max(.001,region[2]-region[0]);sourceH*=Math.max(.001,region[3]-region[1]);aspect=sourceW/sourceH;boxAspect=w/h;if(aspect>boxAspect){drawW=w;drawH=w/aspect;}else{drawH=h;drawW=h*aspect;}return imageAsset(key,x+(w-drawW)*.5,y+(h-drawH)*.5,drawW,drawH,alpha);} function imageAssetChamfer(key,x,y,w,h,cut,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1,clip=Math.max(0,Math.min(.45,(Number(cut)||0)/Math.max(1,Math.min(w,h))));return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,clip);}
+  function imageRegion(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharpen,clip,rotation){var image,cached,texture,v,textureKey;if(!key||!M3.TextureAssets||(image=M3.TextureAssets.get(key))===null)return false;textureKey=M3.TextureAssets.cacheKey?M3.TextureAssets.cacheKey(key):key;cached=textures[textureKey];if(!cached||cached.image!==image){if(cached&&cached.texture&&gl.deleteTexture)gl.deleteTexture(cached.texture);texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,key==='battle-scene-surround'||/monster.*atlas/.test(key)?gl.NEAREST:gl.LINEAR);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);cached=textures[textureKey]={texture:texture,image:image};}texture=cached.texture;tint=tint||[1,1,1,1];v=new Float32Array([x,y,u0,v0,x+w,y,u1,v0,x,y+h,u0,v1,x,y+h,u0,v1,x+w,y,u1,v0,x+w,y+h,u1,v1]);if(rotation){var ci,px,py,cs=Math.cos(rotation),sn=Math.sin(rotation),cx=x+w*.5,cy=y+h*.5;for(ci=0;ci<v.length;ci+=4){px=v[ci]-cx;py=v[ci+1]-cy;v[ci]=cx+px*cs-py*sn;v[ci+1]=cy+px*sn+py*cs;}}gl.useProgram(imageProgram);gl.bindBuffer(gl.ARRAY_BUFFER,imageBuffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(imagePosLoc);gl.vertexAttribPointer(imagePosLoc,2,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(imageUvLoc);gl.vertexAttribPointer(imageUvLoc,2,gl.FLOAT,false,16,8);gl.uniform2f(imageResLoc,M3.Layout.w,M3.Layout.h);gl.uniform1f(imageAlphaLoc,alpha===undefined?1:alpha);gl.uniform1f(imageSharpLoc,sharpen?1:0);gl.uniform1f(imageClipLoc,clip||0);gl.uniform4f(imageUvBoundsLoc,u0,v0,u1,v1);gl.uniform4f(imageTintLoc,tint[0],tint[1],tint[2],tint.length>3?tint[3]:1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.drawArrays(gl.TRIANGLES,0,6);return true;} function imageAsset(key,x,y,w,h,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1;return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,0);} function imageAssetContain(key,x,y,w,h,alpha){var image=M3.TextureAssets&&M3.TextureAssets.get(key),meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region||[0,0,1,1],sourceW=image&&(image.naturalWidth||image.width),sourceH=image&&(image.naturalHeight||image.height),aspect,boxAspect,drawW,drawH;if(!image||!sourceW||!sourceH)return false;sourceW*=Math.max(.001,region[2]-region[0]);sourceH*=Math.max(.001,region[3]-region[1]);aspect=sourceW/sourceH;boxAspect=w/h;if(aspect>boxAspect){drawW=w;drawH=w/aspect;}else{drawH=h;drawW=h*aspect;}return imageAsset(key,x+(w-drawW)*.5,y+(h-drawH)*.5,drawW,drawH,alpha);} function imageAssetChamfer(key,x,y,w,h,cut,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1,clip=Math.max(0,Math.min(.45,(Number(cut)||0)/Math.max(1,Math.min(w,h))));return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,clip);}
   function isTowerFrame(r){var active=M3.Renderer&&M3.Renderer._activeView,l,cell,i,t,rects,j,target;if(!active||active.state!=='BATTLE'||!active.combat||!active.combat.towers)return false;l=M3.UILayout.get();cell=l.cell;for(i=0;i<active.combat.towers.length;i+=1){t=active.combat.towers[i];rects=[{x:l.board.x+(t.x+.16)*cell,y:l.board.y+(t.y+.12)*cell,w:cell*.68,h:cell*.76},{x:l.board.x+(t.x+.08)*cell,y:l.board.y+(t.y+.04)*cell,w:cell*.84,h:cell*.90}];for(j=0;j<rects.length;j+=1){target=rects[j];if(Math.abs(r.x-target.x)<.02&&Math.abs(r.y-target.y)<.02&&Math.abs(r.w-target.w)<.02&&Math.abs(r.h-target.h)<.02)return true;}}return false;}
   function frame(r,c,b){if(isTowerFrame(r))return;b=b||2;rect(r.x,r.y,r.w,b,c);rect(r.x,r.y+r.h-b,r.w,b,c);rect(r.x,r.y,b,r.h,c);rect(r.x+r.w-b,r.y,b,r.h,c);}
   var drawRect=rect,drawImageAsset=imageAsset;
@@ -138,11 +138,6 @@
   function attackEffects(v,b,cell){var events=v.combat.attackEvents||[],configs=v.presentation&&v.presentation.combatEffects||{},i,event,cfg,progress,fade,sx,sy,tx,ty,dx,dy,distance,steps,j,ratio,width,size,px,py,color,impactColor;for(i=0;i<events.length;i+=1){event=events[i];cfg=configs[event.type]||{};progress=Math.min(1,event.age/event.duration);fade=Math.max(0,1-progress);sx=b.x+event.fromX*cell;sy=b.y+event.fromY*cell;tx=b.x+event.toX*cell;ty=b.y+event.toY*cell;dx=tx-sx;dy=ty-sy;distance=Math.sqrt(dx*dx+dy*dy);width=Math.max(2,cell*(Number(cfg.trailWidth)||(event.type==='hero'?.12:.07)));size=cell*(Number(cfg.impactScale)||(event.type==='hero'?.30:.18));color=cfg.color||(event.type==='hero'?[1,.76,.2,1]:[.42,.94,1,1]);impactColor=cfg.impactColor||(event.type==='hero'?[1,.34,.16,1]:[.88,1,1,1]);if(event.type==='hero'){steps=Math.max(3,Math.ceil(distance/Math.max(3,cell*.14)));for(j=0;j<=steps;j+=1){ratio=j/steps;px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(.45+.55*ratio)));}frame({x:tx-size*(.55+progress*.45),y:ty-size*(.55+progress*.45),w:size*(1.1+progress*.9),h:size*(1.1+progress*.9)},alphaColor(impactColor,fade),Math.max(2,width*.55));rect(tx-width*1.4,ty-width*.45,width*2.8,width*.9,alphaColor(impactColor,fade));rect(tx-width*.45,ty-width*1.4,width*.9,width*2.8,alphaColor(impactColor,fade));}else{for(j=0;j<4;j+=1){ratio=Math.max(0,progress-j*.10);px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(1-j*.18)));}frame({x:tx-size*.5,y:ty-size*.5,w:size,h:size},alphaColor(impactColor,fade),Math.max(1,width*.45));}}}
   function itemDisplay(l,v){var p=uiPalette(v),r=l.battleItems,size=Math.min(r.w,r.h),icon={x:r.x+(r.w-size)*.5,y:r.y+(r.h-size)*.5,w:size,h:size},art={x:0,y:0,w:0,h:0};rect(icon.x+3,icon.y+4,icon.w,icon.h,[0,0,0,.34]);rect(icon.x,icon.y,icon.w,icon.h,p.navy2);frame(icon,p.borderVariants[2],2);art={x:icon.x+2,y:icon.y+2,w:icon.w-4,h:icon.h-4};if(imageAsset('ui-item-question',art.x,art.y,art.w,art.h,1)){frame(art,[p.borderVariants[2][0],p.borderVariants[2][1],p.borderVariants[2][2],.78],1.5);return;}text('道具',icon.x+icon.w*.5,icon.y+icon.h*.20,.60,p.paper,icon.w*.84,'center');text('点击选择',icon.x+icon.w*.5,icon.y+icon.h*.66,.44,p.accent,icon.w*.88,'center');}
   function itemChoiceIcon(r,effect,color){var cx=r.x+r.w*.5,cy=r.y+r.h*.31,s=Math.min(r.w,r.h)*.22;if(effect==='clear_all_enemies'){frame({x:cx-s*.62,y:cy-s*.62,w:s*1.24,h:s*1.24},color,2);rect(cx-s*.9,cy-2,s*1.8,4,color);rect(cx-2,cy-s*.9,4,s*1.8,color);rect(cx-s*.16,cy-s*.16,s*.32,s*.32,color);}else{rect(cx-s*.72,cy+s*.16,s*.38,s*.42,color);rect(cx-s*.19,cy-s*.08,s*.38,s*.66,color);rect(cx+s*.34,cy-s*.36,s*.38,s*.94,color);rect(cx-s*.16,cy-s*.78,s*.32,s*.32,color);rect(cx-s*.42,cy-s*.53,s*.84,s*.08,color);}}
-  function pixelUnit(id,d,r){
-    var uv=M3.CombatProjection.region(id,d),aspect,w,h;if(!uv)return false;
-    aspect=(uv[2]-uv[0])*836/((uv[3]-uv[1])*1881);w=Math.min(r.w,r.h*aspect);h=w/aspect;
-    return imageRegion('pixel-units-25d',r.x+(r.w-w)/2,r.y+r.h-h,w,h,uv[0],1-uv[1],uv[2],1-uv[3],[1,1,1,1],1,false,0);
-  }
   function remoteTerrain(map,tile,r){
     var key=M3.TextureAssets.tileKey(map,tile);
     // Each server tile already includes its ground and 2.5D props. Draw it once, at its authored ratio.
@@ -164,7 +159,7 @@
     for(i=0;i<c.enemies.length;i+=1)objects.push({kind:'enemy',x:c.enemies[i].x,y:c.enemies[i].y+.15,unit:c.enemies[i]});
     objects.sort(function(a,b){return a.y-b.y||a.x-b.x;});
     for(i=0;i<objects.length;i+=1){
-      var o=objects[i],h,w,d,fade=1;p=projection.point(g,o.x,o.y);unit=o.unit;
+      var o=objects[i],h,w,fade=1;p=projection.point(g,o.x,o.y);unit=o.unit;
       groundShadow(p.x,p.y,g.cx*(o.kind==='enemy'?.22:.30),g.cy*.11);
       if(o.kind==='enemy'){
         fade=unit.dying?Math.max(0,1-(unit.deathAge||0)/(unit.deathDuration||.45)):1;
@@ -173,15 +168,12 @@
         if(!unit.dying){drawRect(p.x-g.cx*.27,p.y-h*.88,g.cx*.54,4,[.025,.06,.08,1]);drawRect(p.x-g.cx*.27,p.y-h*.88,g.cx*.54*Math.max(0,unit.hp/unit.maxHp),3,[.70,.22,.47,1]);}
       }else{
         h=g.cx*(o.kind==='hero'?1.38:1.48);w=h;
-        if(unit.unitId==='tower-6')w=h*.70;
-        d=projection.directional(unit.unitId)?(unit.aimX!==undefined?projection.facing(unit.aimX,unit.aimY):projection.direction(unit,c.enemies)):0;
         r={x:p.x-w/2,y:p.y-h*.91,w:w,h:h};
-        if(!pixelUnit(unit.unitId,d,r))imageAssetContain(c.unitAssets[unit.unitId],r.x,r.y,r.w,r.h,1);
+        imageAssetContain(o.kind==='tower'?towerLevelAsset(v,unit.unitId,unit.level):c.unitAssets[unit.unitId],r.x,r.y,r.w,r.h,1);
         if(c.selectedTower&&unit.x===c.selectedTower.x&&unit.y===c.selectedTower.y&&o.kind==='tower')chamferOutline({x:p.x-g.cx*.40,y:p.y-g.cy*.4,w:g.cx*.8,h:g.cy*.55},amber,2,4);
         if((unit.level||1)>1)mapLabel('Lv'+unit.level,{x:p.x-16,y:p.y+1,w:32,h:14},10,amber);
       }
     }
-    if(M3.DeathParticles&&(c.deathEffects||[]).length){gl.blendFunc(M3.DeathParticles.blendSource,M3.DeathParticles.blendDestination);try{M3.DeathParticles.draw(c.deathEffects,{x:g.x,y:g.y},g.cx,function(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharp){return imageRegion(key,x,g.y+(y-g.y)*g.cy/g.cx,w,h,u0,v0,u1,v1,tint,alpha,sharp);});}finally{gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}}
     for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i],from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
     for(i=0;i<(c.damageEvents||[]).length;i+=1){var ev=c.damageEvents[i];p=projection.point(g,ev.x,ev.y);mapLabel(String(ev.value),{x:p.x-18,y:p.y-g.cx*.65-ev.age*16,w:36,h:18},12,[1,.72,.30,Math.max(0,1-ev.age/ev.duration)]);}
   }
@@ -190,31 +182,21 @@
     mapSkinFrame(selected?[58,585,818,260]:[58,860,818,256],r,22,fill||[.024,.106,.149,1],heroSkin,.43);
   }
   function battleOuterArmor(r){mapSkinFrame([58,860,818,256],r,22,[.024,.106,.149,1],heroSkin,.65);}
-  // Alpha bounds of the front-facing atlas cells, used only for compact UI portraits.
-  function battleUnitPortrait(r,id,bust){
-    var row=/^hero-/.test(id)?Number(id.slice(5))-1:Number(id.slice(6))+2,
-      ys=[0,207,430,606,805,979,1181,1374,1577,1881],
-      bounds=[[28,17,209,207],[15,0,209,223],[0,0,199,176],[29,0,199,199],[15,0,209,174],[25,0,195,202],[25,0,207,193],[15,0,209,203],[0,0,187,280]],box=bounds[row];
-    if(!box)return;var x0=box[0],y0=ys[row]+box[1],x1=box[2],y1=ys[row]+box[3];
-    if(bust){var bustBox=[[29,17,209,131],[15,0,201,133],[33,0,198,105]][row];if(bustBox){x0=bustBox[0];y0=ys[row]+bustBox[1];x1=bustBox[2];y1=ys[row]+bustBox[3];}}
-    var aspect=(x1-x0)/(y1-y0),w=Math.min(r.w,r.h*aspect),h=w/aspect;
-    imageRegion('pixel-units-25d',r.x+(r.w-w)/2,r.y+(r.h-h)/2,w,h,x0/836,1-y0/1881,x1/836,1-y1/1881,[1,1,1,1],1,false,0);
-  }
   function battlePrice(r,cost){
     chamfer(r,[.01,.045,.065,1],5);chamferOutline(r,[.24,.43,.48,1],1,5);
     var size=Math.min(18,r.h-4),value=String(cost),tw=Math.min(r.w-25,Math.max(14,value.length*11)),start=r.x+(r.w-tw-size-5)/2;
     battleHudIcon('coin',start,r.y+(r.h-size)/2,size,[.957,.718,.173,1]);mapLabel(value,{x:start+size+5,y:r.y,w:tw,h:r.h},16,[.957,.718,.173,1],{padding:0});
   }
-  function pixelBattleCard(r,id,name,cost,selected){
+  function battleUnitCard(r,id,assetKey,name,cost,selected){
     var paper=[.835,.957,.937,1],cyan=[.278,.863,.906,1],hero=/^hero-/.test(id);
     battleArmor(r,selected);
     if(hero){var portrait=Math.min(r.h-14,r.w*.42),art={x:r.x+7,y:r.y+7,w:portrait,h:r.h-14},tx=art.x+art.w+7,infoW=r.x+r.w-tx-8;
-      battleArmor(art,false);battleUnitPortrait({x:art.x+7,y:art.y+7,w:art.w-14,h:art.h-14},id,true);
+      battleArmor(art,false);imageAssetContain(assetKey,art.x+7,art.y+7,art.w-14,art.h-14,1);
       mapLabel(name,{x:tx,y:r.y+8,w:infoW,h:23},17,cyan,{align:'left',padding:0});
       mapLabel('战役支援',{x:tx,y:r.y+33,w:infoW,h:20},14,[.45,.66,.72,1],{align:'left',padding:0});
       battlePrice({x:tx,y:r.y+61,w:Math.min(92,infoW),h:27},cost);
     }else{
-      battleUnitPortrait({x:r.x+9,y:r.y+10,w:r.w-18,h:r.h-60},id,false);
+      imageAssetContain(assetKey,r.x+9,r.y+10,r.w-18,r.h-60,1);
       mapLabel(name,{x:r.x+9,y:r.y+r.h-46,w:r.w-18,h:20},13,cyan,{padding:0});
       battlePrice({x:r.x+10,y:r.y+r.h-28,w:r.w-20,h:21},cost);
     }
@@ -275,8 +257,8 @@
       if(M3.DeploymentHints)M3.DeploymentHints.draw(v);
     }finally{gl.disable(gl.SCISSOR_TEST);}
     battleOuterArmor({x:6,y:l.heroBarY-10,w:l.w-12,h:l.top+l.usable-l.heroBarY+6});
-    for(i=0;i<v.combat.heroIds.length;i+=1){r=l.battleHeroCard(i,v.combat.heroIds.length,count);pixelBattleCard(r,v.combat.heroUnits[v.combat.heroIds[i]],heroDisplayName(v.combat.heroNames[v.combat.heroIds[i]]),0,v.combat.selectedHero===v.combat.heroIds[i]);}
-    for(i=0;i<count;i+=1){r=l.battleTowerCard(i,count);pixelBattleCard(r,v.combat.cardUnits[v.combat.deckIds[i]],v.combat.cardNames[v.combat.deckIds[i]],v.combat.cardCosts[v.combat.deckIds[i]],v.combat.selectedCard===v.combat.deckIds[i]);}
+    for(i=0;i<v.combat.heroIds.length;i+=1){r=l.battleHeroCard(i,v.combat.heroIds.length,count);battleUnitCard(r,v.combat.heroUnits[v.combat.heroIds[i]],v.combat.unitAssets[v.combat.heroUnits[v.combat.heroIds[i]]],heroDisplayName(v.combat.heroNames[v.combat.heroIds[i]]),0,v.combat.selectedHero===v.combat.heroIds[i]);}
+    for(i=0;i<count;i+=1){r=l.battleTowerCard(i,count);battleUnitCard(r,v.combat.cardUnits[v.combat.deckIds[i]],towerLevelAsset(v,v.combat.cardUnits[v.combat.deckIds[i]],1),v.combat.cardNames[v.combat.deckIds[i]],v.combat.cardCosts[v.combat.deckIds[i]],v.combat.selectedCard===v.combat.deckIds[i]);}
     battleCommand(l.battleItems,'支援',false);
     battleMessagePanel(l,v);if(!v.paused)battleCommand(l.pauseButton,'暂停',false);battleInspection(l,v);if(v.paused){drawRect(l.board.x,l.board.y,l.board.w,l.board.h,[.01,.025,.04,.60]);var pauseBox={x:l.w*.18,y:l.board.y+l.board.h*.5-46,w:l.w*.64,h:92};battleArmor(pauseBox,false);mapLabel('游戏暂停',{x:pauseBox.x,y:pauseBox.y+10,w:pauseBox.w,h:30},22,[.835,.957,.937,1]);mapLabel('点击继续恢复对局',{x:pauseBox.x,y:pauseBox.y+47,w:pauseBox.w,h:24},14,[.278,.863,.906,1]);battleCommand(l.pauseButton,'继续',true);}
   }
@@ -762,34 +744,45 @@
     battleHudText(v,panels[0],'金币',v.combat.gold,cyan,'coin');battleHudText(v,panels[1],'波次',v.combat.wave+' / '+v.combat.waveCount,cyan,'wave');battleHudText(v,panels[2],'基地生命',v.combat.baseHp,cyan,'base');
   }
   function battleBoardFrame(l,v){var p=uiPalette(v),r={x:l.board.x,y:l.board.y,w:l.board.w,h:l.board.h};chamferOutline(r,p.frame,2,8);chamferOutline({x:r.x+2,y:r.y+2,w:r.w-4,h:r.h-4},[p.cyan[0],p.cyan[1],p.cyan[2],.78],1,6);diamond(r.x+r.w*.5,r.y,10,10,p.accent);diamond(r.x+r.w*.5,r.y+r.h,10,10,p.primary);diamond(r.x,r.y+r.h*.5,8,8,p.frame);diamond(r.x+r.w,r.y+r.h*.5,8,8,p.frame);}
+  // Coordinates refer to the approved 941 x 1672 concept, packed as an 800 x 1080 crop.
+  function supportSkin(sx,sy,sw,sh,r){
+    return imageRegion('ui-support-dossier',r.x,r.y,r.w,r.h,(sx-70)/800,1-(sy-260)/1080,(sx+sw-70)/800,1-(sy+sh-260)/1080,[1,1,1,1],1,false,0);
+  }
+  function supportButton(r,purple,label,secondary){
+    var source=secondary?[287,1178,367,113]:[purple?502:133,1022,307,96],
+      fill=secondary?[.025,.075,.12,1]:purple?[.075,.025,.15,1]:[.015,.14,.16,1],
+      ink=[.87,.96,1,1],size=r.w<125?12:14,groupW=6*size+17,start=r.x+(r.w-groupW)/2;
+    mapSkinFrame(source,r,18,fill,supportSkin,.60);
+    if(!secondary){
+      chamfer({x:start,y:r.y+r.h/2-8,w:16,h:16},purple?[.64,.47,.93,1]:[.32,.87,.96,1],2);
+      solid([start+6,r.y+r.h/2-4,start+6,r.y+r.h/2+4,start+12,r.y+r.h/2],[.015,.04,.08,1]);
+      mapLabel(label,{x:start+21,y:r.y+5,w:groupW-17,h:r.h-10},size,ink,{padding:0,spacing:0});
+    }else mapLabel(label,{x:r.x+12,y:r.y+6,w:r.w-24,h:r.h-12},18,ink,{padding:0});
+  }
   function itemModalV2(l,v){
-    var p=uiPalette(v),modal=l.itemModal,i,r,item,accent,iconKey,action,iconSize;
-    rect(0,l.top,l.w,l.usable,[.004,.014,.022,.92]);
-    refinedPanel(modal,p.cyan,[.025,.055,.09,.99],'panel');
-    if(!imageAsset('ui-item-supply',l.w*.5-18,modal.y+18,36,36,1)){
-      diamond(l.w*.5,modal.y+36,20,20,p.primary);
-      diamond(l.w*.5,modal.y+36,10,10,p.navy);
-    }
-    text('选择本局支援',l.w*.5,modal.y+68,1.36,p.paper,modal.w*.84,'center','title');
-    text('二选一  ·  不占用地图位置',l.w*.5,modal.y+100,.64,p.muted,modal.w*.86,'center');
-    line(modal.x+modal.w*.08,modal.y+126,modal.x+modal.w*.92,modal.y+126,1,[p.frame[0],p.frame[1],p.frame[2],.30]);
+    var modal=l.itemModal,navy=[.018,.045,.075,1],paper=[.85,.95,1,1],cyan=[.25,.87,.97,1],
+      i,r,item,clear,art,artH,nameY,description,lines,j,action,crestW=Math.min(136,modal.w*.36);
+    rect(0,l.top,l.w,l.usable,[.003,.01,.018,.78]);
+    mapSkinFrame([70,365,800,970],modal,32,navy,supportSkin,.64);
+    supportSkin(334,260,272,155,{x:l.w/2-crestW/2,y:modal.y-crestW*.38,w:crestW,h:crestW*155/272});
+    mapLabel('选择本局支援',{x:modal.x+24,y:modal.y+38,w:modal.w-48,h:34},l.w<360?23:27,paper,{padding:0});
+    line(modal.x+modal.w*.20,modal.y+77,modal.x+modal.w*.80,modal.y+77,1.5,cyan);
+    mapLabel(v.lowHealthItemWarning?'当前血量低，推荐使用道具':'二选一 · 不占用地图位置',{x:modal.x+16,y:modal.y+81,w:modal.w-32,h:22},13,v.lowHealthItemWarning?[1,.48,.36,1]:[.58,.75,.85,1],{padding:0});
     for(i=0;i<2;i+=1){
-      r=l.itemChoices[i];item=v.battleItemChoices[i];accent=i?p.violet:p.primary;
-      refinedPanel(r,accent,i?[.095,.045,.15,.98]:[.035,.105,.12,.98],'card');
-      if(!item)continue;
-      iconKey=item.effect==='clear_all_enemies'?'ui-item-clear':'ui-item-economy';
-      iconSize=Math.min(r.w*.46,r.h*.44);
-      imageAsset(iconKey,r.x+(r.w-iconSize)*.5,r.y+r.h*.055,iconSize,iconSize,1)||itemChoiceIcon(r,item.effect,accent);
-      text(item.displayName||(item.effect==='clear_all_enemies'?'清除怪物':'经济强化'),r.x+r.w*.5,r.y+r.h*.55,.96,p.paper,r.w*.88,'center','title');
-      text(item.description||(item.effect==='clear_all_enemies'?'清除当前地图全部怪物':'本局经济收益提高25%'),r.x+r.w*.5,r.y+r.h*.68,.60,p.muted,r.w*.90,'center');
-      action={x:r.x+r.w*.055,y:r.y+r.h*.80,w:r.w*.89,h:r.h*.16};
-      refinedPanel(action,i?p.violet:[.28,.78,.58,1],i?p.buttonViolet:p.buttonGreen,'button');
-      line(action.x+8,action.y+action.h*.5,action.x+action.w-8,action.y+action.h*.5,1,[accent[0],accent[1],accent[2],.38]);
-      text('观看广告',action.x+action.w*.5,action.y+action.h*.06,.60,p.paper,action.w*.88,'center','compactButton');
-      text('立即使用',action.x+action.w*.5,action.y+action.h*.54,.60,p.paper,action.w*.88,'center','compactButton');
+      r=l.itemChoices[i];item=v.battleItemChoices[i];if(!item)continue;
+      clear=item.effect==='clear_all_enemies';action=l.itemActions[i];
+      mapSkinFrame([clear?473:96,581,375,572],r,36,clear?[.045,.018,.095,1]:[.012,.075,.085,1],supportSkin,.58);
+      artH=Math.min((r.w-24)*282/310,r.h-150);
+      art={x:r.x+12,y:r.y+14,w:r.w-24,h:artH};
+      supportSkin(clear?505:130,620,310,282,art);
+      nameY=r.y+14+artH+7;
+      mapLabel(item.displayName||(clear?'清除怪物':'经济强化'),{x:r.x+8,y:nameY,w:r.w-16,h:26},l.w<360?17:20,clear?[.84,.74,1,1]:[1,.78,.26,1],{padding:0});
+      description=String(item.description||(clear?'清除当前地图全部怪物':'本局经济收益提高25%')).replace(/(\d)\s+(?=\d|%)/g,'$1');
+      lines=M3.MapUI.wrap(description,12,r.w-22);
+      for(j=0;j<Math.min(2,lines.length);j+=1)mapLabel(lines[j],{x:r.x+11,y:nameY+29+j*17,w:r.w-22,h:17},12,[.62,.78,.87,1],{padding:0,spacing:0});
+      supportButton(action,clear,'观看广告使用',false);
     }
-    refinedPanel(l.itemSkip,p.cyan,p.buttonBlue,'button');
-    text('暂不使用',l.itemSkip.x+l.itemSkip.w*.5,l.itemSkip.y+(l.itemSkip.h-16)*.5,1,p.paper,l.itemSkip.w*.88,'center','button');
+    supportButton(l.itemSkip,false,'暂不使用',true);
   }
   function loadingScreen(l,v,failed){
     // Keep the entire reference composition visible, including its title and hero silhouettes.

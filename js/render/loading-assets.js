@@ -11,7 +11,7 @@
   register({key:'ui-tower-interface',url:'subpackages/ui-images/assets/Image/ui/ui-tower-interface-v1.webp',type:'image',version:'1'},'startup:ui-tower-interface@1');
   register({key:'ui-level-briefing',url:'subpackages/ui-images/assets/Image/ui/ui-level-briefing-v1.webp',type:'image',version:'1'},'startup:ui-level-briefing@1');
   register({key:'ui-hero-interface',url:'subpackages/ui-images/assets/Image/ui/ui-hero-interface-v1.webp',type:'image',version:'1'},'startup:ui-hero-interface@1');
-  register({key:'font-cn-ui-hd',url:'assets/Font/font-cn-ui-hd.png'+(typeof ks==='undefined'?'?v=10':''),type:'image',version:'10'},'startup:font-cn-ui-hd@10');
+  register({key:'font-cn-ui-hd',url:'assets/Font/font-cn-ui-hd.png'+(typeof ks==='undefined'?'?v=11':''),type:'image',version:'11'},'startup:font-cn-ui-hd@11');
   var manifest=M3.NeutralConfig&&M3.NeutralConfig.manifest,fonts=manifest&&manifest.assetManifest||[],i;
   for(i=0;i<fonts.length;i+=1)if(/^font-cn-main-/.test(fonts[i].key))register(fonts[i],'default:'+fonts[i].key+'@'+(fonts[i].version||'1'));
   if(M3.BitmapFont&&manifest)M3.BitmapFont.configure(manifest);

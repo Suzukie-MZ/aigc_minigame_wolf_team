@@ -45,5 +45,5 @@ for row,(base,mid,light) in enumerate(palettes):
                 d.rectangle((1,9,5,13),fill='#263F32')
                 d.line((2,10,4,10),fill='#47634B')
         im.paste(tile,(variant*16,row*16))
-im.save(ROOT/'assets/Image/ui/ui-map-terrain.png',optimize=True)
-print('128 x 64 native pixel terrain atlas:',(ROOT/'assets/Image/ui/ui-map-terrain.png').stat().st_size,'bytes')
+im.save(ROOT/'subpackages/ui-images/assets/Image/ui/ui-map-terrain.png',optimize=True)
+print('128 x 64 native pixel terrain atlas:',(ROOT/'subpackages/ui-images/assets/Image/ui/ui-map-terrain.png').stat().st_size,'bytes')

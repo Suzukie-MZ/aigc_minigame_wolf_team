@@ -88,8 +88,10 @@
         if(entry.fallback&&entry.fallback.cacheKey!==entry.cacheKey)return readyImage(entry.fallback.cacheKey);
         throw error;
       }).then(function(){return key;},function(error){
-        console.error('[TextureAssets] required image failed',key,entry.item.url,error&&error.message||error);
-        throw new Error('图片加载失败: '+key);
+        var url=error&&error.url||entry.item.url,reason=error&&(error.reason||error.message||error.errMsg)||'图片读取或解码失败';
+        console.error('[TextureAssets] required image failed',key,url,reason);
+        var failure=new Error('图片加载失败: '+key+' ('+url+') '+reason);
+        failure.assetKey=key;failure.url=url;failure.reason=reason;failure.cause=error;throw failure;
       });
     }));
   }

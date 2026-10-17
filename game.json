@@ -14,9 +14,39 @@
         {
             "name": "monsters",
             "root": "subpackages/monsters/"
+        },
+        {
+            "name": "ui-images",
+            "root": "subpackages/ui-images/"
+        },
+        {
+            "name": "battle-images",
+            "root": "subpackages/battle-images/"
+        },
+        {
+            "name": "monsters-light",
+            "root": "subpackages/monsters-light/"
+        },
+        {
+            "name": "monsters-heavy",
+            "root": "subpackages/monsters-heavy/"
+        },
+        {
+            "name": "ui-compat-map",
+            "root": "subpackages/ui-compat-map/"
+        },
+        {
+            "name": "ui-compat-panels",
+            "root": "subpackages/ui-compat-panels/"
         }
     ],
     "parallelPreloadSubpackages": [
+        {
+            "name": "ui-images"
+        },
+        {
+            "name": "battle-images"
+        },
         {
             "name": "monsters"
         }

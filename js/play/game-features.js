@@ -24,11 +24,13 @@
   function loadConfig(){
     var attempt=++loadAttempt,layout=M3.UILayout.get(),initialLevelCount=Math.max(1,Math.ceil(layout.mapList?layout.mapList.h/(layout.levelRowH+layout.levelGap):4)*(layout.mapColumns||1));
     state='LOADING';loadingPhase='config';loadingError='';assetKeys=[];visibleLevelRequests={};
-    if(typeof ks!=='undefined'&&M3.SubpackageLoader&&!M3.SubpackageLoader.isLoaded('monsters')){
+    var pendingPackages=['ui-images','battle-images','monsters'].filter(function(name){return M3.SubpackageLoader&&!M3.SubpackageLoader.isLoaded(name);});
+    if(typeof ks!=='undefined'&&pendingPackages.length){
       loadingPhase='assets';
-      M3.SubpackageLoader.load('monsters',{
-        onSuccess:function(){if(attempt===loadAttempt)loadConfig();},
-        onFail:function(error){if(attempt===loadAttempt){loadingError=error&&(error.errorMsg||error.message)||'怪物资源加载失败';state='LOAD_ERROR';}}
+      Promise.all(pendingPackages.map(function(name){return new Promise(function(resolve,reject){
+        M3.SubpackageLoader.load(name,{onSuccess:resolve,onFail:reject});
+      });})).then(function(){if(attempt===loadAttempt)loadConfig();},function(error){
+        if(attempt===loadAttempt){loadingError=error&&(error.errorMsg||error.message)||'图片子包加载失败';state='LOAD_ERROR';}
       });
       return;
     }
@@ -46,10 +48,12 @@
         selectedNodeId=nodes.length?nodes[0].id:null;
         assetKeys=M3.TextureAssets?M3.TextureAssets.configure(manifest,initialAssetKeys()):[];
         loadingPhase='assets';
-        Promise.resolve(M3.TextureAssets?M3.TextureAssets.waitFor(assetKeys):null).then(function(){
+        var readiness=M3.TextureAssets?M3.TextureAssets.waitFor(assetKeys):null;
+        if(M3.LoadingAssets&&M3.LoadingAssets.ready)readiness=Promise.all([readiness,M3.LoadingAssets.ready()]);
+        Promise.resolve(readiness).then(function(){
           if(attempt===loadAttempt&&state==='LOADING')loadingPhase='render';
         },function(error){
-          if(attempt===loadAttempt){loadingError=error&&error.message||'图片加载失败';console.error('[Game] startup assets failed',loadingError);state='LOAD_ERROR';}
+          if(attempt===loadAttempt){loadingError=error&&error.message||'图片加载失败';console.error('[Game] startup assets failed',loadingError,error&&error.assetKey||'',error&&error.url||'');state='LOAD_ERROR';}
         });
       }catch(error){loadingError=error&&error.message||'资源初始化失败';console.error('[Game] startup initialization failed',loadingError);state='LOAD_ERROR';}
     },{initialLevelCount:initialLevelCount});

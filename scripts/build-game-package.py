@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Build a runtime-only ZIP with a strict 6,000,000-byte main-package budget.
-
-Deploy the extracted ZIP, never the source repository (which contains local
-design files, tests and Git history). Declared subpackages are counted separately.
-"""
+"""Build the upload ZIP; enforce the 6,000,000-byte main and individual subpackage budgets."""
 import argparse
 import json
 from pathlib import Path
@@ -19,26 +15,13 @@ ENTRY_FILES = (
 RUNTIME_DIRS = ('js', 'api', 'standard', 'subpackages', 'assets')
 
 
-def atlas_source_files():
-    """Keep editable icon originals in the repo, but ship their shared runtime atlas once."""
-    if not (ROOT / 'assets/Image/ui/ui-icons.png').exists():
-        return set()
-    atlas = (ROOT / 'js/render/ui-icon-assets.js').read_text()
-    keys = {entry['key'] for entry in json.loads(re.search(r'var entries=(.*);', atlas).group(1))}
-    source = (ROOT / 'js/play/neutral-config.js').read_text()
-    manifest = json.loads(re.search(r'var manifest = (.*);', source).group(1))
-    return {ROOT / entry['url'] for entry in manifest['assetManifest']
-            if entry['key'] in keys and entry['url'].startswith('assets/')
-            and entry['url'] != 'assets/Image/ui/ui-icons.png'} | {ROOT / 'assets/Image/ui/ui-icons.webp'}
-
-
 def runtime_files():
     paths = [ROOT / name for name in ENTRY_FILES]
     for directory in RUNTIME_DIRS:
         paths.extend(path for path in (ROOT / directory).rglob('*')
                      if path.is_file() and not any(part.startswith('.') for part in path.relative_to(ROOT).parts)
                      and path.name != 'README.md' and not path.name.endswith(('.prompt.txt', '.source.md')))
-    return sorted(set(paths) - atlas_source_files())
+    return sorted(set(paths))
 
 
 def check_references(paths):
@@ -60,7 +43,17 @@ def check_references(paths):
                 candidate = candidate.with_suffix('.js')
             if candidate.is_relative_to(ROOT) and candidate.relative_to(ROOT).as_posix() not in included:
                 raise ValueError(f'Unpackaged reference in {path.relative_to(ROOT)}: {name}')
-    required = ['assets/home-asset/home-loading-qiyuan.webp', 'assets/Image/ui/ui-icons.png', 'assets/Image/ui/ui-map-reference.webp', 'assets/Image/ui/ui-tower-interface-v1.webp', 'assets/Image/ui/ui-hero-interface-v1.webp', 'assets/Image/ui/ui-level-briefing-v1.webp', 'assets/Image/ui/pixel-units-25d-v1.webp', 'assets/Image/ui/battle-scene-surround.webp', 'assets/Font/font-cn-ui-hd.png']
+    # Manifests loaded later can switch UI icons back to their original images.
+    # Preserve and verify every explicit local image path, including those originals.
+    for path in paths:
+        if path.suffix != '.js':
+            continue
+        source = re.sub(r'/\*.*?\*/', '', path.read_text(), flags=re.DOTALL)
+        source = re.sub(r'^\s*//.*$', '', source, flags=re.MULTILINE)
+        for name in re.findall(r"""['\"]((?:assets|subpackages)/[^'\"]+?\.(?:png|webp|jpe?g))(?:\?[^'\"]*)?['\"]""", source):
+            if name not in included:
+                raise ValueError(f'Unpackaged image reference in {path.relative_to(ROOT)}: {name}')
+    required = ['assets/home-asset/home-loading-qiyuan.webp', 'subpackages/ui-images/assets/Image/ui/ui-icons.png', 'subpackages/ui-images/assets/Image/ui/ui-map-reference.webp', 'subpackages/ui-images/assets/Image/ui/ui-tower-interface-v1.webp', 'subpackages/ui-images/assets/Image/ui/ui-hero-interface-v1.webp', 'subpackages/ui-images/assets/Image/ui/ui-level-briefing-v1.webp', 'subpackages/battle-images/assets/Image/ui/pixel-units-25d-v1.webp', 'subpackages/battle-images/assets/Image/ui/battle-scene-surround.webp', 'assets/Font/font-cn-ui-hd.png']
     required += [f'assets/Font/font-cn-main-{index}.png' for index in range(9)]
     for name in required:
         if name not in included:
@@ -75,13 +68,27 @@ def main():
         raise SystemExit('Build output must be outside package/ to avoid including the ZIP in the next upload')
     config = json.loads((ROOT / 'game.json').read_text())
     package_roots = [ROOT / item['root'] for item in config.get('subpackages', [])]
+    directory_files = [path for path in ROOT.rglob('*') if path.is_file()]
+    directory_main_size = sum(path.stat().st_size for path in directory_files
+                              if not any(path.is_relative_to(root) for root in package_roots))
+    directory_total_size = sum(path.stat().st_size for path in directory_files)
+    if directory_main_size > LIMIT:
+        raise SystemExit(f'Actual source-directory main package exceeds budget: {directory_main_size:,} > {LIMIT:,} bytes')
     paths = runtime_files()
     check_references(paths)
     raw_size = sum(path.stat().st_size for path in paths)
-    main_size = sum(path.stat().st_size for path in paths
-                    if not any(path.is_relative_to(root) for root in package_roots))
+    subpackage_sizes = {item['name']: sum(path.stat().st_size for path in paths
+                        if path.is_relative_to(ROOT / item['root']))
+                        for item in config.get('subpackages', [])}
+    directory_subpackage_sizes = {item['name']: sum(path.stat().st_size for path in directory_files
+                                  if path.is_relative_to(ROOT / item['root']))
+                                  for item in config.get('subpackages', [])}
+    main_size = raw_size - sum(subpackage_sizes.values())
     if main_size > LIMIT:
-        raise SystemExit(f'Main package exceeds budget: {main_size:,} > {LIMIT:,} bytes')
+        raise SystemExit(f'Runtime main package exceeds budget: {main_size:,} > {LIMIT:,} bytes')
+    for name, size in directory_subpackage_sizes.items():
+        if size > LIMIT:
+            raise SystemExit(f'Subpackage {name} exceeds budget: {size:,} > {LIMIT:,} bytes')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix('.zip.tmp')
     with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
@@ -100,13 +107,15 @@ def main():
                         if path.is_relative_to(ROOT / item['root']))
                         for item in config.get('subpackages', [])}
     main_size = raw_size - sum(subpackage_sizes.values())
-    report = {'main_package_bytes': main_size, 'subpackage_bytes': subpackage_sizes,
+    report = {'directory_main_bytes': directory_main_size, 'directory_total_bytes': directory_total_size,
+              'main_package_bytes': main_size, 'subpackage_bytes': subpackage_sizes,
+              'directory_subpackage_bytes': directory_subpackage_sizes,
               'limit_bytes': LIMIT, 'runtime_bytes': raw_size, 'zip_bytes': zip_size,
               'file_count': len(paths), 'files': [path.relative_to(ROOT).as_posix() for path in paths]}
     args.output.with_suffix('.size.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(f'Runtime content: {raw_size:,} bytes; ZIP: {zip_size:,} bytes; main limit: {LIMIT:,} bytes')
+    print(f'Runtime total: {raw_size:,} bytes; ZIP: {zip_size:,} bytes; per-package limit: {LIMIT:,} bytes')
     print(f'Main package: {main_size:,} bytes; subpackages: {subpackage_sizes}')
-    print('Deploy the extracted runtime ZIP, not the source repository.')
+    print(f'Actual directory: main {directory_main_size:,} bytes; total {directory_total_size:,} bytes (no hidden-file exclusions)')
     print(args.output)
 
 

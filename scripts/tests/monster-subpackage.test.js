@@ -43,7 +43,7 @@ test('all local monster assets live in declared monsters package and are require
   const images={};s.M3.AssetManager={acquire(type,key,url){images[key]={url};},loaded(key){return!!images[key];},get(key){return images[key];}};
   const entries=s.M3.EnemyAnimations.manifest.concat(s.M3.DeathParticles.manifest);
   const required=Array.from(s.M3.TextureAssets.configure({assetManifest:[]}));
-  assert.equal(entries.length,5);
+  assert.equal(entries.length, 29);
   for(const item of entries){assert.ok(item.url.startsWith('subpackages/monsters/'));assert.ok(fs.existsSync(path.join(root,item.url)));assert.ok(required.includes(item.key));}
   const config=JSON.parse(fs.readFileSync(path.join(root,'game.json'),'utf8'));
   assert.ok(config.subpackages.some(item=>item.name==='monsters'&&item.root==='subpackages/monsters/'));

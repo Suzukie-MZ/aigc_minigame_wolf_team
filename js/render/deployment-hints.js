@@ -1,5 +1,5 @@
 (function () {
-  var M3=window.M3,draw=M3.Renderer.draw;
+  var M3=window.M3;
   function quad(v,x,y,w,h){v.push(x,y,x+w,y,x,y+h,x,y+h,x+w,y,x+w,y+h);}
   function render(v){
     var c=v.combat,hero,l,x,y,i,unit,used={},vertices=[],inset,b,px,py,size,alpha,g,cw,ch;
@@ -19,5 +19,4 @@
     M3.Renderer.triangles(vertices,hero?[1,.83,.42,alpha]:[.35,.95,.86,alpha]);
   }
   M3.DeploymentHints={draw:render};
-  M3.Renderer.draw=function(context,v){draw(context,v);render(v);};
 })();

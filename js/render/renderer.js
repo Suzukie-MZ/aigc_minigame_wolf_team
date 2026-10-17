@@ -2,11 +2,11 @@
   var M3=window.M3,gl,program,buffer,posLoc,colorLoc,resLoc,imageProgram,imageBuffer,imagePosLoc,imageUvLoc,imageResLoc,imageAlphaLoc,imageTintLoc,imageSharpLoc,imageUvBoundsLoc,imageClipLoc,textures={};
   function shader(type,source){var s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
   function init(context){if(program)return;gl=context;program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,'attribute vec2 a;uniform vec2 r;void main(){vec2 z=a/r;vec2 c=z*2.0-1.0;gl_Position=vec4(c.x,-c.y,0,1);}'));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,'precision mediump float;uniform vec4 c;void main(){gl_FragColor=c;}'));gl.linkProgram(program);buffer=gl.createBuffer();posLoc=gl.getAttribLocation(program,'a');resLoc=gl.getUniformLocation(program,'r');colorLoc=gl.getUniformLocation(program,'c');imageProgram=gl.createProgram();gl.attachShader(imageProgram,shader(gl.VERTEX_SHADER,'attribute vec2 a;attribute vec2 u;uniform vec2 r;varying vec2 v;void main(){vec2 z=a/r;vec2 c=z*2.0-1.0;gl_Position=vec4(c.x,-c.y,0,1);v=u;}'));gl.attachShader(imageProgram,shader(gl.FRAGMENT_SHADER,'precision mediump float;uniform sampler2D s;uniform float o;uniform float q;uniform float k;uniform vec4 m;uniform vec4 t;varying vec2 v;void main(){vec4 c=texture2D(s,v);vec2 p=(v-m.xy)/(m.zw-m.xy);float z=step(k,p.x+p.y)*step(k,(1.0-p.x)+p.y)*step(k,p.x+(1.0-p.y))*step(k,(1.0-p.x)+(1.0-p.y));float a=mix(c.a,smoothstep(.38,.62,c.a),q)*z;gl_FragColor=vec4(c.rgb*t.rgb,a*o*t.a);}'));gl.linkProgram(imageProgram);imageBuffer=gl.createBuffer();imagePosLoc=gl.getAttribLocation(imageProgram,'a');imageUvLoc=gl.getAttribLocation(imageProgram,'u');imageResLoc=gl.getUniformLocation(imageProgram,'r');imageAlphaLoc=gl.getUniformLocation(imageProgram,'o');imageTintLoc=gl.getUniformLocation(imageProgram,'t');imageSharpLoc=gl.getUniformLocation(imageProgram,'q');imageUvBoundsLoc=gl.getUniformLocation(imageProgram,'m');imageClipLoc=gl.getUniformLocation(imageProgram,'k');gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}
-  function rect(x,y,w,h,c){var active=M3.Renderer&&M3.Renderer._activeView,l,gx,gy,tile,key,v,style,gap,cellX,cellY,imageReady;if(active&&active.state==='BATTLE'&&active.combat&&active.levelPreview&&active.levelPreview.map&&active.levelPreview.map.tileAssets){l=M3.UILayout.get();if(w>l.cell*.7&&w<l.cell*1.05&&h>l.cell*.7&&h<l.cell*1.05&&x>=l.board.x&&y>=l.board.y&&x<l.board.x+l.board.w&&y<l.board.y+l.board.h){gx=Math.floor((x-l.board.x)/l.cell);gy=Math.floor((y-l.board.y)/l.cell);style=active.combat.mapPresentation&&active.combat.mapPresentation.style||{};gap=style.tileGap||1;cellX=l.board.x+gx*l.cell;cellY=l.board.y+gy*l.cell;tile=active.combat.board.tile(gx,gy);key=M3.TextureAssets&&M3.TextureAssets.tileKey(active.levelPreview.map,tile);imageReady=key&&M3.TextureAssets.get(key)!==null;if(imageReady){if(Math.abs(x-(cellX+gap))<.05&&Math.abs(y-(cellY+gap))<.05)imageAsset(key,cellX,cellY,l.cell,l.cell,1);return;}}}v=new Float32Array([x,y,x+w,y,x,y+h,x,y+h,x+w,y,x+w,y+h]);gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(posLoc);gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);gl.uniform2f(resLoc,M3.Layout.w,M3.Layout.h);gl.uniform4f(colorLoc,c[0],c[1],c[2],c.length>3?c[3]:1);gl.drawArrays(gl.TRIANGLES,0,6);}
+  function rect(x,y,w,h,c){var v=new Float32Array([x,y,x+w,y,x,y+h,x,y+h,x+w,y,x+w,y+h]);gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(posLoc);gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);gl.uniform2f(resLoc,M3.Layout.w,M3.Layout.h);gl.uniform4f(colorLoc,c[0],c[1],c[2],c.length>3?c[3]:1);gl.drawArrays(gl.TRIANGLES,0,6);}
   function solid(points,c){var v=new Float32Array(points);gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(posLoc);gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);gl.uniform2f(resLoc,M3.Layout.w,M3.Layout.h);gl.uniform4f(colorLoc,c[0],c[1],c[2],c.length>3?c[3]:1);gl.drawArrays(gl.TRIANGLES,0,v.length/2);}
   function diamond(cx,cy,w,h,c){solid([cx,cy-h*.5,cx+w*.5,cy,cx,cy+h*.5,cx,cy-h*.5,cx,cy+h*.5,cx-w*.5,cy],c);}
   function line(x1,y1,x2,y2,width,c){var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1,px=-dy/len*width*.5,py=dx/len*width*.5;solid([x1+px,y1+py,x2+px,y2+py,x1-px,y1-py,x1-px,y1-py,x2+px,y2+py,x2-px,y2-py],c);}
-  function imageRegion(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharpen,clip,rotation){var image,cached,texture,v,textureKey;if(!key||!M3.TextureAssets||(image=M3.TextureAssets.get(key))===null)return false;textureKey=M3.TextureAssets.cacheKey?M3.TextureAssets.cacheKey(key):key;cached=textures[textureKey];if(!cached||cached.image!==image){if(cached&&cached.texture&&gl.deleteTexture)gl.deleteTexture(cached.texture);texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,key==='ui-map-terrain'||key==='pixel-units-25d'||key==='pixel-terrain-25d'||key==='battle-scene-surround'||/monster.*atlas/.test(key)?gl.NEAREST:gl.LINEAR);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);cached=textures[textureKey]={texture:texture,image:image};}texture=cached.texture;tint=tint||[1,1,1,1];v=new Float32Array([x,y,u0,v0,x+w,y,u1,v0,x,y+h,u0,v1,x,y+h,u0,v1,x+w,y,u1,v0,x+w,y+h,u1,v1]);if(rotation){var ci,px,py,cs=Math.cos(rotation),sn=Math.sin(rotation),cx=x+w*.5,cy=y+h*.5;for(ci=0;ci<v.length;ci+=4){px=v[ci]-cx;py=v[ci+1]-cy;v[ci]=cx+px*cs-py*sn;v[ci+1]=cy+px*sn+py*cs;}}gl.useProgram(imageProgram);gl.bindBuffer(gl.ARRAY_BUFFER,imageBuffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(imagePosLoc);gl.vertexAttribPointer(imagePosLoc,2,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(imageUvLoc);gl.vertexAttribPointer(imageUvLoc,2,gl.FLOAT,false,16,8);gl.uniform2f(imageResLoc,M3.Layout.w,M3.Layout.h);gl.uniform1f(imageAlphaLoc,alpha===undefined?1:alpha);gl.uniform1f(imageSharpLoc,sharpen?1:0);gl.uniform1f(imageClipLoc,clip||0);gl.uniform4f(imageUvBoundsLoc,u0,v0,u1,v1);gl.uniform4f(imageTintLoc,tint[0],tint[1],tint[2],tint.length>3?tint[3]:1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.drawArrays(gl.TRIANGLES,0,6);return true;} function imageAsset(key,x,y,w,h,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1;return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,0);} function imageAssetContain(key,x,y,w,h,alpha){var image=M3.TextureAssets&&M3.TextureAssets.get(key),meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region||[0,0,1,1],sourceW=image&&(image.naturalWidth||image.width),sourceH=image&&(image.naturalHeight||image.height),aspect,boxAspect,drawW,drawH;if(!image||!sourceW||!sourceH)return false;sourceW*=Math.max(.001,region[2]-region[0]);sourceH*=Math.max(.001,region[3]-region[1]);aspect=sourceW/sourceH;boxAspect=w/h;if(aspect>boxAspect){drawW=w;drawH=w/aspect;}else{drawH=h;drawW=h*aspect;}return imageAsset(key,x+(w-drawW)*.5,y+(h-drawH)*.5,drawW,drawH,alpha);} function imageAssetChamfer(key,x,y,w,h,cut,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1,clip=Math.max(0,Math.min(.45,(Number(cut)||0)/Math.max(1,Math.min(w,h))));return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,clip);}
+  function imageRegion(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharpen,clip,rotation){var image,cached,texture,v,textureKey;if(!key||!M3.TextureAssets||(image=M3.TextureAssets.get(key))===null)return false;textureKey=M3.TextureAssets.cacheKey?M3.TextureAssets.cacheKey(key):key;cached=textures[textureKey];if(!cached||cached.image!==image){if(cached&&cached.texture&&gl.deleteTexture)gl.deleteTexture(cached.texture);texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,key==='pixel-units-25d'||key==='battle-scene-surround'||/monster.*atlas/.test(key)?gl.NEAREST:gl.LINEAR);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);cached=textures[textureKey]={texture:texture,image:image};}texture=cached.texture;tint=tint||[1,1,1,1];v=new Float32Array([x,y,u0,v0,x+w,y,u1,v0,x,y+h,u0,v1,x,y+h,u0,v1,x+w,y,u1,v0,x+w,y+h,u1,v1]);if(rotation){var ci,px,py,cs=Math.cos(rotation),sn=Math.sin(rotation),cx=x+w*.5,cy=y+h*.5;for(ci=0;ci<v.length;ci+=4){px=v[ci]-cx;py=v[ci+1]-cy;v[ci]=cx+px*cs-py*sn;v[ci+1]=cy+px*sn+py*cs;}}gl.useProgram(imageProgram);gl.bindBuffer(gl.ARRAY_BUFFER,imageBuffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(imagePosLoc);gl.vertexAttribPointer(imagePosLoc,2,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(imageUvLoc);gl.vertexAttribPointer(imageUvLoc,2,gl.FLOAT,false,16,8);gl.uniform2f(imageResLoc,M3.Layout.w,M3.Layout.h);gl.uniform1f(imageAlphaLoc,alpha===undefined?1:alpha);gl.uniform1f(imageSharpLoc,sharpen?1:0);gl.uniform1f(imageClipLoc,clip||0);gl.uniform4f(imageUvBoundsLoc,u0,v0,u1,v1);gl.uniform4f(imageTintLoc,tint[0],tint[1],tint[2],tint.length>3?tint[3]:1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.drawArrays(gl.TRIANGLES,0,6);return true;} function imageAsset(key,x,y,w,h,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1;return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,0);} function imageAssetContain(key,x,y,w,h,alpha){var image=M3.TextureAssets&&M3.TextureAssets.get(key),meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region||[0,0,1,1],sourceW=image&&(image.naturalWidth||image.width),sourceH=image&&(image.naturalHeight||image.height),aspect,boxAspect,drawW,drawH;if(!image||!sourceW||!sourceH)return false;sourceW*=Math.max(.001,region[2]-region[0]);sourceH*=Math.max(.001,region[3]-region[1]);aspect=sourceW/sourceH;boxAspect=w/h;if(aspect>boxAspect){drawW=w;drawH=w/aspect;}else{drawH=h;drawW=h*aspect;}return imageAsset(key,x+(w-drawW)*.5,y+(h-drawH)*.5,drawW,drawH,alpha);} function imageAssetChamfer(key,x,y,w,h,cut,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1,clip=Math.max(0,Math.min(.45,(Number(cut)||0)/Math.max(1,Math.min(w,h))));return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,clip);}
   function isTowerFrame(r){var active=M3.Renderer&&M3.Renderer._activeView,l,cell,i,t,rects,j,target;if(!active||active.state!=='BATTLE'||!active.combat||!active.combat.towers)return false;l=M3.UILayout.get();cell=l.cell;for(i=0;i<active.combat.towers.length;i+=1){t=active.combat.towers[i];rects=[{x:l.board.x+(t.x+.16)*cell,y:l.board.y+(t.y+.12)*cell,w:cell*.68,h:cell*.76},{x:l.board.x+(t.x+.08)*cell,y:l.board.y+(t.y+.04)*cell,w:cell*.84,h:cell*.90}];for(j=0;j<rects.length;j+=1){target=rects[j];if(Math.abs(r.x-target.x)<.02&&Math.abs(r.y-target.y)<.02&&Math.abs(r.w-target.w)<.02&&Math.abs(r.h-target.h)<.02)return true;}}return false;}
   function frame(r,c,b){if(isTowerFrame(r))return;b=b||2;rect(r.x,r.y,r.w,b,c);rect(r.x,r.y+r.h-b,r.w,b,c);rect(r.x,r.y,b,r.h,c);rect(r.x+r.w-b,r.y,b,r.h,c);}
   var drawRect=rect,drawImageAsset=imageAsset;
@@ -92,15 +92,46 @@
   function heroSelect(l,v){var i,r,h,selected={};(v.heroes||[]).forEach(function(id){selected[id]=true;});text('选择一名英雄',l.w*.5,l.top+l.usable*.045,2.2,tone(v,'frame',[.8,1,1,1]),l.w*.9,'center');text('固定 3 名候选，局内限用一名',l.w*.5,l.top+l.usable*.12,.92,tone(v,'primary',[.3,.8,.7,1]),l.w*.9,'center');for(i=0;i<v.heroCards.length&&i<l.heroCards.length;i+=1){r=l.heroCards[i];h=v.heroCards[i];rect(r.x,r.y,r.w,r.h,tone(v,'panel',[.12,.18,.22,1]));imageAsset(h.portraitAsset,r.x+4,r.y+4,r.w-8,r.h*.60,1)||actor(r.x+r.w*.5,r.y+r.h*.33,Math.min(r.w,r.h)*.66,h.appearance,h.color);text(h.uiName,r.x+r.w*.5,r.y+r.h*.64,.95,[1,1,1,1],r.w*.9,'center');text(h.roleDescription||'支援全场的英雄单位',r.x+r.w*.5,r.y+r.h*.76,.76,tone(v,'primary',[.3,.8,.7,1]),r.w*.9,'center');text('等级 '+h.level,r.x+r.w*.5,r.y+r.h*.88,.78,tone(v,'gold',[1,.8,.3,1]),r.w*.84,'center');frame(r,selected[h.id]?tone(v,'gold',[1,.8,.3,1]):tone(v,'frame',[.7,.9,.9,1]),selected[h.id]?5:2);}rect(l.heroBack.x,l.heroBack.y,l.heroBack.w,l.heroBack.h,tone(v,'disabled',[.3,.32,.35,1]));text('返回',l.heroBack.x+l.heroBack.w*.5,l.heroBack.y+l.heroBack.h*.27,.92,[1,1,1,1],l.heroBack.w*.8,'center');rect(l.heroStart.x,l.heroStart.y,l.heroStart.w,l.heroStart.h,v.heroes.length===1?tone(v,'success',[.18,.72,.48,1]):tone(v,'disabled',[.3,.32,.35,1]));text('消耗体力开始',l.heroStart.x+l.heroStart.w*.5,l.heroStart.y+l.heroStart.h*.27,1.05,tone(v,'background',[.03,.1,.16,1]),l.heroStart.w*.88,'center');}
   function heroShowcaseCard(r,h,index,isSelected,v,p){var portrait,nameBar,cardFill=p.panelVariants[(index+1)%p.panelVariants.length],cardAccent=p.borderVariants[(index+2)%p.borderVariants.length];ornatePanel(r,v,cardAccent,isSelected,cardFill);nameBar={x:r.x+8,y:r.y+7,w:r.w-16,h:24};chamfer(nameBar,[.010,.032,.046,.88],6);line(nameBar.x+8,nameBar.y+nameBar.h-2,nameBar.x+nameBar.w-8,nameBar.y+nameBar.h-2,1,[cardAccent[0],cardAccent[1],cardAccent[2],.40]);text(heroDisplayName(h.uiName),r.x+r.w*.5,nameBar.y+3,.76,p.paper,nameBar.w*.90,'center','label');portrait={x:r.x+8,y:r.y+34,w:r.w-16,h:r.w-34};imageAsset(h.portraitAsset,portrait.x,portrait.y,portrait.w,portrait.h,1)||actor(r.x+r.w*.5,portrait.y+portrait.h*.52,Math.min(portrait.w,portrait.h)*.78,h.appearance,h.color);cutCorners(portrait,cardFill,10);chamferOutline(portrait,isSelected?p.primary:[cardAccent[0],cardAccent[1],cardAccent[2],.64],isSelected?2:1,10);text('等级  '+h.level,r.x+r.w*.5,r.y+r.h+8,.70,p.paper,r.w*.94,'center');text(h.roleDescription||'支援全场的英雄单位',r.x+r.w*.5,r.y+r.h+31,.64,p.paper,r.w*.96,'center');if(isSelected)selectionMark(r,v);edgeJewels(r,v);}
   function progression(l,v){
-    var rows=l.loadoutHeroes||l.heroSelectCards,cards=v.progressionCards||[],selected=v.selectedProgressionHero,preview=v.heroUpgradePreview,i,h,label='请选择升级英雄';
-    sceneBackdrop(l,v,null,1,true);
-    if(selected&&preview){
-      label=preview.level>=preview.maxLevel?'已满级':(preview.canUpgrade?'升级 · ':'材料不足 · ')+preview.cost+' 材料';
+    var p=l.upgradePanel,rows=l.loadoutHeroes,cards=v.progressionCards||[],selected=v.selectedProgressionHero,preview=v.heroUpgradePreview,
+      navy=[.024,.106,.149,1],cyan=[.278,.863,.906,1],paper=[.835,.957,.937,1],muted=[.557,.667,.698,1],amber=[.957,.718,.173,1],
+      back={},i,h,r,chosen,art,infoX,infoW,infoY,tag,label='请选择英雄',summary=l.upgradeSummary,maxed=preview&&preview.level>=preview.maxLevel;
+    for(i in v)if(Object.prototype.hasOwnProperty.call(v,i))back[i]=v[i];back.message='';back.mapDialog=null;
+    mapV2(l,back);drawRect(0,l.top,l.w,l.usable,[0,0,0,.66]);
+    mapSkinFrame([25,322,886,1245],p,36,navy,heroSkin,p.w/886);
+    tag={x:p.x+p.w*.25,y:p.y-9,w:p.w*.50,h:29};
+    mapSkinFrame([254,300,426,86],tag,35,navy,heroSkin,p.w/886);mapLabel('英雄强化',tag,16,paper);
+    // Draw editable title and real balance instead of the selection skin's baked title.
+    chamferOutline({x:p.x+20,y:p.y+33,w:p.w-40,h:60},cyan,1,7);
+    mapLabel('选择升级英雄',{x:p.x+28,y:p.y+36,w:p.w-56,h:28},24,paper);
+    mapLabel('材料  '+String(v.materials||0),{x:p.x+28,y:p.y+67,w:p.w-56,h:22},14,amber);
+    for(i=0;i<cards.length&&i<rows.length;i+=1){
+      h=cards[i];r=rows[i];chosen=!!(selected&&selected.id===h.id);
+      mapSkinFrame(chosen?[58,585,818,260]:[58,860,818,256],r,22,navy,heroSkin,p.w/886);
+      art={x:r.x+6,y:r.y+6,w:(r.w-12)*.44,h:r.h-12};
+      heroSkin(96,889,326,200,art);heroBust(h,art)||actor(art.x+art.w/2,art.y+art.h/2,art.h,h.appearance,h.color);
+      infoX=art.x+art.w+12;infoW=r.x+r.w-infoX-10;infoY=r.y+(r.h-79)/2;
+      rect(infoX-3,r.y+10,infoW+4,r.h-20,navy);
+      mapLabel(heroDisplayName(h.uiName),{x:infoX,y:infoY,w:infoW-23,h:25},18,paper,{align:'left',padding:0});
+      tag={x:infoX,y:infoY+30,w:Math.min(94,infoW-6),h:22};
+      heroSkin(487,975,182,50,tag);mapLabel((h.roleDescription||'战役支援').replace(/角色$/,''),tag,12,cyan);
+      mapLabel('等级 '+(h.level||1),{x:infoX,y:infoY+57,w:infoW,h:22},14,muted,{align:'left',padding:0});
+      heroSkin(chosen?775:776,chosen?637:914,62,62,{x:r.x+r.w-30,y:r.y+12,w:21,h:21});
     }
-    heroUpgradeHeader(l,v,selected,preview,rows);
-    for(i=0;i<cards.length&&i<rows.length;i+=1){h=cards[i];loadoutHeroCard(rows[i],h,!!(selected&&selected.id===h.id));}
-    loadoutButton(l.heroBack,'返回',false,true);
-    loadoutButton(l.heroStart,label,true,!!(selected&&preview&&preview.canUpgrade));
+    chamfer(summary,[.043,.145,.204,1],5);chamferOutline(summary,[.20,.35,.41,1],1,5);
+    var levelText='选择上方英雄',benefit='查看下一等级的强化效果';
+    if(selected&&preview){
+      levelText=maxed?'等级 '+preview.level+' · 已满级':'等级 '+preview.level+' → '+preview.nextLevel;
+      benefit=(maxed?'当前攻击加成 +':'升级后攻击加成 +')+(maxed?preview.currentBonus:preview.nextBonus)+'%';
+      label=maxed?'已满级':(preview.canUpgrade?'升级 · ':'材料不足 · ')+preview.cost+' 材料';
+    }
+    mapLabel(levelText,{x:summary.x+10,y:summary.y+7,w:summary.w-20,h:23},16,paper,{align:'left',padding:0});
+    mapLabel(benefit,{x:summary.x+10,y:summary.y+34,w:summary.w-20,h:22},14,selected?cyan:muted,{align:'left',padding:0});
+    towerModalButton(l.heroBack,'返回',false,true);
+    towerModalButton(l.heroStart,label,true,!!(selected&&preview&&preview.canUpgrade));
+    if(v.message){
+      var notice={x:p.x+20,y:l.heroStart.y-34,w:p.w-40,h:28};
+      chamfer(notice,navy,4);chamferOutline(notice,amber,1,4);mapLabel(v.message,notice,14,paper);
+    }
   }
   function alphaColor(color,alpha){return[color[0],color[1],color[2],(color.length>3?color[3]:1)*alpha];}
   function upgradeEffects(v,b,cell){var events=v.combat.upgradeEvents||[],i,event,progress,fade,cx,cy,ring,particle,j,angle,distance,px,py,color;for(i=0;i<events.length;i+=1){event=events[i];progress=Math.min(1,event.age/event.duration);fade=Math.max(0,1-progress);cx=b.x+event.x*cell;cy=b.y+event.y*cell;color=v.combat.cardColors[event.cardId]||tone(v,'gold',[1,.82,.28,1]);ring=cell*(.42+progress*.82);frame({x:cx-ring*.5,y:cy-ring*.5,w:ring,h:ring},alphaColor(color,fade),Math.max(2,cell*(.11-progress*.06)));frame({x:cx-cell*(.32+progress*.18),y:cy-cell*(.32+progress*.18),w:cell*(.64+progress*.36),h:cell*(.64+progress*.36)},alphaColor(tone(v,'frame',[.85,1,1,1]),fade*.72),Math.max(1,cell*.05));particle=Math.max(2,cell*(.10-progress*.045));distance=cell*(.16+progress*.68);for(j=0;j<8;j+=1){angle=Math.PI*.25*j;px=cx+Math.cos(angle)*distance;py=cy+Math.sin(angle)*distance;rect(px-particle*.5,py-particle*.5,particle,particle,alphaColor(j%2?color:tone(v,'frame',[.9,1,1,1]),fade));}text('升级成功',cx,cy-cell*(.82+progress*.32),.58,alphaColor(tone(v,'gold',[1,.85,.25,1]),fade),cell*2.4,'center');}}
@@ -112,18 +143,19 @@
     aspect=(uv[2]-uv[0])*836/((uv[3]-uv[1])*1881);w=Math.min(r.w,r.h*aspect);h=w/aspect;
     return imageRegion('pixel-units-25d',r.x+(r.w-w)/2,r.y+r.h-h,w,h,uv[0],1-uv[1],uv[2],1-uv[3],[1,1,1,1],1,false,0);
   }
-  function pixelTerrain(col,row,r){return imageRegion('pixel-terrain-25d',r.x,r.y,r.w,r.h,col/4,1-row/2,(col+1)/4,1-(row+1)/2,[1,1,1,1],1,false,0);}
+  function remoteTerrain(map,tile,r){
+    var key=M3.TextureAssets.tileKey(map,tile);
+    // Each server tile already includes its ground and 2.5D props. Draw it once, at its authored ratio.
+    if(!imageAsset(key,r.x,r.y,r.w,r.h,1))drawRect(r.x,r.y,r.w,r.h,tile==='road'?[.27,.32,.35,1]:[.05,.22,.22,1]);
+  }
   function groundShadow(x,y,w,h){var vertices=[],i,a,b;for(i=0;i<16;i+=1){a=i*Math.PI/8;b=(i+1)*Math.PI/8;vertices.push(x,y,x+Math.cos(a)*w,y+Math.sin(a)*h,x+Math.cos(b)*w,y+Math.sin(b)*h);}solid(vertices,[0,0,0,.35]);}
   function obliqueWorld(l,v){
-    var c=v.combat,projection=M3.CombatProjection,g=projection.geometry(l,c.board),cyan=[.278,.863,.906,1],amber=[.957,.718,.173,1],navy=[.024,.106,.149,1],x,y,tile,key,p,unit,i,r,objects=[],selected;
+    var c=v.combat,projection=M3.CombatProjection,g=projection.geometry(l,c.board),map=c.board.level&&c.board.level.map||v.levelPreview.map,amber=[.957,.718,.173,1],x,y,tile,p,unit,i,r,objects=[];
     // The gameplay board remains an m*n matrix. Only its screen projection changes.
 
     for(y=0;y<c.board.height;y+=1)for(x=0;x<c.board.width;x+=1){
-      p=projection.point(g,x,y);tile=c.board.tile(x,y);key=M3.TextureAssets.tileKey(v.levelPreview.map,tile);
-      var groundCol=tile==='tower_slot'?2:tile==='hero_slot'?3:(tile==='road'||tile==='spawn'||tile==='goal'?1:0);
-      if(!pixelTerrain(groundCol,0,{x:p.x,y:p.y,w:g.cx,h:g.cy})&&!imageAsset(key,p.x,p.y,g.cx,g.cy,1))drawRect(p.x+1,p.y+1,g.cx-2,g.cy-2,tile==='road'?[.27,.32,.35,1]:[.05,.22,.22,1]);
-      if(tile==='spawn'||tile==='goal')objects.push({kind:tile,x:x+.5,y:y+.85});
-      if(tile==='obstacle')objects.push({kind:'obstacle',x:x+.5,y:y+.82,key:M3.TextureAssets.tileKey(v.levelPreview.map,'obstacle')});
+      p=projection.point(g,x,y);tile=c.board.tile(x,y);
+      remoteTerrain(map,tile,{x:p.x,y:p.y,w:g.cx,h:g.cy});
       if(c.selectedObstacle&&c.selectedObstacle.x===x&&c.selectedObstacle.y===y)frame({x:p.x+1,y:p.y+1,w:g.cx-2,h:g.cy-2},amber,2);
     }
 
@@ -134,7 +166,6 @@
     for(i=0;i<objects.length;i+=1){
       var o=objects[i],h,w,d,fade=1;p=projection.point(g,o.x,o.y);unit=o.unit;
       groundShadow(p.x,p.y,g.cx*(o.kind==='enemy'?.22:.30),g.cy*.11);
-      if(o.kind==='obstacle'||o.kind==='spawn'||o.kind==='goal'){h=g.cx*.92;pixelTerrain(o.kind==='obstacle'?2:o.kind==='spawn'?0:1,1,{x:p.x-g.cx*.48,y:p.y-h*.86,w:g.cx*.96,h:h});continue;}
       if(o.kind==='enemy'){
         fade=unit.dying?Math.max(0,1-(unit.deathAge||0)/(unit.deathDuration||.45)):1;
         h=g.cx*(c.unitRenderScales[unit.unitId]||.72)*1.15;w=h;
@@ -150,7 +181,7 @@
         if((unit.level||1)>1)mapLabel('Lv'+unit.level,{x:p.x-16,y:p.y+1,w:32,h:14},10,amber);
       }
     }
-    if(M3.DeathParticles&&(c.deathEffects||[]).length){gl.blendFunc(M3.DeathParticles.blendSource,M3.DeathParticles.blendDestination);try{M3.DeathParticles.draw(c.deathEffects,{x:g.x,y:g.y},g.cx,function(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharp){return imageRegion(key,x,g.y+(y-g.y)*.72,w,h,u0,v0,u1,v1,tint,alpha,sharp);});}finally{gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}}
+    if(M3.DeathParticles&&(c.deathEffects||[]).length){gl.blendFunc(M3.DeathParticles.blendSource,M3.DeathParticles.blendDestination);try{M3.DeathParticles.draw(c.deathEffects,{x:g.x,y:g.y},g.cx,function(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharp){return imageRegion(key,x,g.y+(y-g.y)*g.cy/g.cx,w,h,u0,v0,u1,v1,tint,alpha,sharp);});}finally{gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}}
     for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i],from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
     for(i=0;i<(c.damageEvents||[]).length;i+=1){var ev=c.damageEvents[i];p=projection.point(g,ev.x,ev.y);mapLabel(String(ev.value),{x:p.x-18,y:p.y-g.cx*.65-ev.age*16,w:36,h:18},12,[1,.72,.30,Math.max(0,1-ev.age/ev.duration)]);}
   }
@@ -165,7 +196,7 @@
       ys=[0,207,430,606,805,979,1181,1374,1577,1881],
       bounds=[[28,17,209,207],[15,0,209,223],[0,0,199,176],[29,0,199,199],[15,0,209,174],[25,0,195,202],[25,0,207,193],[15,0,209,203],[0,0,187,280]],box=bounds[row];
     if(!box)return;var x0=box[0],y0=ys[row]+box[1],x1=box[2],y1=ys[row]+box[3];
-    if(bust){y1=y0+(y1-y0)*.60;var trim=(x1-x0)*.18;x0+=trim;x1-=trim;}
+    if(bust){var bustBox=[[29,17,209,131],[15,0,201,133],[33,0,198,105]][row];if(bustBox){x0=bustBox[0];y0=ys[row]+bustBox[1];x1=bustBox[2];y1=ys[row]+bustBox[3];}}
     var aspect=(x1-x0)/(y1-y0),w=Math.min(r.w,r.h*aspect),h=w/aspect;
     imageRegion('pixel-units-25d',r.x+(r.w-w)/2,r.y+(r.h-h)/2,w,h,x0/836,1-y0/1881,x1/836,1-y1/1881,[1,1,1,1],1,false,0);
   }
@@ -226,20 +257,10 @@
 
   }
   function battleFieldGround(l,v){
-    var r=l.battleArena,g=M3.CombatProjection.geometry(l,v.combat.board),x,y,startY=g.y-Math.ceil((g.y-r.y)/g.cy)*g.cy;
-    // Extend the same terrain into the headroom and surrounding scenery, without adding playable cells.
-    for(y=startY;y<r.y+r.h;y+=g.cy)for(x=g.x;x<g.x+g.w-.01;x+=g.cx){
-      var top=Math.max(y,r.y),bottom=Math.min(y+g.cy,r.y+r.h);
-      if(bottom>top)pixelTerrain(0,0,{x:x,y:top,w:g.cx,h:bottom-top});
-    }
-    // The perimeter uses the outer scene wall; no second armored box shrinks the battlefield.
-    battleRepeat(20,78,22,74,{x:0,y:r.y,w:8,h:r.h},.7);
-    battleRepeat(216,78,22,74,{x:l.w-8,y:r.y,w:8,h:r.h},.7);
-    battleRepeat(22,25,210,48,{x:8,y:r.y-16,w:l.w-16,h:16},.75);
-    battleRepeat(24,220,202,20,{x:8,y:r.y+r.h,w:l.w-16,h:10},.75);
-    // Sparse scene props stay outside the playable matrix, clear of the top-row unit silhouettes.
-    if(g.y-r.y>g.cx*1.3){pixelTerrain(2,1,{x:g.x+g.w-g.cx*1.3,y:r.y+14,w:g.cx*.9,h:g.cx*.9});pixelTerrain(2,1,{x:g.x+g.cx*2.8,y:r.y+22,w:g.cx*.7,h:g.cx*.7});}
-    if(r.y+r.h-g.y-g.h>g.cx){pixelTerrain(2,1,{x:g.x+g.cx*3.4,y:r.y+r.h-g.cx*.85,w:g.cx*.8,h:g.cx*.8});}
+    var r=l.battleArena,aspect=640/720,viewAspect=r.w/r.h,u=1,vspan=1;
+    // A single fixed scene covers the arena, with proportional center cropping.
+    if(viewAspect>aspect)vspan=aspect/viewAspect;else u=viewAspect/aspect;
+    imageRegion('battle-arena-background',r.x,r.y,r.w,r.h,(1-u)/2,(1+vspan)/2,(1+u)/2,(1-vspan)/2,[1,1,1,1],1,false,0);
   }
   function battle(l,v){var b=l.board,cell=l.cell,x,y,t,e,i,r,col,path={},p,dmg,progress,palette=uiPalette(v),mp=v.combat.mapPresentation||{},style=mp.style||{},tile,gap=style.tileGap||1,inset,count=v.combat.deckIds.length;
     drawRect(0,l.top,l.w,l.usable,[.024,.106,.149,1]);battleEnvironment(l);battleBackdrop(l,v);
@@ -247,14 +268,18 @@
     battleFieldGround(l,v);
     var sx=gl.drawingBufferWidth/l.w,sy=gl.drawingBufferHeight/l.h;
     gl.enable(gl.SCISSOR_TEST);gl.scissor(Math.round(l.board.x*sx),Math.round((l.h-l.board.y-l.board.h)*sy),Math.round(l.board.w*sx),Math.round(l.board.h*sy));
-    try{obliqueWorld(l,v);}finally{gl.disable(gl.SCISSOR_TEST);}
+    try{
+      obliqueWorld(l,v);
+      // Field overlays share the board clip and render before notices and HUD.
+      if(M3.RouteGuide)M3.RouteGuide.draw(v);
+      if(M3.DeploymentHints)M3.DeploymentHints.draw(v);
+    }finally{gl.disable(gl.SCISSOR_TEST);}
     battleOuterArmor({x:6,y:l.heroBarY-10,w:l.w-12,h:l.top+l.usable-l.heroBarY+6});
     for(i=0;i<v.combat.heroIds.length;i+=1){r=l.battleHeroCard(i,v.combat.heroIds.length,count);pixelBattleCard(r,v.combat.heroUnits[v.combat.heroIds[i]],heroDisplayName(v.combat.heroNames[v.combat.heroIds[i]]),0,v.combat.selectedHero===v.combat.heroIds[i]);}
     for(i=0;i<count;i+=1){r=l.battleTowerCard(i,count);pixelBattleCard(r,v.combat.cardUnits[v.combat.deckIds[i]],v.combat.cardNames[v.combat.deckIds[i]],v.combat.cardCosts[v.combat.deckIds[i]],v.combat.selectedCard===v.combat.deckIds[i]);}
-    if(v.combat.crisisActive){chamfer(l.battleHint,[.085,.045,.018,1],4);mapLabel('资源危机：基地受损可转化资源',l.battleHint,12,[1,.76,.40,1]);}battleCommand(l.battleItems,'支援',false);
-    battleWaveNotice(l,v);if(!v.paused)battleCommand(l.pauseButton,'暂停',false);battleInspection(l,v);if(v.paused){drawRect(l.board.x,l.board.y,l.board.w,l.board.h,[.01,.025,.04,.60]);var pauseBox={x:l.w*.18,y:l.board.y+l.board.h*.5-46,w:l.w*.64,h:92};battleArmor(pauseBox,false);mapLabel('游戏暂停',{x:pauseBox.x,y:pauseBox.y+10,w:pauseBox.w,h:30},22,[.835,.957,.937,1]);mapLabel('点击继续恢复对局',{x:pauseBox.x,y:pauseBox.y+47,w:pauseBox.w,h:24},14,[.278,.863,.906,1]);battleCommand(l.pauseButton,'继续',true);}
+    battleCommand(l.battleItems,'支援',false);
+    battleMessagePanel(l,v);if(!v.paused)battleCommand(l.pauseButton,'暂停',false);battleInspection(l,v);if(v.paused){drawRect(l.board.x,l.board.y,l.board.w,l.board.h,[.01,.025,.04,.60]);var pauseBox={x:l.w*.18,y:l.board.y+l.board.h*.5-46,w:l.w*.64,h:92};battleArmor(pauseBox,false);mapLabel('游戏暂停',{x:pauseBox.x,y:pauseBox.y+10,w:pauseBox.w,h:30},22,[.835,.957,.937,1]);mapLabel('点击继续恢复对局',{x:pauseBox.x,y:pauseBox.y+47,w:pauseBox.w,h:24},14,[.278,.863,.906,1]);battleCommand(l.pauseButton,'继续',true);}
   }
-  function result(l,v){var palette=uiPalette(v),win=v.result==='win',data=v.resultData||{},accent=win?tone(v,'success',[.2,.8,.5,1]):tone(v,'accent',[.92,.34,.32,1]),panel=l.resultPanel,rewards=l.resultRewards,rewardAccents=[tone(v,'gold',[1,.78,.28,1]),tone(v,'primary',[.34,.82,1,1])],rewardFills=[[.18,.13,.045,.98],[.035,.13,.22,.98]],pulse=.88+Math.sin(M3._now()*.004)*.08,i,r;imageAsset(v.presentation&&v.presentation.sceneAssets&&v.presentation.sceneAssets.worldMapBackground,0,l.top,l.w,l.usable,.18);rect(0,l.top,l.w,l.usable,[.01,.025,.05,.66]);rect(panel.x+6,panel.y+8,panel.w,panel.h,[0,0,0,.34]);rect(panel.x,panel.y,panel.w,panel.h,palette.panelVariants[1]||tone(v,'panel',[.035,.09,.13,.98]));frame(panel,alphaColor(accent,.94),3);rect(panel.x,panel.y,panel.w,7,accent);rect(panel.x+panel.w*.12,panel.y+panel.h*.23,panel.w*.76,1,alphaColor(accent,.38));diamond(l.w*.5,l.resultBadge.y+l.resultBadge.h*.5,l.resultBadge.w*pulse,l.resultBadge.h*pulse,alphaColor(accent,.25));diamond(l.w*.5,l.resultBadge.y+l.resultBadge.h*.5,l.resultBadge.w*.72,l.resultBadge.h*.72,accent);if(win){line(l.w*.5-l.resultBadge.w*.16,l.resultBadge.y+l.resultBadge.h*.53,l.w*.5-l.resultBadge.w*.02,l.resultBadge.y+l.resultBadge.h*.67,5,palette.navy);line(l.w*.5-l.resultBadge.w*.02,l.resultBadge.y+l.resultBadge.h*.67,l.w*.5+l.resultBadge.w*.20,l.resultBadge.y+l.resultBadge.h*.36,5,palette.navy);}else{line(l.w*.5-l.resultBadge.w*.14,l.resultBadge.y+l.resultBadge.h*.36,l.w*.5+l.resultBadge.w*.14,l.resultBadge.y+l.resultBadge.h*.66,5,palette.navy);line(l.w*.5+l.resultBadge.w*.14,l.resultBadge.y+l.resultBadge.h*.36,l.w*.5-l.resultBadge.w*.14,l.resultBadge.y+l.resultBadge.h*.66,5,palette.navy);}text(win?copy(v,'resultWin','守护成功'):copy(v,'resultLose','前哨失守'),l.w*.5,panel.y+panel.h*.27,1.90,palette.paper,panel.w*.78,'center','resultTitle');text(win?'防线稳固 · 奖励已结算':'防线失守 · 成长仍会保留',l.w*.5,panel.y+panel.h*.36,.74,accent,panel.w*.84,'center','resultBody');for(i=0;i<2;i+=1){r=rewards[i];rect(r.x+3,r.y+4,r.w,r.h,[0,0,0,.25]);rect(r.x,r.y,r.w,r.h,rewardFills[i]);frame(r,rewardAccents[i],2);rect(r.x,r.y,r.w,5,rewardAccents[i]);text(i?'成长经验':'局外货币',r.x+r.w*.5,r.y+r.h*.20,.64,palette.paper,r.w*.88,'center','resultBody');text('+'+(i?(data.xp||0):(data.outerCurrency||0)),r.x+r.w*.5,r.y+r.h*.50,1.34,rewardAccents[i],r.w*.86,'center','resultLabel');}text('奖励将用于英雄强化与永久成长',l.w*.5,panel.y+panel.h*.83,.68,palette.muted,panel.w*.86,'center','resultBody');rect(l.resultDouble.x+4,l.resultDouble.y+5,l.resultDouble.w,l.resultDouble.h,[0,0,0,.30]);rect(l.resultDouble.x,l.resultDouble.y,l.resultDouble.w,l.resultDouble.h,data.doubled?palette.disabled:palette.buttonGreen);frame(l.resultDouble,data.doubled?palette.muted:palette.borderVariants[3],2);text(data.doubled?'双倍奖励已领取':'观看广告 · 奖励翻倍',l.w*.5,l.resultDouble.y+l.resultDouble.h*.26,.98,palette.paper,l.resultDouble.w*.90,'center','resultButton');rect(l.resultButton.x,l.resultButton.y,l.resultButton.w,l.resultButton.h,palette.buttonBlue);frame(l.resultButton,palette.cyan,2);text(copy(v,'resultAction','返回地图'),l.w*.5,l.resultButton.y+l.resultButton.h*.27,1.16,palette.paper,l.resultButton.w*.88,'center','resultButton');}
   function itemModalLegacy(l,v){var palette=uiPalette(v),modal=l.itemModal,choiceColor,choiceFill,action,i,r,item;rect(0,l.top,l.w,l.usable,[.005,.018,.035,.88]);rect(modal.x+5,modal.y+7,modal.w,modal.h,[0,0,0,.36]);rect(modal.x,modal.y,modal.w,modal.h,palette.panelVariants[1]||tone(v,'panel',[.025,.08,.12,.99]));frame(modal,palette.cyan,2);rect(modal.x,modal.y,modal.w,6,palette.primary);text('战术补给',l.w*.5,modal.y+20,.68,palette.cyan,modal.w*.84,'center');text('选择本局支援',l.w*.5,modal.y+48,1.38,palette.paper,modal.w*.86,'center','title');text('二选一 · 不占用地图位置',l.w*.5,modal.y+82,.68,palette.muted,modal.w*.86,'center');rect(modal.x+modal.w*.08,modal.y+108,modal.w*.84,1,alphaColor(palette.cyan,.34));for(i=0;i<2;i+=1){r=l.itemChoices[i];item=v.battleItemChoices[i];choiceColor=i?palette.violet:palette.primary;choiceFill=i?[.18,.075,.22,.98]:[.035,.19,.19,.98];rect(r.x+4,r.y+5,r.w,r.h,[0,0,0,.28]);rect(r.x,r.y,r.w,r.h,choiceFill);frame(r,choiceColor,3);rect(r.x,r.y,r.w,6,choiceColor);if(item){itemChoiceIcon(r,item.effect,choiceColor);text(item.displayName||(item.effect==='clear_all_enemies'?'清除怪物':'经济强化'),r.x+r.w*.5,r.y+r.h*.48,.98,palette.paper,r.w*.88,'center');text(item.description||(item.effect==='clear_all_enemies'?'清除当前全部怪物':'提高本局经济收益'),r.x+r.w*.5,r.y+r.h*.63,.64,palette.muted,r.w*.88,'center');action={x:r.x+r.w*.04,y:r.y+r.h*.75,w:r.w*.92,h:r.h*.20};rect(action.x,action.y,action.w,action.h,i?palette.buttonViolet:palette.buttonGreen);frame(action,choiceColor,2);text('观看广告',action.x+action.w*.5,action.y+action.h*.08,.58,palette.paper,action.w*.90,'center','compactButton');text('立即使用',action.x+action.w*.5,action.y+action.h*.52,.58,palette.paper,action.w*.90,'center','compactButton');}}rect(l.itemSkip.x,l.itemSkip.y,l.itemSkip.w,l.itemSkip.h,palette.buttonBlue);frame(l.itemSkip,palette.cyan,2);text('暂不使用',l.itemSkip.x+l.itemSkip.w*.5,l.itemSkip.y+l.itemSkip.h*.24,.82,palette.paper,l.itemSkip.w*.84,'center','compactButton');}
   function mapShortcutFallback(kind,cx,cy,size,accent){
     var half=size*.34;
@@ -295,31 +320,14 @@
     for(j=0;j<3;j+=1)for(i=0;i<3;i+=1)if(i!==1||j!==1)ready=skin(sx[i],sy[j],sw[i],sh[j],{x:dx[i],y:dy[j],w:dw[i],h:dh[j]})&&ready;
     if(!ready)mapMetalPanel(r,[.278,.863,.906,1],fill);
   }
-  function mapTerrain(cell,tile,theme,x,y){
-    var row=theme==='factory'?1:theme==='wasteland'?2:theme==='forest'?3:0,
-      road=tile==='road'||tile==='spawn'||tile==='goal',col=(x*3+y*5)%4+(road?4:0);
-    imageRegion('ui-map-terrain',cell.x,cell.y,cell.w,cell.h,col/8,1-row/4,(col+1)/8,1-(row+1)/4,[1,1,1,1],1,false,0);
-    if(tile==='obstacle')mapSkin(36,319,13,13,cell);
-  }
   function mapTacticalPreview(r,level){
-    var m=level&&level.map,cw,ch,mw,mh,x0,y0,x,y,tile,cell,theme=M3.MapUI.theme(level);
+    var m=level&&level.map,cw,x0,y0,x,y;
     rect(r.x,r.y,r.w,r.h,[.055,.10,.10,1]);
     if(!m||!m.tiles||!m.width||!m.height)return;
-    cw=ch=Math.min((r.w-6)/m.width,(r.h-6)/m.height);
-    for(y=0;y<Math.ceil(r.h/ch);y+=1)for(x=0;x<Math.ceil(r.w/cw);x+=1)mapTerrain({x:r.x+x*cw,y:r.y+y*ch,w:Math.min(cw,r.w-x*cw),h:Math.min(ch,r.h-y*ch)},'grass',theme,x,y);
-    mw=cw*m.width;mh=ch*m.height;x0=r.x+(r.w-mw)*.5;y0=r.y+(r.h-mh)*.5;
-    for(y=0;y<m.height;y+=1)for(x=0;x<m.width;x+=1){
-      tile=m.tiles[y*m.width+x];cell={x:x0+x*cw,y:y0+y*ch,w:cw,h:ch};
-      mapTerrain(cell,tile,theme,x,y);
-      if(tile==='tower_slot'||tile==='buildable'||tile==='hero_slot'){
-        var k=cw*.48,bx=cell.x+(cw-k)*.5,by=cell.y+(ch-k)*.5,col=tile==='hero_slot'?[.28,.86,.91,1]:[.48,.68,.40,1];
-        frame({x:bx,y:by,w:k,h:k},col,1);
-        line(bx+k*.25,by+k*.5,bx+k*.75,by+k*.5,1,col);
-        line(bx+k*.5,by+k*.25,bx+k*.5,by+k*.75,1,col);
-      }
-      if(tile==='spawn')mapSkin(23,130,26,28,cell);
-      if(tile==='goal')mapSkin(111,212,23,23,cell);
-    }
+    cw=Math.min((r.w-6)/m.width,(r.h-6)/m.height);
+    x0=r.x+(r.w-cw*m.width)*.5;y0=r.y+(r.h-cw*m.height)*.5;
+    for(y=0;y<m.height;y+=1)for(x=0;x<m.width;x+=1)
+      remoteTerrain(m,m.tiles[y*m.width+x],{x:x0+x*cw,y:y0+y*cw,w:cw,h:cw});
     frame(r,[.27,.43,.44,1],1);
   }
   function mapLabel(value,r,size,color,options){
@@ -360,14 +368,13 @@
       top=l.mapList.y,bottom=top+l.mapList.h,i,item,node,level,r,preview,active,badge,action,name,titleY,parts,lines,j,scroll=v.mapScroll||0,
       scaleX=gl.drawingBufferWidth/l.w,scaleY=gl.drawingBufferHeight/l.h;
     rect(0,l.top,l.w,l.usable,navy);
-    mapSkin(0,0,15,618,{x:0,y:l.top,w:15*s,h:l.usable});
-    mapSkin(271,0,15,618,{x:l.w-15*s,y:l.top,w:15*s,h:l.usable});
-    mapSkin(111,0,77,31,{x:15*s,y:l.top,w:l.w-30*s,h:l.mapTopH});
+    // One continuous sky and rail crop, excluding the original navigation icons.
+    // The sky crop has no buildings that would distort when widened.
+    mapSkin(111,0,40,24,{x:0,y:l.top,w:l.w,h:26*s});
+    mapSkin(112,26,25,5,{x:0,y:l.top+26*s,w:l.w,h:5*s});
+    mapSkin(0,31,15,587,{x:0,y:l.top+l.mapTopH,w:15*s,h:l.usable-l.mapTopH});
+    mapSkin(271,31,15,587,{x:l.w-15*s,y:l.top+l.mapTopH,w:15*s,h:l.usable-l.mapTopH});
     mapSkin(43,8,67,22,l.mapBrand);
-    // These are independent controls, with real home/menu/exit handlers.
-    mapSkin(193,5,23,24,{x:l.mapHome.x+8,y:l.mapHome.y+8,w:32,h:32});
-    mapSkin(222,5,24,24,{x:l.mapMore.x+8,y:l.mapMore.y+8,w:32,h:32});
-    mapSkin(251,5,24,24,{x:l.mapExit.x+8,y:l.mapExit.y+8,w:32,h:32});
     if(!mapSkin(20,31,246,62,l.mapHeader)){
       mapMetalPanel(l.mapHeader,cyan,navy);
       text('未来都市战图',l.w*.5,l.mapHeader.y+12,2.5,paper,l.mapHeader.w-20,'center','title');
@@ -484,31 +491,48 @@
     sceneBackdrop(l,v,null,1,true);drawRect(0,l.top,l.w,l.usable,[0,0,0,.66]);
     // Component crops omit the concept artwork's static map, names and sample numbers.
     briefingSkin(83,59,230,88,{x:14,y:l.top+10,w:110,h:36});
-    var tab={x:Math.max(130,l.w*.36),y:l.top+16,w:l.w<360?106:132,h:30};
+    var tab={x:130,y:l.top+13,w:l.w<360?106:132,h:30};
     mapSkinFrame([322,88,320,70],tab,22,navy,briefingSkin,.4);mapLabel('关卡简报',tab,16,cyan);
     mapSkinFrame([22,159,809,193],header,30,navy,briefingSkin,.45);
+    var titleSize=l.w<360?28:42,titleGap=12,
+      titleW=Math.min(M3.BitmapFont.measureLabel(title,titleSize),header.w-badge.w-titleGap-36),
+      titleX=header.x+(header.w-titleW-titleGap-badge.w)/2;
+    nameRect={x:titleX,y:header.y+10,w:titleW,h:header.h-20};badge.x=titleX+titleW+titleGap;
     mapStatusFrame(badge,cyan);mapLabel('第'+(v.difficulty||1)+'关',badge,18,cyan);
-    parts=M3.MapUI.wrap(title,l.w<360?22:28,nameRect.w);
-    for(i=0;i<Math.min(2,parts.length);i+=1)mapLabel(parts[i],{x:nameRect.x,y:nameRect.y+(nameRect.h-Math.min(2,parts.length)*30)/2+i*30,w:nameRect.w,h:30},l.w<360?22:28,paper,{align:'left',padding:0});
+    parts=M3.MapUI.wrap(title,titleSize,nameRect.w);
+    var titleLine=Math.min(titleSize+2,nameRect.h/Math.min(2,parts.length));
+    for(i=0;i<Math.min(2,parts.length);i+=1)mapLabel(parts[i],{x:nameRect.x,y:nameRect.y+(nameRect.h-Math.min(2,parts.length)*titleLine)/2+i*titleLine,w:nameRect.w,h:titleLine},Math.min(titleSize,titleLine),paper,{align:'left',padding:0});
     mapSkinFrame([22,355,809,1032],mapFrame,30,navy,briefingSkin,.45);
     mapLabel('战术地图',{x:mapFrame.x+18,y:mapFrame.y+(l.w<360?4:8),w:100,h:26},18,cyan,{align:'left',padding:0});
     line(mapFrame.x+130,mapFrame.y+23,mapFrame.x+mapFrame.w-22,mapFrame.y+23,1,[.13,.43,.47,1]);
     mapPreview(l.detailPreview,level,v);
     var legend=l.detailLegend,group=legend.w/3,types=['spawn','goal','hero_slot'],labels=['敌人入口','核心基地','英雄部署'],colors=[[.68,.30,.95,1],amber,cyan];
     for(i=0;i<3;i+=1){
-      var x=legend.x+i*group,key=level.map&&level.map.tileAssets&&level.map.tileAssets[types[i]];
-      if(!imageAssetContain(key,x,legend.y+4,22,22,1))diamond(x+11,legend.y+15,14,14,colors[i]);
-      mapLabel(labels[i],{x:x+26,y:legend.y,w:group-28,h:30},l.w<360?12:14,paper,{align:'left',padding:0});
+      var legendSize=l.w<360?12:14,labelW=M3.BitmapFont.measureLabel(labels[i],legendSize),
+        x=legend.x+i*group+(group-24-6-labelW)/2,key=level.map&&level.map.tileAssets&&level.map.tileAssets[types[i]];
+      if(!imageAssetContain(key,x,legend.y+4,24,24,1))diamond(x+12,legend.y+16,14,14,colors[i]);
+      mapLabel(labels[i],{x:x+30,y:legend.y,w:labelW,h:32},legendSize,paper,{align:'left',padding:0});
     }
     mapSkinFrame([22,1385,809,232],desc,24,navy,briefingSkin,.5);
     mapLabel('关卡目标',{x:desc.x+18,y:desc.y+9,w:120,h:24},18,cyan,{align:'left',padding:0});
-    briefingSkin(96,1483,82,80,{x:desc.x+15,y:desc.y+43,w:30,h:30});
-    var objectiveSize=l.w<360?14:16,objectiveLine=l.w<360?18:22;
-    parts=M3.MapUI.wrap(objective,objectiveSize,desc.w-74);
-    for(i=0;i<Math.min(2,parts.length);i+=1)mapLabel(parts[i],{x:desc.x+55,y:desc.y+34+i*objectiveLine,w:desc.w-74,h:objectiveLine},objectiveSize,paper,{align:'left',padding:0});
-    mapLabel('先选择英雄，再搭配四座防御塔',{x:desc.x+18,y:desc.y+desc.h-22,w:desc.w-36,h:18},12,muted,{align:'left',padding:0});
+    var objectiveSize=l.w<360?14:16,objectiveLine=l.w<360?18:22,
+      bodyTop=desc.y+38,bodyH=desc.h-48,iconSize=l.w<360?36:44,
+      objectiveX=desc.x+72,objectiveW=desc.w-88;
+    briefingSkin(96,1483,82,80,{x:desc.x+18,y:bodyTop+(bodyH-iconSize)/2,w:iconSize,h:iconSize});
+    parts=M3.MapUI.wrap(objective,objectiveSize,objectiveW);
+    var objectiveLines=Math.min(2,parts.length),copyH=objectiveLines*objectiveLine+5+18,copyY=bodyTop+(bodyH-copyH)/2;
+    for(i=0;i<objectiveLines;i+=1)mapLabel(parts[i],{x:objectiveX,y:copyY+i*objectiveLine,w:objectiveW,h:objectiveLine},objectiveSize,paper);
+    mapLabel('先选择英雄，再搭配四座防御塔',{x:objectiveX,y:copyY+objectiveLines*objectiveLine+5,w:objectiveW,h:18},12,muted);
     var flow=l.detailFlow,flowLabels=['关卡简报','选择英雄','搭配防御塔'],flowW=flow.w/3;
-    for(j=0;j<3;j+=1){mapLabel(flowLabels[j],{x:flow.x+j*flowW,y:flow.y,w:flowW-14,h:flow.h},12,j===0?cyan:muted);if(j<2)mapLabel('→',{x:flow.x+(j+1)*flowW-16,y:flow.y,w:18,h:flow.h},12,cyan);}
+    for(j=0;j<3;j+=1){
+      var flowSize=l.w<360?10:12,flowTextW=M3.BitmapFont.measureLabel(flowLabels[j],flowSize),
+        flowX=flow.x+j*flowW+(flowW-14-17-flowTextW)/2,cx=flowX+6,cy=flow.y+flow.h/2,
+        statusColor=j===0?cyan:muted,k,a,b;
+      for(k=0;k<16;k+=1){a=k*Math.PI/8;b=(k+1)*Math.PI/8;line(cx+6*Math.cos(a),cy+6*Math.sin(a),cx+6*Math.cos(b),cy+6*Math.sin(b),2,statusColor);}
+      if(j===0)chamfer({x:cx-2,y:cy-2,w:4,h:4},cyan,1);
+      mapLabel(flowLabels[j],{x:flowX+17,y:flow.y,w:flowTextW,h:flow.h},flowSize,statusColor,{padding:0});
+      if(j<2)mapLabel('→',{x:flow.x+(j+1)*flowW-14,y:flow.y,w:18,h:flow.h},12,cyan);
+    }
     briefingButton(l.detailBack,'返回',false);briefingButton(l.detailStart,'选择出战英雄',true);
     briefingSkin(741,76,85,75,{x:l.detailClose.x+7,y:l.detailClose.y+7,w:34,h:34});
   }
@@ -633,7 +657,7 @@
     return imageRegion(key,r.x,r.y,r.w,r.h,u0,1-v0,u1,1-v1,[1,1,1,1],1,false,0);
   }
   function heroSelectV2(l,v){
-    var p=l.heroModal,rows=l.heroModalCards,back={},i,h,r,selected,art,infoX,infoW,tag,
+    var p=l.heroModal,rows=l.heroModalCards,back={},i,h,r,selected,art,infoX,infoW,infoY,tag,
       navy=[.024,.106,.149,1],cyan=[.278,.863,.906,1],paper=[.835,.957,.937,1],muted=[.557,.667,.698,1];
     for(i in v)if(Object.prototype.hasOwnProperty.call(v,i))back[i]=v[i];back.message='';back.mapDialog=null;
     mapV2(l,back);drawRect(0,l.top,l.w,l.usable,[0,0,0,.66]);
@@ -652,13 +676,13 @@
       mapSkinFrame(selected?[58,585,818,260]:[58,860,818,256],r,22,navy,heroSkin,p.w/886);
       art={x:r.x+6,y:r.y+6,w:(r.w-12)*.44,h:r.h-12};
       heroSkin(96,889,326,200,art);heroBust(h,art)||actor(art.x+art.w/2,art.y+art.h/2,art.h,h.appearance,h.color);
-      infoX=art.x+art.w+12;infoW=r.x+r.w-infoX-10;
+      infoX=art.x+art.w+12;infoW=r.x+r.w-infoX-10;infoY=r.y+(r.h-79)/2;
       // Clear the generated placeholder UI; all text and selected state are live.
       rect(infoX-3,r.y+10,infoW+4,r.h-20,navy);
-      mapLabel(heroDisplayName(h.uiName),{x:infoX,y:r.y+12,w:infoW-23,h:25},18,paper,{align:'left',padding:0});
-      tag={x:infoX,y:r.y+r.h*.43,w:Math.min(94,infoW-6),h:22};
+      mapLabel(heroDisplayName(h.uiName),{x:infoX,y:infoY,w:infoW-23,h:25},18,paper,{align:'left',padding:0});
+      tag={x:infoX,y:infoY+30,w:Math.min(94,infoW-6),h:22};
       heroSkin(487,975,182,50,tag);mapLabel((h.roleDescription||'战役支援').replace(/角色$/,''),tag,12,cyan);
-      mapLabel('等级 '+(h.level||1),{x:infoX,y:r.y+r.h-32,w:infoW,h:22},14,muted,{align:'left',padding:0});
+      mapLabel('等级 '+(h.level||1),{x:infoX,y:infoY+57,w:infoW,h:22},14,muted,{align:'left',padding:0});
       heroSkin(selected?775:776,selected?637:914,62,62,{x:r.x+r.w-30,y:r.y+12,w:21,h:21});
     }
     heroSkin(68,1415,387,102,l.heroCancel);mapLabel('取消',l.heroCancel,18,paper);
@@ -666,33 +690,45 @@
     mapLabel('下一步',{x:l.heroNext.x,y:l.heroNext.y,w:l.heroNext.w-25,h:l.heroNext.h},18,v.heroes.length===1?navy:muted);
   }
   function progressionV2(l,v){progression(l,v);}
+  function settlementLabel(value,r,size,face,raised,options){
+    var shifted={x:r.x,y:r.y,w:r.w,h:r.h};
+    if(raised){
+      shifted.y=r.y+3;mapLabel(value,shifted,size,[.015,.045,.065,1],options);
+      shifted.y=r.y+2;mapLabel(value,shifted,size,[face[0]*.36,face[1]*.36,face[2]*.36,1],options);
+      shifted.y=r.y-1;mapLabel(value,shifted,size,[Math.min(1,face[0]+.25),Math.min(1,face[1]+.2),Math.min(1,face[2]+.2),1],options);
+    }
+    mapLabel(value,r,size,face,options);
+    shifted.y=r.y;shifted.x=r.x+.55;mapLabel(value,shifted,size,face,options);
+  }
+  function settlementAction(r,label,primary,enabled,key){
+    var navy=[.024,.106,.149,1],color=enabled?navy:[.28,.36,.40,1],size=18,
+      labelW=M3.BitmapFont.measureLabel(label,size)+8,icon=enabled?28:0,gap=enabled?8:0,
+      start=r.x+(r.w-labelW-icon-gap)/2;
+    if(!towerSkin(primary&&enabled?146:20,496,121,31,r))mapMetalPanel(r,[.957,.718,.173,1],primary?[.957,.718,.173,1]:[.45,.54,.58,1]);
+    if(enabled)imageAssetContain(key,start,r.y+(r.h-28)/2,28,28,1);
+    settlementLabel(label,{x:start+icon+gap,y:r.y,w:labelW,h:r.h},size,color,false);
+  }
   function resultV2(l,v){
-    var p=uiPalette(v),win=v.result==='win',data=v.resultData||{},accent=win?tone(v,'success',[.18,.8,.5,1]):tone(v,'accent',[.92,.33,.28,1]),rewardGold=tone(v,'gold',[1,.75,.25,1]),panel=l.resultPanel,rewards=l.resultRewards,i,r,iconSize,titleY=panel.y+panel.h*.26,center=l.w*.5,ornamentY=titleY+12,badgeY=l.resultBadge.y-l.usable*.03,button=l.resultDouble,back=l.resultButton;
-    sceneBackdrop(l,v,null,.45);
-    refinedPanel(panel,p.cyan,p.navy,'panel');
-    iconSize=Math.min(l.resultBadge.w*.98,l.resultBadge.h*.94);
-    imageAsset(win?'ui-result-success':'ui-result-failure',center-iconSize*.5,badgeY+(l.resultBadge.h-iconSize)*.5,iconSize,iconSize,1);
-    line(l.w*.15,ornamentY,l.w*.25,ornamentY,1.5,[rewardGold[0],rewardGold[1],rewardGold[2],.78]);
-    line(l.w*.75,ornamentY,l.w*.85,ornamentY,1.5,[rewardGold[0],rewardGold[1],rewardGold[2],.78]);
-    diamond(l.w*.25,ornamentY,8,8,rewardGold);diamond(l.w*.75,ornamentY,8,8,rewardGold);
-    text(win?copy(v,'resultWin','守护成功'):copy(v,'resultLose','前哨失守'),center,titleY,1.86,p.paper,panel.w*.62,'center','title');
-    text(win?'防线稳固  奖励已结算':'防线失守  成长仍会保留',center,panel.y+panel.h*.36,.68,accent,panel.w*.82,'center');
+    var win=v.result==='win',data=v.resultData||{},panel=l.resultPanel,rewards=l.resultRewards,
+      cyan=[.278,.863,.906,1],paper=[.835,.957,.937,1],muted=[.557,.667,.698,1],amber=[.957,.718,.173,1],navy=[.024,.106,.149,1],red=[.851,.341,.333,1],
+      i,r,tag,button=l.resultDouble,back=l.resultButton;
+    if(v.combat)battle(l,v);else sceneBackdrop(l,v,null,1,true);
+    drawRect(0,l.top,l.w,l.usable,[0,0,0,.68]);
+    mapSkinFrame([25,322,886,1245],panel,36,navy,heroSkin,panel.w/886);
+    tag={x:panel.x+panel.w*.25,y:panel.y-10,w:panel.w*.5,h:30};
+    mapSkinFrame([254,300,426,86],tag,35,navy,heroSkin,panel.w/886);mapLabel('战斗结算',tag,18,paper);
+    imageAssetContain(win?'ui-settlement-win-v2':'ui-settlement-lose-v2',l.resultBadge.x,l.resultBadge.y,l.resultBadge.w,l.resultBadge.h,1);
+    settlementLabel(win?copy(v,'resultWin','守护成功'):copy(v,'resultLose','防线失守'),{x:panel.x+24,y:panel.y+panel.h*.29,w:panel.w-48,h:36},30,win?[.60,.98,1,1]:[1,.43,.40,1],true);
+    mapLabel(win?'防线稳固 · 奖励已结算':'防线失守 · 成长仍会保留',{x:panel.x+20,y:panel.y+panel.h*.37,w:panel.w-40,h:22},14,paper);
     for(i=0;i<2;i+=1){
-      r=rewards[i];refinedPanel(r,i?p.cyan:rewardGold,i?[.025,.075,.16,.98]:[.16,.10,.03,.98],'card');
-      iconSize=Math.min(58,r.h*.43);
-      imageAsset(i?'ui-result-experience':'ui-result-coins',r.x+r.w*.5-iconSize*.5,r.y+5,iconSize,iconSize,1);
-      text(i?'成长经验':'局外货币',r.x+r.w*.5,r.y+r.h*.54,.60,p.paper,r.w*.86,'center');
-      text('+'+(i?(data.xp||0):(data.outerCurrency||0)),r.x+r.w*.5,r.y+r.h*.72,1.20,i?p.cyan:rewardGold,r.w*.84,'center','label');
+      r=rewards[i];mapSkinFrame([58,860,818,256],r,22,navy,heroSkin,panel.w/886);
+      settlementLabel(i?'成长经验':'局外货币',{x:r.x+6,y:r.y+5,w:r.w-12,h:22},16,paper,false);
+      imageAssetContain(i?'ui-settlement-experience-v2':'ui-settlement-coins-v2',r.x+r.w/2-32,r.y+29,64,54,1);
+      settlementLabel('+'+(i?(data.xp||0):(data.outerCurrency||0)),{x:r.x+8,y:r.y+r.h-32,w:r.w-16,h:26},24,i?cyan:amber,true);
     }
-    text('奖励将用于英雄强化与永久成长',center,panel.y+panel.h*.83,.62,p.muted,panel.w*.84,'center');
-    refinedPanel(button,data.doubled?p.muted:p.cyan,data.doubled?p.disabled:[.035,.22,.25,.98],'button');
-    if(!data.doubled){
-      imageAsset('ui-result-video',button.x+button.w*.11,button.y+button.h*.28,button.h*.44,button.h*.44,1);
-    }
-    text(data.doubled?'双倍奖励已领取':'观看广告  奖励翻倍',data.doubled?center:button.x+button.w*.59,button.y+button.h*.40,.84,p.paper,button.w*(data.doubled?.88:.66),'center','button');
-    refinedPanel(back,p.cyan,p.navy2,'button');
-    imageAsset('ui-result-map',back.x+back.w*.17,back.y+back.h*.16,back.h*.66,back.h*.66,1);
-    text(copy(v,'resultAction','返回地图'),back.x+back.w*.60,back.y+back.h*.40,1.06,p.paper,back.w*.54,'center','button');
+    settlementLabel('奖励将用于英雄强化与永久成长',{x:panel.x+18,y:panel.y+panel.h*.70,w:panel.w-36,h:22},13,paper,false);
+    settlementAction(button,data.doubled?'双倍奖励已领取':'观看广告 · 奖励翻倍',false,!data.doubled,'ui-settlement-video-v2');
+    settlementAction(back,copy(v,'resultAction','返回地图'),true,true,'ui-settlement-map-v2');
   }
   function battleHudRects(l){var gap=5,w=(l.w-24-gap*2)/3,y=l.battleHudTop;return[{x:12,y:y,w:w,h:56},{x:12+w+gap,y:y,w:w,h:56},{x:12+2*(w+gap),y:y,w:w,h:56}];}
   function battleHudIcon(type,x,y,size,color){
@@ -818,41 +854,28 @@
       if(error&&error!==gl.NO_ERROR)throw new Error('图片渲染失败: '+key+' ('+error+')');
     }
   }
-  function battleWaveNotice(l,v){
-    var c=v.combat,boss=c.bossWarning>0,remaining=boss?c.bossWarning:c.waveWarning,p=uiPalette(v),r,accent;
-    if(!(remaining>0))return;
-    r={x:l.w*.08,y:l.board.y+l.board.h*.20,w:l.w*.84,h:70};
-    accent=boss?[1,.36,.25,1]:p.cyan;
-    chamfer({x:r.x+3,y:r.y+4,w:r.w,h:r.h},[0,0,0,.30],10);
-    chamfer(r,boss?[.22,.035,.025,.96]:[.022,.065,.09,.96],10);
-    chamferOutline(r,accent,boss?2.5:1.5,10);
-    text(boss?'BOSS 即将出现':'第 '+c.wave+' 波即将开始',l.w*.5,r.y+9,1.3,accent,r.w-24,'center','button');
-    text(boss?'第 '+c.wave+' 波 · 准备迎战':'准备防御',l.w*.5,r.y+41,.85,p.paper,r.w-24,'center','compactButton');
+  function battleMessagePanel(l,v){
+    var r=l.waveNotice,state=M3.BattleMessages.sample(v,M3._now()),item=state.item,
+      navy=[.024,.106,.149,1],paper=[.835,.957,.937,1],amber=[.957,.718,.173,1],
+      danger=item.kind==='boss'||item.kind==='error',accent=danger?[1,.38,.32,1]:item.kind==='crisis'?amber:[.278,.863,.906,1],
+      alpha=state.opacity,infoX=r.x+64,infoW=r.w-82,y=r.y+6+state.offset,lines=M3.MapUI.wrap(item.body,13,infoW),i,x,
+      sx=gl.drawingBufferWidth/l.w,sy=gl.drawingBufferHeight/l.h;
+    // The terminal frame remains visible; only its contents animate.
+    chamfer({x:r.x+3,y:r.y+4,w:r.w,h:r.h},[0,0,0,.35],8);
+    mapSkinFrame([58,860,818,256],r,22,navy,heroSkin,.42);
+    line(r.x+10,r.y+11,r.x+10,r.y+r.h-11,1.5,accent);
+    line(r.x+r.w-10,r.y+11,r.x+r.w-10,r.y+r.h-11,1.5,accent);
+    for(i=0;i<3;i+=1){x=r.x+r.w-43+i*8;solid([x,r.y+r.h-9,x+5,r.y+r.h-9,x+10,r.y+r.h-15,x+5,r.y+r.h-15],amber);}
+    gl.enable(gl.SCISSOR_TEST);gl.scissor(Math.round((r.x+8)*sx),Math.round((l.h-r.y-r.h+5)*sy),Math.round((r.w-16)*sx),Math.round((r.h-10)*sy));
+    try{
+      if(item.kind==='error'){
+        chamfer({x:r.x+23,y:r.y+17+state.offset,w:25,h:25},alphaColor(accent,alpha*.15),4);
+        rect(r.x+34,r.y+21+state.offset,3,11,alphaColor(accent,alpha));rect(r.x+34,r.y+35+state.offset,3,3,alphaColor(accent,alpha));
+      }else imageAssetContain(item.kind==='boss'?'ui-wave-boss-v1':'ui-wave-radar-v1',r.x+12,r.y+8+state.offset,44,44,alpha);
+      settlementLabel(item.title,{x:infoX,y:y,w:infoW,h:21},l.w<360?16:18,alphaColor(accent,alpha),false,{align:'left',padding:0});
+      for(i=0;i<Math.min(2,lines.length);i+=1)mapLabel(lines[i],{x:infoX,y:y+24+i*13,w:infoW,h:14},13,alphaColor(paper,alpha),{align:'left',padding:0});
+    }finally{gl.disable(gl.SCISSOR_TEST);}
   }
-  function battleToast(l,v){
-    var p=uiPalette(v),message=String(v.message||''),width=Math.min(l.w-40,Math.max(204,message.length*14.6+66)),
-      chars=Math.max(1,Math.floor((width-66)/14.3)),lines=[message.slice(0,chars)],height=46,r,below,above,
-      accent=v.messageFailed?[.90,.49,.39,1]:p.cyan,now=M3._now(),remaining=v.messageExpiresAt?Math.max(0,v.messageExpiresAt-now):2200,
-      opacity=v.messageExpiresAt?Math.min(1,(2200-remaining)/140,remaining/200):1,i,y,cx,cy;
-    if(!message||opacity<=0)return;
-    if(message.length>chars){lines.push(message.slice(chars,chars*2));if(message.length>chars*2)lines[1]=lines[1].slice(0,-1)+'…';height=62;}
-    below=l.heroBarY-(l.board.y+l.board.h);above=l.board.y-l.battleHudBottom;
-    if(v.itemMenuOpen)y=Math.min(l.top+l.usable-height-14,l.itemModal.y+l.itemModal.h+12);
-    else if(below>=height+12)y=l.board.y+l.board.h+(below-height)*.5;
-    else if(above>=height+12)y=l.battleHudBottom+(above-height)*.5;
-    else y=l.battleHudBottom+8;
-    if(!v.itemMenuOpen)y=l.board.y+8;
-    r={x:(l.w-width)*.5,y:y+(1-opacity)*4,w:width,h:height};cx=r.x+25;cy=r.y+r.h*.5;
-    chamfer({x:r.x+2,y:r.y+3,w:r.w,h:r.h},[0,0,0,.24*opacity],8);
-    chamfer(r,[.022,.048,.062,.94*opacity],8);
-    chamferOutline(r,[accent[0],accent[1],accent[2],.55*opacity],.9,8);
-    line(r.x+11,r.y+2,r.x+r.w-11,r.y+2,.7,[.73,.89,.93,.15*opacity]);
-    chamfer({x:cx-12,y:cy-12,w:24,h:24},[accent[0],accent[1],accent[2],.14*opacity],5);
-    if(v.messageFailed){rect(cx-1,cy-7,2,8,alphaColor(accent,opacity));rect(cx-1,cy+4,2,2,alphaColor(accent,opacity));}
-    else{rect(cx-1,cy-7,2,2,alphaColor(accent,opacity));rect(cx-1,cy-2,2,8,alphaColor(accent,opacity));}
-    for(i=0;i<lines.length;i+=1)text(lines[i],r.x+47,r.y+(r.h-lines.length*17)*.5+i*17,.92,alphaColor(p.paper,opacity),r.w-60,'left','label');
-    line(r.x+47,r.y+r.h-5,r.x+47+(r.w-60)*Math.min(1,remaining/2200),r.y+r.h-5,.7,[accent[0],accent[1],accent[2],.28*opacity]);
-  }
-  function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]);init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')loadingScreen(l,v,false);else if(v.state==='LOADING'){if(v.loadingPhase==='render'){try{prepareAssets(v.assetKeys);mapV2(l,v);if(gl.getError&&gl.getError()!==gl.NO_ERROR)throw new Error('地图画面渲染失败');loadingScreen(l,v,false);if(M3.Game&&M3.Game.assetsRendered)M3.Game.assetsRendered();}catch(error){if(M3.Game&&M3.Game.assetRenderFailed)M3.Game.assetRenderFailed(error);loadingScreen(l,{loadingError:error&&error.message||'图片渲染失败'},true);}}else loadingScreen(l,v,false);}else if(v.state==='LOAD_ERROR')loadingScreen(l,v,true);else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.mapDialog)mapDialog(l,v);if(v.message){if(v.state==='BATTLE')battleToast(l,v);else if(v.state!=='WORLD_MAP'&&v.state!=='DECK_SELECT'&&v.state!=='HERO_SELECT')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
+  function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]);init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')loadingScreen(l,v,false);else if(v.state==='LOADING'){if(v.loadingPhase==='render'){try{prepareAssets(v.assetKeys);mapV2(l,v);if(gl.getError&&gl.getError()!==gl.NO_ERROR)throw new Error('地图画面渲染失败');loadingScreen(l,v,false);if(M3.Game&&M3.Game.assetsRendered)M3.Game.assetsRendered();}catch(error){if(M3.Game&&M3.Game.assetRenderFailed)M3.Game.assetRenderFailed(error);loadingScreen(l,{loadingError:error&&error.message||'图片渲染失败'},true);}}else loadingScreen(l,v,false);}else if(v.state==='LOAD_ERROR')loadingScreen(l,v,true);else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.mapDialog)mapDialog(l,v);if(v.message){if(v.state!=='BATTLE'&&v.state!=='WORLD_MAP'&&v.state!=='DECK_SELECT'&&v.state!=='HERO_SELECT'&&v.state!=='PROGRESSION')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
   M3.Renderer={draw:draw,rect:rect,triangles:solid,imageRegion:imageRegion};
 })();

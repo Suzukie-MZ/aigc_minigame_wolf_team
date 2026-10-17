@@ -1,5 +1,5 @@
 (function () {
-  var M3=window.M3,draw=M3.Renderer.draw,board=null,segments=[],length=0,started=0;
+  var M3=window.M3,board=null,segments=[],length=0,started=0;
   function prepare(next){
     var path=next.path||[],i,a,b,dx,dy,size;
     board=next;segments=[];length=0;started=M3._now();
@@ -31,5 +31,4 @@
     try{M3.Renderer.triangles(vertices,[.64,.98,.96,Math.max(0,alpha)]);}finally{M3.Renderer._activeView=active;}
   }
   M3.RouteGuide={draw:render};
-  M3.Renderer.draw=function(context,v){draw(context,v);render(v);};
 })();

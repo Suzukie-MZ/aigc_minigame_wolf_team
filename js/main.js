@@ -72,6 +72,7 @@
     require('./render/loading-assets.js');
     require('./render/map-ui-model.js');
     require('./render/combat-projection.js');
+    require('./render/battle-messages.js');
     require('./render/renderer.js');
     require('./render/tile-render-hook.js');
     require('./render/route-guide.js');

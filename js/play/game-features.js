@@ -1,5 +1,5 @@
 (function(){
-  var M3=window.M3,PAGE_SIZE=6,HERO_POOL_SIZE=3,state='BOOT',started=false,last=0,manifest,levelId,selectedNodeId,level,cards=[],deck=[],heroes=[],heroPool=[],cardPage=0,heroPage=0,progressionPage=0,selectedProgressionHero=null,mapScroll=0,mapVelocity=0,combat,result,resultData,message='',messageFailed=false,messageExpiresAt=0,nodes=[],paused=false,itemMenuOpen=false,loadingPhase='config',loadingError='',assetKeys=[],loadAttempt=0,nodeSelection=0,visibleLevelRequests={},mapDialogState=null;
+  var M3=window.M3,PAGE_SIZE=6,HERO_POOL_SIZE=3,state='BOOT',started=false,last=0,manifest,levelId,selectedNodeId,level,cards=[],deck=[],heroes=[],heroPool=[],cardPage=0,heroPage=0,progressionPage=0,selectedProgressionHero=null,mapScroll=0,mapVelocity=0,combat,result,resultData,message='',messageFailed=false,messageExpiresAt=0,nodes=[],paused=false,itemMenuOpen=false,loadingPhase='config',loadingError='',assetKeys=[],loadAttempt=0,nodeSelection=0,visibleLevelRequests={},mapDialogState=null,battleLoading=false,battleStartRequest=0;
   function initialAssetKeys(){
     var keys={}, scenes=manifest.presentation&&manifest.presentation.sceneAssets||{};
     function add(key){if(key)keys[key]=true;}
@@ -9,6 +9,7 @@
     heroPool.forEach(function(hero){add(hero.portraitAsset);});
     nodes.forEach(function(node){var current=M3.RuntimeConfig.getLevel(node.levelId),map;if(!current)return;map=current.map;add(map.backgroundAsset);Object.keys(map.tileAssets||{}).forEach(function(key){add(map.tileAssets[key]);});(current.units||[]).forEach(function(unit){if(unit.kind!=='enemy')unitAssets(unit);});});
     (manifest.assetManifest||[]).forEach(function(item){if(/^(tower[-_]|hero[-_]|font-cn-main-|ui-)/.test(item.key))add(item.key);});
+    (M3.BattleMessages&&M3.BattleMessages.assets||[]).forEach(function(item){add(item.key);});
     return Object.keys(keys);
   }
   function selectNode(node){
@@ -73,7 +74,7 @@
   }
   function assetsRendered(){if(state==='LOADING'&&loadingPhase==='render'){loadingPhase='done';state='WORLD_MAP';loadExtraContent();}}
   function assetRenderFailed(error){if(state==='LOADING'){loadingError=error&&error.message||'图片渲染失败';state='LOAD_ERROR';}}
-  function setState(s){nodeSelection+=1;mapDialogState=null;mapVelocity=0;state=s;message='';messageFailed=false;messageExpiresAt=0;}
+  function setState(s){battleLoading=false;battleStartRequest+=1;nodeSelection+=1;mapDialogState=null;mapVelocity=0;state=s;message='';messageFailed=false;messageExpiresAt=0;}
   function showBattleMessage(value,failed){message=value||'';messageFailed=!!failed;messageExpiresAt=message?M3._now()+2200:0;}
   function beginDeck(){cardPage=0;setState('DECK_SELECT');}
   function toggleCard(id){var at=deck.indexOf(id),size=manifest.deckRules.deckSize||4;if(at>=0)deck.splice(at,1);else if(deck.length<size)deck.push(id);}
@@ -83,37 +84,34 @@
   function roleDescription(configured,unit,isHero){if(configured)return configured;if(!unit)return isHero?'支援全场的英雄单位':'通用防御单位';if(unit.kind==='economy')return'周期产出局内资源';if(unit.skill==='slow')return isHero?'远程减速控制敌人':'减速控制敌人推进';if(unit.skill==='splash')return isHero?'范围攻击清理敌群':'范围攻击多个敌人';if(unit.interval<=.7)return'高速持续单体输出';if(unit.range>=3)return'远距离单体输出';return isHero?'稳定输出支援防线':'稳定单体伤害';}
   function cardView(card){var out={},key,u=findUnit(card.unitId);for(key in card)if(Object.prototype.hasOwnProperty.call(card,key))out[key]=card[key];out.roleDescription=roleDescription(card.roleDescription,u,false);out.purchaseCost=u&&u.buildCost||0;out.level=M3.Progression.cardLevel(card.id);out.upgradeCost=M3.Progression.upgradeCost(manifest,card.id);return out;}
   function heroView(hero){var out={},key,u=findUnit(hero.unitId);for(key in hero)if(Object.prototype.hasOwnProperty.call(hero,key))out[key]=hero[key];out.roleDescription=roleDescription(hero.roleDescription,u,true);out.level=M3.Progression.heroLevel(hero.id);out.upgradeCost=M3.Progression.heroUpgradeCost(manifest,hero.id);out.purchaseCost=0;out.color=Array.isArray(out.color)&&out.color.length>=3?out.color:u&&u.color||[.3,.7,.8,1];out.appearance=out.appearance||u&&u.appearance||null;return out;}
-  function beginBattle(){var index;if(!M3.Deck.validate(manifest,deck).ok){message='请选择四座防御塔';return;}if(heroes.length!==1){message='请选择一名英雄';return;}level=M3.RuntimeConfig.getLevel(levelId);if(!level){message='关卡配置不可用';return;}if(!M3.SaveData.consumeEnergy(manifest)){message='体力不足，请返回地图补充';return;}index=nodes.map(function(n){return n.id;}).indexOf(selectedNodeId)+1;level=M3.FeatureSystem.prepareLevel(level,manifest,index||1);M3.UILayout.setGrid(level.map.width,level.map.height);M3.SaveData.setRecentDeck(deck);combat=M3.Combat.create(level,manifest,deck,heroes);result=null;resultData=null;paused=false;itemMenuOpen=false;message='';messageFailed=false;messageExpiresAt=0;state='BATTLE';if(M3.Tutorial)M3.Tutorial.onBattleStart(index===1);}
+  function beginBattle(assetsReady){var index;if(!M3.Deck.validate(manifest,deck).ok){message='请选择四座防御塔';return;}if(heroes.length!==1){message='请选择一名英雄';return;}level=M3.RuntimeConfig.getLevel(levelId);if(!level){message='关卡配置不可用';return;}
+    if(assetsReady!==true&&M3.TextureAssets&&M3.TextureAssets.waitFor){
+      if(battleLoading)return;
+      var request=++battleStartRequest,attempt=loadAttempt,keys=[],tileAssets=level.map.tileAssets||{};
+      if(M3.TextureAssets.addAssets)M3.TextureAssets.addAssets(level.assetManifest,true);
+      Object.keys(tileAssets).forEach(function(type){var key=tileAssets[type];if(key&&keys.indexOf(key)<0)keys.push(key);});
+      battleLoading=true;message='地图素材加载中…';
+      M3.TextureAssets.waitFor(keys).then(function(){
+        if(request!==battleStartRequest||attempt!==loadAttempt||state!=='DECK_SELECT')return;
+        battleLoading=false;beginBattle(true);
+      },function(){
+        if(request!==battleStartRequest||attempt!==loadAttempt||state!=='DECK_SELECT')return;
+        battleLoading=false;message='地图素材加载失败，请点击开始重试';
+      });
+      return;
+    }
+    if(!M3.SaveData.consumeEnergy(manifest)){message='体力不足，请返回地图补充';return;}index=nodes.map(function(n){return n.id;}).indexOf(selectedNodeId)+1;level=M3.FeatureSystem.prepareLevel(level,manifest,index||1);M3.UILayout.setGrid(level.map.width,level.map.height);M3.SaveData.setRecentDeck(deck);combat=M3.Combat.create(level,manifest,deck,heroes);result=null;resultData=null;paused=false;itemMenuOpen=false;message='';messageFailed=false;messageExpiresAt=0;state='BATTLE';if(M3.Tutorial)M3.Tutorial.onBattleStart(index===1);}
   function finish(r){var index=nodes.map(function(n){return n.id;}).indexOf(selectedNodeId)+1,amount;paused=false;itemMenuOpen=false;result=r;if(r==='win')M3.SaveData.completeLevel(levelId||selectedNodeId,3,0,0,[selectedNodeId]);amount=M3.SaveData.addSettlement(manifest,r==='win',index||1);resultData={outerCurrency:amount,xp:r==='win'?30:10,layers:2,doubled:false};message='';messageFailed=false;messageExpiresAt=0;state='RESULT';}
   function update(){var now=M3._now(),dt=last?(now-last)/1000:0;last=now;if(state==='WORLD_MAP'&&mapVelocity){var scrollDt=Math.min(.05,Math.max(0,dt)),scrollBefore=mapScroll;shiftMap(mapVelocity*scrollDt);mapVelocity*=Math.exp(-7*scrollDt);if(Math.abs(mapVelocity)<12||mapScroll===scrollBefore)mapVelocity=0;}if(state==='BATTLE'&&messageExpiresAt&&now>=messageExpiresAt){message='';messageFailed=false;messageExpiresAt=0;}if(M3.KwaiPlatform&&M3.KwaiPlatform.setBannerAllowed)M3.KwaiPlatform.setBannerAllowed(false);if(state==='BATTLE'&&combat&&!paused&&!itemMenuOpen&&(!M3.Tutorial||!M3.Tutorial.shouldFreeze())&&(!M3.KwaiPlatform||M3.KwaiPlatform.isActive())){combat.update(dt);if(combat.result)finish(combat.result);}}
   function battleItemChoices(){var cfg=manifest.systems&&manifest.systems.M3_item||{};return(cfg.item_pool||[]).slice(0,cfg.choices_per_trigger||2);}
   function useBattleItem(index){var item=battleItemChoices()[index];if(!item){showBattleMessage('道具配置不可用',true);return;}M3.RewardSystem.unlockMatchItem(manifest,item,combat.match,function(){if(!M3.FeatureSystem.applyItem(combat,item)){showBattleMessage('道具配置不可用',true);return;}itemMenuOpen=false;showBattleMessage(item.effect==='clear_all_enemies'?'当前怪物已清除':'经济补给已到账');},function(){showBattleMessage('观看完整广告后生效',true);});}
-  function openMapDialog(kind){
+  function openMapDialog(){
     var cfg=manifest.systems.M14_energy||{},energy=M3.SaveData.get().energy,max=Number(cfg.daily_max_energy)||10;
     mapVelocity=0;message='';
-    if(kind==='home')mapDialogState={kind:kind,title:'作战首页',lines:['选择战图，准备下一场防守。','已解锁关卡 '+nodes.filter(function(n){return n.unlocked;}).length+' / '+nodes.length,'当前体力 '+energy+' / '+max,'英雄与防御塔可在出战前搭配。'],actions:['继续选图','玩法说明']};
-    else if(kind==='menu')mapDialogState={kind:kind,title:'作战终端',lines:['选择已解锁的关卡进入战斗。','通关后解锁下一关。','下方入口可补充体力和强化英雄。'],actions:['玩法说明','关闭']};
-    else if(kind==='help')mapDialogState={kind:kind,title:'玩法说明',lines:['选择已解锁关卡，查看战术地图。','先选一名英雄，再搭配四座防御塔。','消耗体力出战，部署单位守住基地。','通关获得奖励并解锁下一关。'],actions:['返回菜单','关闭']};
-    else if(kind==='energy')mapDialogState={kind:kind,title:'体力',lines:['当前体力 '+energy+' / '+max,'每天恢复至体力上限。','完整观看广告可补充 '+(Number(cfg.ad_refill_amount)||5),'分享成功可补充 '+(Number(cfg.share_refill_amount)||3)],actions:['知道了']};
-    else if(kind==='exit')mapDialogState={kind:kind,title:'退出游戏',lines:['关卡进度和英雄强化已保存。','是否退出本次游戏？'],actions:['确认退出','继续游戏']};
-    else if(kind==='exited')mapDialogState={kind:kind,title:'已退出游戏',lines:['本次预览已结束。','点击下方按钮重新进入。'],actions:['重新进入']};
+    mapDialogState={kind:'energy',title:'体力',lines:['当前体力 '+energy+' / '+max,'每天恢复至体力上限。','完整观看广告可补充 '+(Number(cfg.ad_refill_amount)||5),'分享成功可补充 '+(Number(cfg.share_refill_amount)||3)],actions:['知道了']};
   }
   function mapDialogPointer(x,y,l){
-    var d=mapDialogState,index=-1,i;
-    if(M3.UILayout.contains(l.mapDialogClose,x,y)){mapDialogState=null;return;}
-    for(i=0;i<d.actions.length;i+=1)if(M3.UILayout.contains(l.mapDialogActions[i],x,y))index=i;
-    if(index<0)return;
-    if(d.kind==='home'&&index===1){openMapDialog('help');return;}
-    if(index===1){mapDialogState=null;return;}
-    if(d.kind==='menu'){openMapDialog('help');return;}
-    if(d.kind==='help'){openMapDialog('menu');return;}
-    if(d.kind==='exit'){
-      if(M3.SaveData.save)M3.SaveData.save();
-      if(typeof ks!=='undefined'&&typeof KwaiBase!=='undefined'&&KwaiBase.exit)KwaiBase.exit();
-      else openMapDialog('exited');
-      return;
-    }
-    mapDialogState=null;
+    if(M3.UILayout.contains(l.mapDialogClose,x,y)||M3.UILayout.contains(l.mapDialogActions[0],x,y))mapDialogState=null;
   }
   function pointerAction(x,y){var l=M3.UILayout.get(),i,r,gx,gy,visible,item,actionOk;
     if(state==='LOADING')return;
@@ -128,7 +126,7 @@
       return;
     }
     if(state==='BATTLE'&&combat&&(combat.selectedTower||combat.selectedObstacle)&&!M3.UILayout.contains(l.board,x,y)&&!M3.UILayout.contains(l.towerUpgrade,x,y)){combat.clearInspection();showBattleMessage('');}
-    if(state==='WORLD_MAP'){if(l.mapFooter&&M3.UILayout.contains(l.mapFooter,x,y)&&M3.RuntimeConfig.getExtraStatus&&M3.RuntimeConfig.getExtraStatus()==='error'){message='正在补充关卡目录…';loadExtraContent();return;}if(M3.UILayout.contains(l.mapHome,x,y)){mapScroll=0;mapVelocity=0;openMapDialog('home');return;}if(M3.UILayout.contains(l.mapMore,x,y)){openMapDialog('menu');return;}if(M3.UILayout.contains(l.mapExit,x,y)){openMapDialog('exit');return;}if(M3.UILayout.contains(l.energyCurrent,x,y)){openMapDialog('energy');return;}if(M3.UILayout.contains(l.energyAd,x,y)){M3.RewardSystem.refillEnergyAd(manifest,function(){message='体力补充成功';},function(){message=typeof ks==='undefined'?'请在快手中观看广告':'广告未完成';});return;}if(M3.UILayout.contains(l.energyShare,x,y)){M3.RewardSystem.refillEnergyShare(manifest,function(){message='分享补充成功';},function(){message=typeof ks==='undefined'?'请在快手中分享':'分享未完成';});return;}if(M3.UILayout.contains(l.mapUpgrade,x,y)){progressionPage=0;selectedProgressionHero=null;setState('PROGRESSION');return;}if(!M3.UILayout.contains(l.mapList,x,y))return;nodes=M3.WorldMap.nodes(manifest);for(i=0;i<nodes.length;i+=1){r=l.levelCard(i,mapScroll);if(r.y+r.h>l.mapList.y&&r.y<l.mapList.y+l.mapList.h&&M3.UILayout.contains(r,x,y)){if(!nodes[i].unlocked){message='请先通关上一关';return;}selectNode(nodes[i]);return;}}}
+    if(state==='WORLD_MAP'){if(l.mapFooter&&M3.UILayout.contains(l.mapFooter,x,y)&&M3.RuntimeConfig.getExtraStatus&&M3.RuntimeConfig.getExtraStatus()==='error'){message='正在补充关卡目录…';loadExtraContent();return;}if(M3.UILayout.contains(l.energyCurrent,x,y)){openMapDialog();return;}if(M3.UILayout.contains(l.energyAd,x,y)){M3.RewardSystem.refillEnergyAd(manifest,function(){message='体力补充成功';},function(){message=typeof ks==='undefined'?'请在快手中观看广告':'广告未完成';});return;}if(M3.UILayout.contains(l.energyShare,x,y)){M3.RewardSystem.refillEnergyShare(manifest,function(){message='分享补充成功';},function(){message=typeof ks==='undefined'?'请在快手中分享':'分享未完成';});return;}if(M3.UILayout.contains(l.mapUpgrade,x,y)){progressionPage=0;selectedProgressionHero=null;setState('PROGRESSION');return;}if(!M3.UILayout.contains(l.mapList,x,y))return;nodes=M3.WorldMap.nodes(manifest);for(i=0;i<nodes.length;i+=1){r=l.levelCard(i,mapScroll);if(r.y+r.h>l.mapList.y&&r.y<l.mapList.y+l.mapList.h&&M3.UILayout.contains(r,x,y)){if(!nodes[i].unlocked){message='请先通关上一关';return;}selectNode(nodes[i]);return;}}}
     else if(state==='LEVEL_DETAIL'){if(M3.UILayout.contains(l.detailBack,x,y)||M3.UILayout.contains(l.detailClose,x,y))setState('WORLD_MAP');else if(M3.UILayout.contains(l.detailStart,x,y))beginHeroes(true);}
     else if(state==='PROGRESSION'){visible=heroPool;r=l.loadoutHeroes||l.heroSelectCards||l.heroCards;for(i=0;i<r.length;i+=1){if(visible[i]&&M3.UILayout.contains(r[i],x,y)){selectedProgressionHero=selectedProgressionHero===visible[i].id?null:visible[i].id;message='';return;}}if(selectedProgressionHero&&M3.UILayout.contains(l.heroStart,x,y)){message=M3.Progression.upgradeHero(manifest,selectedProgressionHero)?'英雄升级成功':'材料不足或已满级';return;}if(M3.UILayout.contains(l.heroBack,x,y)){selectedProgressionHero=null;setState('WORLD_MAP');}}
     else if(state==='DECK_SELECT'){

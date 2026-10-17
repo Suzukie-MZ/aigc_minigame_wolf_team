@@ -45,12 +45,14 @@
     cfg=systems.M6_units;if(!cfg||cfg.range_primary!==true||cfg.pow_formula!=='ATK*FRQ*RGE'||!Array.isArray(cfg.roles)||cfg.roles.length<3)e.push('systems.M6_units');
     cfg=systems.M7_resources;if(!cfg||cfg.exchange_enabled!==false||!cfg.inner||!cfg.outer||!exactSources(cfg.inner.sources,['economy_unit','kill_enemy'])||!exactSources(cfg.outer.sources,['match_settlement']))e.push('systems.M7_resources');
     cfg=systems.M8_balance;if(!cfg||cfg.tower_pow_formula!=='ATK*FRQ*RGE'||cfg.enemy_pressure_formula!=='HP*SPD'||!finite(cfg.effective_path_length,.1,1000)||!finite(cfg.tower_pow_target_min,0,1000000)||!finite(cfg.tower_pow_target_max,cfg.tower_pow_target_min,1000000)||!finite(cfg.wave_pressure_target_min,0,100000000)||!finite(cfg.wave_pressure_target_max,cfg.wave_pressure_target_min,100000000)||!finite(cfg.minimum_defense_ratio,0,1000)||(cfg.enemy_speed_scale!==undefined&&!finite(cfg.enemy_speed_scale,.1,2)))e.push('systems.M8_balance');
+    if (systems.M8_balance && systems.M8_balance.unit_stats_mode !== undefined && ['final','legacy'].indexOf(systems.M8_balance.unit_stats_mode)<0) e.push('systems.M8_balance.unit_stats_mode');
     cfg=systems.M9_crisis;if(!cfg||!finite(cfg.crisis_wave_ratio,.33,.5)||!finite(cfg.tutorial_wave_count,1,100)||cfg.risk_conversion_mechanism!=='base_hp_to_inner_currency'||!finite(cfg.conversion_rate,0,100000))e.push('systems.M9_crisis');
     cfg=systems.M14_energy;if(!cfg||!integer(cfg.daily_max_energy,1,1000)||!integer(cfg.energy_cost_per_match,1,1000)||!integer(cfg.ad_refill_amount,1,1000)||!integer(cfg.share_refill_amount,1,1000)||!exactSources(cfg.refill_methods,['rewarded_ad','share']))e.push('systems.M14_energy');
     return result(e.length === 0, e);
   }
   function validateLevel(l) {
     var e = [], ids = {}, i, j, u, g, p, previous, key, tileAssets, enemyCount=0, bossCount=0, bossScheduled=false;
+    if (l && l.waveExecution && (l.waveExecution.timingVersion !== undefined || l.waveExecution.interWaveDelay !== undefined) && (l.waveExecution.timingVersion !== 2 || !finite(l.waveExecution.interWaveDelay,0,60))) e.push('waveExecution.timing');
     if (!l || l.schemaVersion !== 5 || l.template !== 'fixed-path-v1') e.push('schema/template');
     if (!l || !l.map || !finite(l.map.width, 2, 40) || !finite(l.map.height, 2, 40)) e.push('map.size');
     if (l && l.map && (!Array.isArray(l.map.tiles) || l.map.tiles.length !== l.map.width * l.map.height)) e.push('map.tiles');
@@ -68,6 +70,7 @@
       if (!u || !ID_RE.test(u.id || '') || ids[u.id]) e.push('units[' + i + ']');
       else ids[u.id] = u;
       if (u && (!validAsset(u.imageAsset) || !validAsset(u.soundAsset))) e.push('units.assets[' + i + ']');
+      if (u && u.upgradeCostGrowth !== undefined && !finite(u.upgradeCostGrowth,1,100)) e.push('units.upgradeCostGrowth');
       if (u && u.combatRole !== undefined && !COMBAT_ROLES[u.combatRole]) e.push('units.combatRole[' + i + ']');
       if (u && u.levelAssetKeys !== undefined) {
         if (!Array.isArray(u.levelAssetKeys) || (u.kind==='tower'||u.kind==='economy') && u.levelAssetKeys.length !== u.levelCap) e.push('units.levelAssetKeys[' + i + ']');
@@ -94,7 +97,7 @@
       if (!Array.isArray(l.waves[i].groups)||!l.waves[i].groups.length) { e.push('waves[' + i + '].groups'); continue; }
       for (g = 0; g < l.waves[i].groups.length; g += 1) { u=l.waves[i].groups[g]; if (!u||!ID_RE.test(u.id||'')||!ids[u.enemy]||ids[u.enemy].kind!=='enemy') e.push('waves[' + i + '].enemy'); else if(ids[u.enemy].boss===true)bossScheduled=true; if(!u||!finite(u.count,1,100000)||!finite(u.delay,0,100000)||!finite(u.interval,.01,100000))e.push('waves['+i+'].timing'); }
     }
-    if (!bossScheduled) e.push('waves.boss');
+    if (!bossScheduled && !(integer(l.levelNumber,1,4))) e.push('waves.boss');
     if (l && l.map && !validAsset(l.map.backgroundAsset)) e.push('map.backgroundAsset');
     return result(e.length === 0, e);
   }

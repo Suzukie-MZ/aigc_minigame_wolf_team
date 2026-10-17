@@ -6,8 +6,26 @@
   function appearance(value, fallback, primary) { var out = merge(fallback, value || {}); out.primaryColor = color(value && value.primaryColor, primary); out.secondaryColor = color(value && value.secondaryColor, fallback.secondaryColor); out.accentColor = color(value && value.accentColor, fallback.accentColor); return out; }
   function configOrigin(url) { var match = /^(https?:\/\/[^/]+)/.exec(url || ''); return match ? match[1] : ''; }
   function normalizeAssetUrls(manifest) { var origin = configOrigin(MANIFEST_URL), list = manifest && manifest.assetManifest || [], i; if (!origin) return manifest; for (i = 0; i < list.length; i += 1) if (list[i] && typeof list[i].url === 'string' && list[i].url.charAt(0) === '/') list[i].url = origin + list[i].url; return manifest; }
-  function applyUnitRole(unit,role,kind,economy){if(!unit||!role)return;unit.combatRole=role;if(role==='economy'){unit.kind='economy';unit.skill='none';if(typeof unit.productionInterval!=='number')unit.productionInterval=Number(economy&&economy.production_interval)||5;if(typeof unit.productionAmount!=='number')unit.productionAmount=Number(economy&&economy.production_amount)||1;return;}unit.kind=kind;if(role==='slow_control'||role==='long_range_slow'){unit.skill='slow';if(typeof unit.skillPower!=='number')unit.skillPower=.25;if(typeof unit.skillDuration!=='number')unit.skillDuration=1.2;}else if(role==='area_damage'){unit.skill='splash';if(typeof unit.skillPower!=='number')unit.skillPower=.35;}else unit.skill='none';}
-  function normalizeRoleContracts(manifest,level){var units=level&&level.units||[],byId={},cards=manifest&&manifest.cards||[],heroes=manifest&&manifest.systems&&manifest.systems.M5_hero&&manifest.systems.M5_hero.hero_unit_pool||[],economy=manifest&&manifest.systems&&manifest.systems.M4_economy_unit,i;for(i=0;i<units.length;i+=1)byId[units[i].id]=units[i];for(i=0;i<Math.min(6,cards.length);i+=1)applyUnitRole(byId[cards[i].unitId],cards[i].combatRole,'tower',economy);for(i=0;i<Math.min(3,heroes.length);i+=1)applyUnitRole(byId[heroes[i].unitId],heroes[i].combatRole,'hero',economy);return level;}
+  function applyLegacyUnitRole(unit,role,kind,economy){if(!unit||!role)return;unit.combatRole=role;if(role==='economy'){unit.kind='economy';unit.skill='none';if(typeof unit.productionInterval!=='number')unit.productionInterval=Number(economy&&economy.production_interval)||5;if(typeof unit.productionAmount!=='number')unit.productionAmount=Number(economy&&economy.production_amount)||1;return;}unit.kind=kind;if(role==='slow_control'||role==='long_range_slow'){unit.skill='slow';if(typeof unit.skillPower!=='number')unit.skillPower=.25;if(typeof unit.skillDuration!=='number')unit.skillDuration=1.2;}else if(role==='area_damage'){unit.skill='splash';if(typeof unit.skillPower!=='number')unit.skillPower=.35;}else unit.skill='none';}
+  function applyUnitRole(unit,role,kind,economy,authoritative){
+    if(!authoritative){applyLegacyUnitRole(unit,role,kind,economy);return;}
+    if(!unit||!role)return;
+    if(unit.combatRole===undefined)unit.combatRole=role;
+    var effective=unit.combatRole, expectedKind=effective==='economy'?'economy':kind;
+    if(unit.kind===undefined)unit.kind=expectedKind;
+    if(effective==='economy'){
+      if(unit.productionInterval===undefined)unit.productionInterval=Number(economy&&economy.production_interval)||5;
+      if(unit.productionAmount===undefined)unit.productionAmount=Number(economy&&economy.production_amount)||1;
+      return;
+    }
+    var skill=effective==='slow_control'||effective==='long_range_slow'?'slow':effective==='area_damage'?'splash':'none';
+    if(unit.skill===undefined)unit.skill=skill;
+    if(unit.skill==='slow'){
+      if(unit.skillPower===undefined)unit.skillPower=.25;
+      if(unit.skillDuration===undefined)unit.skillDuration=1.2;
+    }else if(unit.skill==='splash'&&unit.skillPower===undefined)unit.skillPower=.35;
+  }
+  function normalizeRoleContracts(manifest,level){var units=level&&level.units||[],byId={},cards=manifest&&manifest.cards||[],heroes=manifest&&manifest.systems&&manifest.systems.M5_hero&&manifest.systems.M5_hero.hero_unit_pool||[],economy=manifest&&manifest.systems&&manifest.systems.M4_economy_unit,i;for(i=0;i<units.length;i+=1)byId[units[i].id]=units[i];for(i=0;i<Math.min(6,cards.length);i+=1)applyUnitRole(byId[cards[i].unitId],cards[i].combatRole,'tower',economy,manifest.systems.M8_balance.unit_stats_mode==='final');for(i=0;i<Math.min(3,heroes.length);i+=1)applyUnitRole(byId[heroes[i].unitId],heroes[i].combatRole,'hero',economy,manifest.systems.M8_balance.unit_stats_mode==='final');return level;}
   function inferredBoss(unit) { var id = unit && unit.id || '', asset = unit && unit.imageAsset || ''; return !!(unit && unit.kind === 'enemy' && (unit.boss === true || /(^|[-_.])boss([-_.]|$)/i.test(id) || /^boss([-_.]|$)/i.test(asset))); }
   function normalizeLevelCompatibility(level) {
     var units = level && level.units, i, unit, boss;

@@ -5,6 +5,7 @@
   function hash(seed, salt) { var x = ((seed || 1) * 1103515245 + (salt || 0) * 12345) & 2147483647; return x < 0 ? -x : x; }
   function difficulty(manifest, level, tier) {
     var out = clone(level), cfg = manifest.systems.M10_rank || {}, balance = manifest.systems.M8_balance || {}, enemySpeedScale = Number(balance.enemy_speed_scale), scale = 1 + Math.max(0, tier - 1) * (cfg.difficulty_scale_per_tier || 0);
+    if (balance.unit_stats_mode === 'final') { out.difficultyTier=tier; out.difficultyScale=1; return out; }
     if (!(enemySpeedScale > 0)) enemySpeedScale = .8;
     out.units.forEach(function (unit) { if (unit.kind === 'enemy') { unit.hp = Math.round((unit.hp || 1) * scale); unit.speed = (unit.speed || 1) * Math.min(1.8, 1 + (scale - 1) * 0.35) * enemySpeedScale; } });
     out.difficultyTier = tier; out.difficultyScale = scale; return out;

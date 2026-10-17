@@ -62,12 +62,15 @@
     require('./scene/scene-models.js');
     require('./render/glyphs.js');
     require('./render/font-cn-main-data.js');
+    require('./render/ui-font-hd-data.js');
     require('./render/ui-icon-assets.js');
     require('./render/enemy-animations.js');
     require('./render/death-particles.js');
     require('./render/texture-assets.js');
     require('./render/bitmap-font.js');
     require('./render/loading-assets.js');
+    require('./render/map-ui-model.js');
+    require('./render/combat-projection.js');
     require('./render/renderer.js');
     require('./render/tile-render-hook.js');
     require('./render/route-guide.js');
@@ -132,8 +135,12 @@
       cssH = parseInt(_htmlEl.getAttribute('data-debug-h') || '896', 10);
     }
     dpr = Number(dpr || window.devicePixelRatio || 1);
-    // 3x 已能覆盖当前真机高清屏，同时避免极端 DPR 造成过大的 GPU 缓冲区。
-    dpr = Math.max(1, Math.min(3, dpr));
+    // H5 预览至少使用 2x 缓冲区；真机遵循设备 DPR，上限 3x 控制 GPU 内存。
+    dpr = Math.max(isKS ? 1 : 2, Math.min(3, dpr));
+
+    M3.Layout.safeTop = getSafeTop();
+    M3.Layout.bottomPadding = systemInfo && systemInfo.safeArea ? Math.max(0, cssH - systemInfo.safeArea.bottom) : 0;
+    M3.Layout.usableH = cssH - M3.Layout.safeTop - M3.Layout.bottomPadding;
 
     // 尺寸/DPR 未变化时，跳过昂贵的画布重建，避免全屏浏览器周期性红屏闪动
     if (cssW === _lastCssW && cssH === _lastCssH && dpr === _lastDpr) return;
@@ -149,8 +156,6 @@
     M3.Layout.w = cssW;
     M3.Layout.h = cssH;
     M3.Layout.dpr = dpr;
-    M3.Layout.safeTop = getSafeTop();
-    M3.Layout.usableH = cssH - M3.Layout.safeTop;
   }
   resize();
   if (typeof window.addEventListener === 'function') {

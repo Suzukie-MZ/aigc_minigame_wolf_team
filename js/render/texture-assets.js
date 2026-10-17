@@ -1,7 +1,7 @@
 (function () {
   var M3=window.M3,entries={},handles={},sources={},fallbackEntries={};
   function remote(url){return /^https?:\/\//.test(url||'');}
-  function runtimeArtwork(key){return key==='demo-scene'||/^(tile[-_]|tower[-_]|hero[-_])/.test(key||'');}
+  function runtimeArtwork(key){return key==='battle-scene-surround'||key==='pixel-terrain-25d'||key==='pixel-units-25d'||key==='demo-scene'||/^(tile[-_]|tower[-_]|hero[-_])/.test(key||'');}
   function start(item,cacheKey,onFail,onSuccess){
     if(remote(item.url)){
       if(M3.CdnLoader&&!handles[cacheKey])handles[cacheKey]=M3.CdnLoader.loadImage(cacheKey,item.url,'runtime-images',{onSuccess:function(image){if(onSuccess)onSuccess(image);},onFail:function(error){console.warn('[TextureAssets] remote image failed',item.key,item.url,error&&error.message||'load failed');if(onFail)onFail(error);}}).catch(function(){delete handles[cacheKey];return null;});
@@ -23,7 +23,7 @@
   }
   function loadRemaining(){Object.keys(entries).forEach(function(key){startEntry(entries[key]);});}
   function configure(manifest,initialKeys){
-    var defaults=(M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[]).slice(0),list=(manifest&&manifest.assetManifest||[]).slice(0),builtin=(M3.UIIconAssets&&M3.UIIconAssets.manifest||[]).concat(M3.EnemyAnimations&&M3.EnemyAnimations.manifest||[],M3.DeathParticles&&M3.DeathParticles.manifest||[]),defaultIndex={},listed={},required=[],i,item,cacheKey,sourceKey,fallback;
+    var defaults=(M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[]).slice(0),list=(manifest&&manifest.assetManifest||[]).slice(0),builtin=(M3.UIIconAssets&&M3.UIIconAssets.manifest||[]).concat(M3.EnemyAnimations&&M3.EnemyAnimations.manifest||[],M3.DeathParticles&&M3.DeathParticles.manifest||[],M3.CombatProjection&&M3.CombatProjection.manifest||[]),defaultIndex={},listed={},required=[],i,item,cacheKey,sourceKey,fallback;
     // Only bundled files may be fallback resources. Snapshot network URLs belong to
     // old development releases; missing split-manifest keys must wait for the extra manifest.
     // UI art must remain available even when a remote manifest omits it or its files fail.
@@ -32,7 +32,7 @@
     for(i=0;i<builtin.length;i+=1){
       item=builtin[i];
       if(defaultIndex[item.key]!==undefined)defaults[defaultIndex[item.key]]=item;else defaults.push(item);
-      if(!listed[item.key])list.push(item);
+      if(!listed[item.key])list.push(item);else if(M3.UIIconAssets&&M3.UIIconAssets.manifest.indexOf(item)!==-1){for(var li=0;li<list.length;li+=1)if(list[li].key===item.key)list[li]=item;}
     }
     entries={};fallbackEntries={};sources={};
     for(i=0;i<defaults.length;i+=1){item=defaults[i];if(!item||item.type!=='image'||!item.key||!item.url||remote(item.url)||runtimeArtwork(item.key)&&listed[item.key]||initialKeys&&initialKeys.indexOf(item.key)<0)continue;sourceKey=item.url+'@'+(item.version||'1');cacheKey=sources[sourceKey]||'default:'+item.key+'@'+(item.version||'1');sources[sourceKey]=cacheKey;fallbackEntries[item.key]={cacheKey:cacheKey,item:item};start(item,cacheKey);}

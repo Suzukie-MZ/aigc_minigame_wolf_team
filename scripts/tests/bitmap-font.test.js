@@ -86,3 +86,49 @@ test('legacy remote typography cannot reintroduce blurry ghost layers by default
   assert.equal(calls.length, 2);
   assert.ok(calls.every(call => call[3] >= 14 && call[4] >= 14));
 });
+
+test('HD glyph overlay uses high-resolution pixels and falls back while its image is loading',()=>{
+  const calls=[],M3={Layout:{dpr:3},
+    BitmapFontData:{characters:'A□',fallback:'□',pageSize:480,columns:32,cell:40,padding:5},
+    UIFontHDData:{key:'font-cn-ui-hd',characters:'测',cell:64,padding:8,columns:20,width:1280,height:64}};
+  const context={window:{M3}};
+  vm.runInNewContext(fs.readFileSync(path.resolve(__dirname,'../../js/render/bitmap-font.js'),'utf8'),context);
+  let ready=true;
+  M3.TextureAssets={get:key=>key==='font-cn-ui-hd'&&!ready?null:{}};
+  M3.BitmapFont.configure({presentation:{typography:{}}});
+  const renderer={imageRegion(...args){calls.push(args);return true;}};
+  assert.equal(M3.BitmapFont.hasGlyph('测'),true);
+  assert.equal(M3.BitmapFont.drawText(renderer,'测',0,0,1,[1,1,1,1],100,'left','body'),true);
+  assert.equal(calls[0][0],'font-cn-ui-hd');
+  assert.equal((calls[0][7]-calls[0][5])*1280,48);
+  assert.ok(calls[0][6]>calls[0][8]); // top-origin atlas, correctly flipped texture UVs
+  assert.equal(calls[0][11],false); // preserve the HD font's antialiased edges
+  ready=false;calls.length=0;
+  assert.equal(M3.BitmapFont.drawText(renderer,'测',0,0,1,[1,1,1,1],100,'left','body'),true);
+  assert.equal(calls[0][0],'font-cn-main-0');
+});
+
+test('map labels preserve font proportions, natural digit widths and aligned visible centers',()=>{
+  const calls=[],M3={Layout:{dpr:3}},context={window:{M3}};
+  for(const file of ['font-cn-main-data.js','ui-font-hd-data.js','bitmap-font.js'])
+    vm.runInNewContext(fs.readFileSync(path.resolve(__dirname,'../../js/render',file),'utf8'),context);
+  M3.TextureAssets={get:()=>({})};
+  M3.BitmapFont.configure({presentation:{typography:{styles:{cardBody:{size:30}}}}});
+  const renderer={imageRegion(...args){calls.push(args);return true;}},r={x:10,y:20,w:100,h:24};
+  const draw=(text,width=100)=>M3.BitmapFont.drawLabel(renderer,text,{...r,w:width},16,[1,1,1,1]);
+  assert.equal(draw('第1关'),true);
+  const first=calls.splice(0),metrics=M3.UIFontHDData;
+  assert.ok(first.every(c=>c[3]===c[4]));
+  assert.ok(Math.abs(first[1][1]-first[0][1]-(16+.35))<.34);
+  assert.ok(Math.abs(first[2][1]-first[1][1]-(16*metrics.advances['1']+.35))<.34);
+  const width=16*(2+metrics.advances['1'])+.7;
+  assert.ok(Math.abs(first[0][1]-(r.x+(r.w-width)/2))<.34);
+  assert.equal(draw('霓虹防线'),true);
+  const center=(call,ch)=>call[2]+metrics.inkCenters[metrics.characters.indexOf(ch)]*16/metrics.emSize;
+  for(let i=0;i<first.length;i++)assert.ok(Math.abs(center(first[i],'第1关'[i])-(r.y+r.h/2))<.34);
+  assert.ok(Math.abs(center(calls[0],'霓')-(r.y+r.h/2))<.34);
+  calls.length=0;
+  assert.equal(draw('霓虹防线',40),true);
+  assert.ok(calls.length<4);
+  assert.ok(calls.every(c=>c[3]===first[0][3]&&c[4]===first[0][4]));
+});

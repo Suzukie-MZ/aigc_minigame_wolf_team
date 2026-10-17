@@ -48,9 +48,9 @@
     manifest.presentation.copy = merge(defaults.copy, supplied.copy || {});
     manifest.presentation.typography = merge(defaults.typography || {}, supplied.typography || {});
     manifest.presentation.typography.styles = merge((defaults.typography && defaults.typography.styles) || {}, (supplied.typography && supplied.typography.styles) || {});
-    // UI icons are bundled with the game. Server entries with the same keys must not replace them.
+    // UI icons and font atlases are bundled with the game; keep atlas pixels aligned with the local glyph index.
     var localUi = {};
-    for (i = 0; i < fallbackAssets.length; i += 1) if (/^ui-(item|map|result)-/.test(fallbackAssets[i].key) || fallbackAssets[i].key === 'ui-level-lock') localUi[fallbackAssets[i].key] = true;
+    for (i = 0; i < fallbackAssets.length; i += 1) if (/^ui-(item|map|result)-/.test(fallbackAssets[i].key) || /^font-cn-main-/.test(fallbackAssets[i].key) || fallbackAssets[i].key === 'ui-level-lock') localUi[fallbackAssets[i].key] = true;
     manifest.assetManifest = (manifest.assetManifest || []).filter(function (item) { return item && !localUi[item.key]; });
     for (i = 0; i < manifest.assetManifest.length; i += 1) assetKeys[manifest.assetManifest[i].key] = true;
     for (i = 0; i < fallbackAssets.length; i += 1) {

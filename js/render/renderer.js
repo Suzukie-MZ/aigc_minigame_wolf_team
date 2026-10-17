@@ -6,7 +6,7 @@
   function solid(points,c){var v=new Float32Array(points);gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(posLoc);gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);gl.uniform2f(resLoc,M3.Layout.w,M3.Layout.h);gl.uniform4f(colorLoc,c[0],c[1],c[2],c.length>3?c[3]:1);gl.drawArrays(gl.TRIANGLES,0,v.length/2);}
   function diamond(cx,cy,w,h,c){solid([cx,cy-h*.5,cx+w*.5,cy,cx,cy+h*.5,cx,cy-h*.5,cx,cy+h*.5,cx-w*.5,cy],c);}
   function line(x1,y1,x2,y2,width,c){var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1,px=-dy/len*width*.5,py=dx/len*width*.5;solid([x1+px,y1+py,x2+px,y2+py,x1-px,y1-py,x1-px,y1-py,x2+px,y2+py,x2-px,y2-py],c);}
-  function imageRegion(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharpen,clip,rotation){var image,cached,texture,v,textureKey;if(!key||!M3.TextureAssets||(image=M3.TextureAssets.get(key))===null)return false;textureKey=M3.TextureAssets.cacheKey?M3.TextureAssets.cacheKey(key):key;cached=textures[textureKey];if(!cached||cached.image!==image){if(cached&&cached.texture&&gl.deleteTexture)gl.deleteTexture(cached.texture);texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);cached=textures[textureKey]={texture:texture,image:image};}texture=cached.texture;tint=tint||[1,1,1,1];v=new Float32Array([x,y,u0,v0,x+w,y,u1,v0,x,y+h,u0,v1,x,y+h,u0,v1,x+w,y,u1,v0,x+w,y+h,u1,v1]);if(rotation){var ci,px,py,cs=Math.cos(rotation),sn=Math.sin(rotation),cx=x+w*.5,cy=y+h*.5;for(ci=0;ci<v.length;ci+=4){px=v[ci]-cx;py=v[ci+1]-cy;v[ci]=cx+px*cs-py*sn;v[ci+1]=cy+px*sn+py*cs;}}gl.useProgram(imageProgram);gl.bindBuffer(gl.ARRAY_BUFFER,imageBuffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(imagePosLoc);gl.vertexAttribPointer(imagePosLoc,2,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(imageUvLoc);gl.vertexAttribPointer(imageUvLoc,2,gl.FLOAT,false,16,8);gl.uniform2f(imageResLoc,M3.Layout.w,M3.Layout.h);gl.uniform1f(imageAlphaLoc,alpha===undefined?1:alpha);gl.uniform1f(imageSharpLoc,sharpen?1:0);gl.uniform1f(imageClipLoc,clip||0);gl.uniform4f(imageUvBoundsLoc,u0,v0,u1,v1);gl.uniform4f(imageTintLoc,tint[0],tint[1],tint[2],tint.length>3?tint[3]:1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.drawArrays(gl.TRIANGLES,0,6);return true;} function imageAsset(key,x,y,w,h,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1;return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,0);} function imageAssetContain(key,x,y,w,h,alpha){var image=M3.TextureAssets&&M3.TextureAssets.get(key),meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region||[0,0,1,1],sourceW=image&&(image.naturalWidth||image.width),sourceH=image&&(image.naturalHeight||image.height),aspect,boxAspect,drawW,drawH;if(!image||!sourceW||!sourceH)return false;sourceW*=Math.max(.001,region[2]-region[0]);sourceH*=Math.max(.001,region[3]-region[1]);aspect=sourceW/sourceH;boxAspect=w/h;if(aspect>boxAspect){drawW=w;drawH=w/aspect;}else{drawH=h;drawW=h*aspect;}return imageAsset(key,x+(w-drawW)*.5,y+(h-drawH)*.5,drawW,drawH,alpha);} function imageAssetChamfer(key,x,y,w,h,cut,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1,clip=Math.max(0,Math.min(.45,(Number(cut)||0)/Math.max(1,Math.min(w,h))));return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,clip);}
+  function imageRegion(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharpen,clip,rotation){var image,cached,texture,v,textureKey;if(!key||!M3.TextureAssets||(image=M3.TextureAssets.get(key))===null)return false;textureKey=M3.TextureAssets.cacheKey?M3.TextureAssets.cacheKey(key):key;cached=textures[textureKey];if(!cached||cached.image!==image){if(cached&&cached.texture&&gl.deleteTexture)gl.deleteTexture(cached.texture);texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,key==='ui-map-terrain'||key==='pixel-units-25d'||key==='pixel-terrain-25d'||key==='battle-scene-surround'||/monster.*atlas/.test(key)?gl.NEAREST:gl.LINEAR);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);cached=textures[textureKey]={texture:texture,image:image};}texture=cached.texture;tint=tint||[1,1,1,1];v=new Float32Array([x,y,u0,v0,x+w,y,u1,v0,x,y+h,u0,v1,x,y+h,u0,v1,x+w,y,u1,v0,x+w,y+h,u1,v1]);if(rotation){var ci,px,py,cs=Math.cos(rotation),sn=Math.sin(rotation),cx=x+w*.5,cy=y+h*.5;for(ci=0;ci<v.length;ci+=4){px=v[ci]-cx;py=v[ci+1]-cy;v[ci]=cx+px*cs-py*sn;v[ci+1]=cy+px*sn+py*cs;}}gl.useProgram(imageProgram);gl.bindBuffer(gl.ARRAY_BUFFER,imageBuffer);gl.bufferData(gl.ARRAY_BUFFER,v,gl.STREAM_DRAW);gl.enableVertexAttribArray(imagePosLoc);gl.vertexAttribPointer(imagePosLoc,2,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(imageUvLoc);gl.vertexAttribPointer(imageUvLoc,2,gl.FLOAT,false,16,8);gl.uniform2f(imageResLoc,M3.Layout.w,M3.Layout.h);gl.uniform1f(imageAlphaLoc,alpha===undefined?1:alpha);gl.uniform1f(imageSharpLoc,sharpen?1:0);gl.uniform1f(imageClipLoc,clip||0);gl.uniform4f(imageUvBoundsLoc,u0,v0,u1,v1);gl.uniform4f(imageTintLoc,tint[0],tint[1],tint[2],tint.length>3?tint[3]:1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.drawArrays(gl.TRIANGLES,0,6);return true;} function imageAsset(key,x,y,w,h,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1;return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,0);} function imageAssetContain(key,x,y,w,h,alpha){var image=M3.TextureAssets&&M3.TextureAssets.get(key),meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region||[0,0,1,1],sourceW=image&&(image.naturalWidth||image.width),sourceH=image&&(image.naturalHeight||image.height),aspect,boxAspect,drawW,drawH;if(!image||!sourceW||!sourceH)return false;sourceW*=Math.max(.001,region[2]-region[0]);sourceH*=Math.max(.001,region[3]-region[1]);aspect=sourceW/sourceH;boxAspect=w/h;if(aspect>boxAspect){drawW=w;drawH=w/aspect;}else{drawH=h;drawW=h*aspect;}return imageAsset(key,x+(w-drawW)*.5,y+(h-drawH)*.5,drawW,drawH,alpha);} function imageAssetChamfer(key,x,y,w,h,cut,alpha){var meta=M3.TextureAssets&&M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region,u0=region&&region[0]||0,v0=region&&region[1]||0,u1=region&&region[2]||1,v1=region&&region[3]||1,clip=Math.max(0,Math.min(.45,(Number(cut)||0)/Math.max(1,Math.min(w,h))));return imageRegion(key,x,y,w,h,u0,1-v0,u1,1-v1,[1,1,1,1],alpha,false,clip);}
   function isTowerFrame(r){var active=M3.Renderer&&M3.Renderer._activeView,l,cell,i,t,rects,j,target;if(!active||active.state!=='BATTLE'||!active.combat||!active.combat.towers)return false;l=M3.UILayout.get();cell=l.cell;for(i=0;i<active.combat.towers.length;i+=1){t=active.combat.towers[i];rects=[{x:l.board.x+(t.x+.16)*cell,y:l.board.y+(t.y+.12)*cell,w:cell*.68,h:cell*.76},{x:l.board.x+(t.x+.08)*cell,y:l.board.y+(t.y+.04)*cell,w:cell*.84,h:cell*.90}];for(j=0;j<rects.length;j+=1){target=rects[j];if(Math.abs(r.x-target.x)<.02&&Math.abs(r.y-target.y)<.02&&Math.abs(r.w-target.w)<.02&&Math.abs(r.h-target.h)<.02)return true;}}return false;}
   function frame(r,c,b){if(isTowerFrame(r))return;b=b||2;rect(r.x,r.y,r.w,b,c);rect(r.x,r.y+r.h-b,r.w,b,c);rect(r.x,r.y,b,r.h,c);rect(r.x+r.w-b,r.y,b,r.h,c);}
   var drawRect=rect,drawImageAsset=imageAsset;
@@ -107,20 +107,152 @@
   function attackEffects(v,b,cell){var events=v.combat.attackEvents||[],configs=v.presentation&&v.presentation.combatEffects||{},i,event,cfg,progress,fade,sx,sy,tx,ty,dx,dy,distance,steps,j,ratio,width,size,px,py,color,impactColor;for(i=0;i<events.length;i+=1){event=events[i];cfg=configs[event.type]||{};progress=Math.min(1,event.age/event.duration);fade=Math.max(0,1-progress);sx=b.x+event.fromX*cell;sy=b.y+event.fromY*cell;tx=b.x+event.toX*cell;ty=b.y+event.toY*cell;dx=tx-sx;dy=ty-sy;distance=Math.sqrt(dx*dx+dy*dy);width=Math.max(2,cell*(Number(cfg.trailWidth)||(event.type==='hero'?.12:.07)));size=cell*(Number(cfg.impactScale)||(event.type==='hero'?.30:.18));color=cfg.color||(event.type==='hero'?[1,.76,.2,1]:[.42,.94,1,1]);impactColor=cfg.impactColor||(event.type==='hero'?[1,.34,.16,1]:[.88,1,1,1]);if(event.type==='hero'){steps=Math.max(3,Math.ceil(distance/Math.max(3,cell*.14)));for(j=0;j<=steps;j+=1){ratio=j/steps;px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(.45+.55*ratio)));}frame({x:tx-size*(.55+progress*.45),y:ty-size*(.55+progress*.45),w:size*(1.1+progress*.9),h:size*(1.1+progress*.9)},alphaColor(impactColor,fade),Math.max(2,width*.55));rect(tx-width*1.4,ty-width*.45,width*2.8,width*.9,alphaColor(impactColor,fade));rect(tx-width*.45,ty-width*1.4,width*.9,width*2.8,alphaColor(impactColor,fade));}else{for(j=0;j<4;j+=1){ratio=Math.max(0,progress-j*.10);px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(1-j*.18)));}frame({x:tx-size*.5,y:ty-size*.5,w:size,h:size},alphaColor(impactColor,fade),Math.max(1,width*.45));}}}
   function itemDisplay(l,v){var p=uiPalette(v),r=l.battleItems,size=Math.min(r.w,r.h),icon={x:r.x+(r.w-size)*.5,y:r.y+(r.h-size)*.5,w:size,h:size},art={x:0,y:0,w:0,h:0};rect(icon.x+3,icon.y+4,icon.w,icon.h,[0,0,0,.34]);rect(icon.x,icon.y,icon.w,icon.h,p.navy2);frame(icon,p.borderVariants[2],2);art={x:icon.x+2,y:icon.y+2,w:icon.w-4,h:icon.h-4};if(imageAsset('ui-item-question',art.x,art.y,art.w,art.h,1)){frame(art,[p.borderVariants[2][0],p.borderVariants[2][1],p.borderVariants[2][2],.78],1.5);return;}text('道具',icon.x+icon.w*.5,icon.y+icon.h*.20,.60,p.paper,icon.w*.84,'center');text('点击选择',icon.x+icon.w*.5,icon.y+icon.h*.66,.44,p.accent,icon.w*.88,'center');}
   function itemChoiceIcon(r,effect,color){var cx=r.x+r.w*.5,cy=r.y+r.h*.31,s=Math.min(r.w,r.h)*.22;if(effect==='clear_all_enemies'){frame({x:cx-s*.62,y:cy-s*.62,w:s*1.24,h:s*1.24},color,2);rect(cx-s*.9,cy-2,s*1.8,4,color);rect(cx-2,cy-s*.9,4,s*1.8,color);rect(cx-s*.16,cy-s*.16,s*.32,s*.32,color);}else{rect(cx-s*.72,cy+s*.16,s*.38,s*.42,color);rect(cx-s*.19,cy-s*.08,s*.38,s*.66,color);rect(cx+s*.34,cy-s*.36,s*.38,s*.94,color);rect(cx-s*.16,cy-s*.78,s*.32,s*.32,color);rect(cx-s*.42,cy-s*.53,s*.84,s*.08,color);}}
-  function battle(l,v){var b=l.board,cell=l.cell,x,y,t,e,i,r,col,path={},p,dmg,progress,palette=uiPalette(v),mp=v.combat.mapPresentation||{},style=mp.style||{},tile,gap=style.tileGap||1,inset,count=v.combat.deckIds.length;if(!imageAsset(v.combat.mapBackgroundAsset,0,l.top,l.w,l.usable,.55))rect(0,l.top,l.w,l.usable,mp.waterColor||tone(v,'background',[.08,.11,.16,1]));battleBackdrop(l,v);for(i=0;i<v.combat.board.path.length;i+=1){p=v.combat.board.path[i];path[p.x+','+p.y]=true;}for(y=0;y<v.combat.board.height;y+=1)for(x=0;x<v.combat.board.width;x+=1){tile=v.combat.board.tile(x,y);r={x:b.x+x*cell+gap,y:b.y+y*cell+gap,w:cell-gap*2,h:cell-gap*2};col=path[x+','+y]?(mp.routeColor||tone(v,'route',[.34,.38,.43,1])):(mp.groundColor||tone(v,'ground',[.16,.27,.23,1]));if(tile==='obstacle')col=mp.obstacleColor||tone(v,'obstacle',[.42,.31,.22,1]);rect(r.x,r.y,r.w,r.h,style.tileBorderColor||col);inset=style.tileBorder||1;rect(r.x+inset,r.y+inset,r.w-inset*2,r.h-inset*2,col);if(v.combat.selectedObstacle&&v.combat.selectedObstacle.x===x&&v.combat.selectedObstacle.y===y)frame(r,tone(v,'gold',[1,.85,.25,1]),Math.max(3,cell*.11));}battleBoardFrame(l,v);for(i=0;i<v.combat.towers.length;i+=1){t=v.combat.towers[i];col=v.combat.cardColors[t.cardId]||[.7,.7,.7];r={x:b.x+t.x*cell,y:b.y+t.y*cell,w:cell,h:cell};if(!imageAsset(towerLevelAsset(v,t.unitId,t.level),r.x,r.y,r.w,r.h,1)&&!imageAsset(v.combat.unitAssets[t.unitId],r.x,r.y,r.w,r.h,1))actor(b.x+(t.x+.5)*cell,b.y+(t.y+.52)*cell,cell,v.combat.unitAppearances[t.unitId],col);if(v.combat.selectedTower&&v.combat.selectedTower.x===t.x&&v.combat.selectedTower.y===t.y)frame({x:r.x+1,y:r.y+1,w:r.w-2,h:r.h-2},tone(v,'gold',[1,.85,.25,1]),2);}
-    for(i=0;i<v.combat.heroes.length;i+=1){t=v.combat.heroes[i];col=v.combat.heroColors[t.heroId]||tone(v,'gold',[1,.8,.3,1]);r={x:b.x+t.x*cell,y:b.y+t.y*cell,w:cell,h:cell};if(!imageAsset(v.combat.unitAssets[t.unitId],r.x,r.y,r.w,r.h,1))actor(b.x+(t.x+.5)*cell,b.y+(t.y+.51)*cell,cell,v.combat.unitAppearances[t.unitId],col);}
-    for(i=0;i<v.combat.enemies.length;i+=1){e=v.combat.enemies[i];progress=e.dying?Math.min(1,(e.deathAge||0)/(e.deathDuration||.45)):0;col=v.combat.unitColors[e.unitId]||tone(v,'enemy',[.9,.28,.3]);inset=cell*(v.combat.unitRenderScales[e.unitId]||.72)*(e.dying?1-progress*.22:1);if(!(M3.EnemyAnimations&&M3.EnemyAnimations.draw(imageRegion,v.combat.unitAssets[e.unitId],e,v.combat.elapsed,b.x+e.x*cell-inset*.5,b.y+e.y*cell-inset*.5-progress*cell*.18,inset,inset,1-progress))&&!imageAsset(v.combat.unitAssets[e.unitId],b.x+e.x*cell-inset*.5,b.y+e.y*cell-inset*.5-progress*cell*.18,inset,inset,1-progress))actor(b.x+e.x*cell,b.y+e.y*cell-progress*cell*.18,inset,v.combat.unitAppearances[e.unitId],alphaColor(col,1-progress));if(!e.dying)rect(b.x+(e.x-.3)*cell,b.y+e.y*cell-inset*.62,cell*.6*(Math.max(0,e.hp)/e.maxHp),3,tone(v,'health',[.25,.95,.38,1]));}
-    if(M3.DeathParticles&&(v.combat.deathEffects||[]).length){gl.blendFunc(M3.DeathParticles.blendSource,M3.DeathParticles.blendDestination);try{M3.DeathParticles.draw(v.combat.deathEffects,b,cell,imageRegion);}finally{gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}}
-    attackEffects(v,b,cell);upgradeEffects(v,b,cell);
-    for(i=0;i<(v.combat.damageEvents||[]).length;i+=1){dmg=v.combat.damageEvents[i];progress=Math.min(1,dmg.age/dmg.duration);M3.Glyphs.drawNumber(M3.Renderer,dmg.value,b.x+(dmg.x-.18)*cell,b.y+(dmg.y-.62-progress*.34)*cell,Math.max(11,cell*.36),[1,.22,.12,1-progress]);}
-    for(i=0;i<v.combat.heroIds.length;i+=1){r=l.battleHeroCard(i,v.combat.heroIds.length,v.combat.deckIds.length);col=v.combat.heroColors[v.combat.heroIds[i]]||tone(v,'gold',[1,.8,.3,1]);inset=battleCardArt(r,v.combat.heroAssets[v.combat.heroIds[i]],v.combat.unitAppearances[v.combat.heroUnits&&v.combat.heroUnits[v.combat.heroIds[i]]],col,l.battleHeroArtH,v,v.combat.selectedHero===v.combat.heroIds[i]);cardTextLines(heroDisplayName(v.combat.heroNames[v.combat.heroIds[i]]),r,inset+2,1,[.12,.17,.17,1],.94,15);cardTextLines(v.combat.heroDescriptions[v.combat.heroIds[i]]||'支援全场',r,inset+23,2,[.26,.32,.29,1],.58,12,'cardBody');battleCardCost(r,v.combat.heroCosts[v.combat.heroIds[i]]||0,r.y+r.h-20);}
-    chamfer({x:6,y:l.cardBarY-7,w:l.w-12,h:l.battleCardH+14},[.92,.90,.81,.07],10);
-    for(i=0;i<v.combat.deckIds.length;i+=1){r=l.battleTowerCard(i,count);col=v.combat.cardColors[v.combat.deckIds[i]]||[.5,.5,.5];inset=battleCardArt(r,v.combat.cardAssets[v.combat.deckIds[i]],v.combat.unitAppearances[v.combat.cardUnits[v.combat.deckIds[i]]],col,l.battleCardArtH,v,v.combat.selectedCard===v.combat.deckIds[i]);cardTextLines(v.combat.cardNames[v.combat.deckIds[i]]||'防御塔',r,inset+3,1,[.12,.17,.17,1],.80,14);cardTextLines(v.combat.cardDescriptions[v.combat.deckIds[i]]||'通用防御单位',r,inset+21,2,[.26,.32,.29,1],.58,12,'cardBody');battleCardCost(r,v.combat.cardCosts[v.combat.deckIds[i]]||0,r.y+r.h-24);}
-    if(v.combat.crisisActive){refinedPanel(l.battleHint,palette.borderVariants[4],[.085,.045,.018,.94],'button');text('资源危机：基地受损可转化资源',l.battleHint.x+l.battleHint.w*.5,l.battleHint.y+5,.68,[1,.76,.40,1],l.battleHint.w*.9,'center','compactButton');}itemDisplay(l,v);
-    battleWaveNotice(l,v);
-    // Draw battle controls below the tower inspection panel.
-    if(!v.paused)uiButton(l.pauseButton,v,'暂停','back',true,true);
-    if(v.combat.selectedTower){rect(l.towerPanel.x,l.towerPanel.y,l.towerPanel.w,l.towerPanel.h,tone(v,'panel',[.08,.2,.26,.96]));frame(l.towerPanel,tone(v,'frame',[.7,.9,.9,1]),2);text(v.combat.selectedTower.name+'  Lv'+v.combat.selectedTower.level+'/'+v.combat.selectedTower.levelCap,l.towerPanel.x+10,l.towerPanel.y+9,.78,tone(v,'frame',[.8,1,1,1]),l.towerPanel.w*.60,'left');text(v.combat.selectedTower.bonusLabel+'加成 +'+v.combat.selectedTower.bonusValue,l.towerPanel.x+10,l.towerPanel.y+39,.68,tone(v,'success',[.3,.9,.55,1]),l.towerPanel.w*.58,'left');text('升级花费 '+v.combat.selectedTower.cost,l.towerPanel.x+10,l.towerPanel.y+66,.68,tone(v,'gold',[1,.8,.3,1]),l.towerPanel.w*.58,'left');rect(l.towerUpgrade.x,l.towerUpgrade.y,l.towerUpgrade.w,l.towerUpgrade.h,buttonBackground(v.combat.selectedTower.canUpgrade?tone(v,'success',[.2,.75,.5,1]):tone(v,'disabled',[.3,.32,.35,1])));text(v.combat.selectedTower.level>=v.combat.selectedTower.levelCap?'已满级':'确认升级',l.towerUpgrade.x+l.towerUpgrade.w*.5,l.towerUpgrade.y+l.towerUpgrade.h*.30,1.0,tone(v,'background',[.03,.1,.16,1]),l.towerUpgrade.w*.84,'center');}else if(v.combat.selectedObstacle){rect(l.towerPanel.x,l.towerPanel.y,l.towerPanel.w,l.towerPanel.h,tone(v,'panel',[.08,.2,.26,.96]));frame(l.towerPanel,tone(v,'gold',[1,.8,.3,1]),2);text('障碍地块',l.towerPanel.x+10,l.towerPanel.y+9,.82,tone(v,'frame',[.8,1,1,1]),l.towerPanel.w*.58,'left');text('清除后变为可建塔地块',l.towerPanel.x+10,l.towerPanel.y+39,.62,tone(v,'primary',[.3,.85,.78,1]),l.towerPanel.w*.58,'left');text('清除花费 '+v.combat.selectedObstacle.cost,l.towerPanel.x+10,l.towerPanel.y+66,.68,tone(v,'gold',[1,.8,.3,1]),l.towerPanel.w*.58,'left');rect(l.towerUpgrade.x,l.towerUpgrade.y,l.towerUpgrade.w,l.towerUpgrade.h,buttonBackground(v.combat.selectedObstacle.canClear?tone(v,'success',[.2,.75,.5,1]):tone(v,'disabled',[.3,.32,.35,1])));text('确认清除',l.towerUpgrade.x+l.towerUpgrade.w*.5,l.towerUpgrade.y+l.towerUpgrade.h*.30,1.0,tone(v,'background',[.03,.1,.16,1]),l.towerUpgrade.w*.84,'center');}if(v.paused){rect(0,l.top,l.w,l.usable,[.01,.025,.04,.74]);text('游戏暂停',l.w*.5,l.top+l.usable*.43,2.2,tone(v,'frame',[.8,1,1,1]),l.w*.72,'center');text('点击暂停按钮继续',l.w*.5,l.top+l.usable*.51,.9,tone(v,'primary',[.3,.8,.75,1]),l.w*.7,'center');uiButton(l.pauseButton,v,'继续','green',true,true);}
+  function pixelUnit(id,d,r){
+    var uv=M3.CombatProjection.region(id,d),aspect,w,h;if(!uv)return false;
+    aspect=(uv[2]-uv[0])*836/((uv[3]-uv[1])*1881);w=Math.min(r.w,r.h*aspect);h=w/aspect;
+    return imageRegion('pixel-units-25d',r.x+(r.w-w)/2,r.y+r.h-h,w,h,uv[0],1-uv[1],uv[2],1-uv[3],[1,1,1,1],1,false,0);
+  }
+  function pixelTerrain(col,row,r){return imageRegion('pixel-terrain-25d',r.x,r.y,r.w,r.h,col/4,1-row/2,(col+1)/4,1-(row+1)/2,[1,1,1,1],1,false,0);}
+  function groundShadow(x,y,w,h){var vertices=[],i,a,b;for(i=0;i<16;i+=1){a=i*Math.PI/8;b=(i+1)*Math.PI/8;vertices.push(x,y,x+Math.cos(a)*w,y+Math.sin(a)*h,x+Math.cos(b)*w,y+Math.sin(b)*h);}solid(vertices,[0,0,0,.35]);}
+  function obliqueWorld(l,v){
+    var c=v.combat,projection=M3.CombatProjection,g=projection.geometry(l,c.board),cyan=[.278,.863,.906,1],amber=[.957,.718,.173,1],navy=[.024,.106,.149,1],x,y,tile,key,p,unit,i,r,objects=[],selected;
+    // The gameplay board remains an m*n matrix. Only its screen projection changes.
+
+    for(y=0;y<c.board.height;y+=1)for(x=0;x<c.board.width;x+=1){
+      p=projection.point(g,x,y);tile=c.board.tile(x,y);key=M3.TextureAssets.tileKey(v.levelPreview.map,tile);
+      var groundCol=tile==='tower_slot'?2:tile==='hero_slot'?3:(tile==='road'||tile==='spawn'||tile==='goal'?1:0);
+      if(!pixelTerrain(groundCol,0,{x:p.x,y:p.y,w:g.cx,h:g.cy})&&!imageAsset(key,p.x,p.y,g.cx,g.cy,1))drawRect(p.x+1,p.y+1,g.cx-2,g.cy-2,tile==='road'?[.27,.32,.35,1]:[.05,.22,.22,1]);
+      if(tile==='spawn'||tile==='goal')objects.push({kind:tile,x:x+.5,y:y+.85});
+      if(tile==='obstacle')objects.push({kind:'obstacle',x:x+.5,y:y+.82,key:M3.TextureAssets.tileKey(v.levelPreview.map,'obstacle')});
+      if(c.selectedObstacle&&c.selectedObstacle.x===x&&c.selectedObstacle.y===y)frame({x:p.x+1,y:p.y+1,w:g.cx-2,h:g.cy-2},amber,2);
+    }
+
+    for(i=0;i<c.towers.length;i+=1)objects.push({kind:'tower',x:c.towers[i].x+.5,y:c.towers[i].y+.83,unit:c.towers[i]});
+    for(i=0;i<c.heroes.length;i+=1)objects.push({kind:'hero',x:c.heroes[i].x+.5,y:c.heroes[i].y+.83,unit:c.heroes[i]});
+    for(i=0;i<c.enemies.length;i+=1)objects.push({kind:'enemy',x:c.enemies[i].x,y:c.enemies[i].y+.15,unit:c.enemies[i]});
+    objects.sort(function(a,b){return a.y-b.y||a.x-b.x;});
+    for(i=0;i<objects.length;i+=1){
+      var o=objects[i],h,w,d,fade=1;p=projection.point(g,o.x,o.y);unit=o.unit;
+      groundShadow(p.x,p.y,g.cx*(o.kind==='enemy'?.22:.30),g.cy*.11);
+      if(o.kind==='obstacle'||o.kind==='spawn'||o.kind==='goal'){h=g.cx*.92;pixelTerrain(o.kind==='obstacle'?2:o.kind==='spawn'?0:1,1,{x:p.x-g.cx*.48,y:p.y-h*.86,w:g.cx*.96,h:h});continue;}
+      if(o.kind==='enemy'){
+        fade=unit.dying?Math.max(0,1-(unit.deathAge||0)/(unit.deathDuration||.45)):1;
+        h=g.cx*(c.unitRenderScales[unit.unitId]||.72)*1.15;w=h;
+        if(!(M3.EnemyAnimations&&M3.EnemyAnimations.draw(imageRegion,c.unitAssets[unit.unitId],unit,c.elapsed,p.x-w/2,p.y-h*.85,w,h,fade)))imageAssetContain(c.unitAssets[unit.unitId],p.x-w/2,p.y-h*.85,w,h,fade);
+        if(!unit.dying){drawRect(p.x-g.cx*.27,p.y-h*.88,g.cx*.54,4,[.025,.06,.08,1]);drawRect(p.x-g.cx*.27,p.y-h*.88,g.cx*.54*Math.max(0,unit.hp/unit.maxHp),3,[.70,.22,.47,1]);}
+      }else{
+        h=g.cx*(o.kind==='hero'?1.38:1.48);w=h;
+        if(unit.unitId==='tower-6')w=h*.70;
+        d=projection.directional(unit.unitId)?(unit.aimX!==undefined?projection.facing(unit.aimX,unit.aimY):projection.direction(unit,c.enemies)):0;
+        r={x:p.x-w/2,y:p.y-h*.91,w:w,h:h};
+        if(!pixelUnit(unit.unitId,d,r))imageAssetContain(c.unitAssets[unit.unitId],r.x,r.y,r.w,r.h,1);
+        if(c.selectedTower&&unit.x===c.selectedTower.x&&unit.y===c.selectedTower.y&&o.kind==='tower')chamferOutline({x:p.x-g.cx*.40,y:p.y-g.cy*.4,w:g.cx*.8,h:g.cy*.55},amber,2,4);
+        if((unit.level||1)>1)mapLabel('Lv'+unit.level,{x:p.x-16,y:p.y+1,w:32,h:14},10,amber);
+      }
+    }
+    if(M3.DeathParticles&&(c.deathEffects||[]).length){gl.blendFunc(M3.DeathParticles.blendSource,M3.DeathParticles.blendDestination);try{M3.DeathParticles.draw(c.deathEffects,{x:g.x,y:g.y},g.cx,function(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharp){return imageRegion(key,x,g.y+(y-g.y)*.72,w,h,u0,v0,u1,v1,tint,alpha,sharp);});}finally{gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}}
+    for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i],from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
+    for(i=0;i<(c.damageEvents||[]).length;i+=1){var ev=c.damageEvents[i];p=projection.point(g,ev.x,ev.y);mapLabel(String(ev.value),{x:p.x-18,y:p.y-g.cx*.65-ev.age*16,w:36,h:18},12,[1,.72,.30,Math.max(0,1-ev.age/ev.duration)]);}
+  }
+  // Share the exact armor skins used by the hero selection screen. Fixed corner sizes never stretch.
+  function battleArmor(r,selected,fill){
+    mapSkinFrame(selected?[58,585,818,260]:[58,860,818,256],r,22,fill||[.024,.106,.149,1],heroSkin,.43);
+  }
+  function battleOuterArmor(r){mapSkinFrame([58,860,818,256],r,22,[.024,.106,.149,1],heroSkin,.65);}
+  // Alpha bounds of the front-facing atlas cells, used only for compact UI portraits.
+  function battleUnitPortrait(r,id,bust){
+    var row=/^hero-/.test(id)?Number(id.slice(5))-1:Number(id.slice(6))+2,
+      ys=[0,207,430,606,805,979,1181,1374,1577,1881],
+      bounds=[[28,17,209,207],[15,0,209,223],[0,0,199,176],[29,0,199,199],[15,0,209,174],[25,0,195,202],[25,0,207,193],[15,0,209,203],[0,0,187,280]],box=bounds[row];
+    if(!box)return;var x0=box[0],y0=ys[row]+box[1],x1=box[2],y1=ys[row]+box[3];
+    if(bust){y1=y0+(y1-y0)*.60;var trim=(x1-x0)*.18;x0+=trim;x1-=trim;}
+    var aspect=(x1-x0)/(y1-y0),w=Math.min(r.w,r.h*aspect),h=w/aspect;
+    imageRegion('pixel-units-25d',r.x+(r.w-w)/2,r.y+(r.h-h)/2,w,h,x0/836,1-y0/1881,x1/836,1-y1/1881,[1,1,1,1],1,false,0);
+  }
+  function battlePrice(r,cost){
+    chamfer(r,[.01,.045,.065,1],5);chamferOutline(r,[.24,.43,.48,1],1,5);
+    var size=Math.min(18,r.h-4),value=String(cost),tw=Math.min(r.w-25,Math.max(14,value.length*11)),start=r.x+(r.w-tw-size-5)/2;
+    battleHudIcon('coin',start,r.y+(r.h-size)/2,size,[.957,.718,.173,1]);mapLabel(value,{x:start+size+5,y:r.y,w:tw,h:r.h},16,[.957,.718,.173,1],{padding:0});
+  }
+  function pixelBattleCard(r,id,name,cost,selected){
+    var paper=[.835,.957,.937,1],cyan=[.278,.863,.906,1],hero=/^hero-/.test(id);
+    battleArmor(r,selected);
+    if(hero){var portrait=Math.min(r.h-14,r.w*.42),art={x:r.x+7,y:r.y+7,w:portrait,h:r.h-14},tx=art.x+art.w+7,infoW=r.x+r.w-tx-8;
+      battleArmor(art,false);battleUnitPortrait({x:art.x+7,y:art.y+7,w:art.w-14,h:art.h-14},id,true);
+      mapLabel(name,{x:tx,y:r.y+8,w:infoW,h:23},17,cyan,{align:'left',padding:0});
+      mapLabel('战役支援',{x:tx,y:r.y+33,w:infoW,h:20},14,[.45,.66,.72,1],{align:'left',padding:0});
+      battlePrice({x:tx,y:r.y+61,w:Math.min(92,infoW),h:27},cost);
+    }else{
+      battleUnitPortrait({x:r.x+9,y:r.y+10,w:r.w-18,h:r.h-60},id,false);
+      mapLabel(name,{x:r.x+9,y:r.y+r.h-46,w:r.w-18,h:20},13,cyan,{padding:0});
+      battlePrice({x:r.x+10,y:r.y+r.h-28,w:r.w-20,h:21},cost);
+    }
+  }
+  function battleCommand(r,label,primary){
+    var support=label==='支援',pause=label==='暂停',resume=label==='继续',ink=[.012,.05,.075,1],cyan=[.278,.863,.906,1],accent=support?[.71,.36,.89,1]:cyan;
+    battleArmor(r,false,support?[.14,.035,.24,1]:[.055,.60,.72,1]);
+    chamferOutline({x:r.x+4,y:r.y+4,w:r.w-8,h:r.h-8},accent,2,5);
+    var inner={x:r.x+10,y:r.y+9,w:r.w-20,h:r.h-18},labelW=40,iconW=support?23:19,gap=8,start=inner.x+(inner.w-labelW-iconW-gap)/2;
+    if(support){mapLabel('?',{x:start,y:inner.y-1,w:iconW,h:inner.h+2},30,[.84,.54,1,1],{padding:0});mapLabel(label,{x:start+iconW+gap,y:inner.y,w:labelW,h:inner.h},16,[.93,.76,1,1],{padding:0});}
+    else if(pause||resume){
+      if(resume)solid([start,inner.y+3,start+17,inner.y+inner.h/2,start,inner.y+inner.h-3],ink);
+      else{chamfer({x:start,y:inner.y+3,w:6,h:inner.h-6},ink,2);chamfer({x:start+11,y:inner.y+3,w:6,h:inner.h-6},ink,2);}
+      mapLabel(label,{x:start+iconW+gap,y:inner.y,w:labelW,h:inner.h},16,ink,{padding:0});
+    }else mapLabel(label,inner,16,ink,{padding:0});
+  }
+  function battleInspection(l,v){
+    var info=v.combat.selectedTower||v.combat.selectedObstacle;if(!info)return;
+    var tower=!!v.combat.selectedTower,r=l.towerPanel,paper=[.835,.957,.937,1],amber=[.957,.718,.173,1],cyan=[.278,.863,.906,1];
+    battleArmor(r,false);
+    mapLabel(tower?info.name+' Lv'+info.level+'/'+info.levelCap:'障碍地块',{x:r.x+12,y:r.y+8,w:r.w-124,h:24},16,paper,{align:'left',padding:0});
+    mapLabel(tower?info.bonusLabel+'加成 +'+info.bonusValue:'清除后可部署防御塔',{x:r.x+12,y:r.y+33,w:r.w-124,h:20},12,cyan,{align:'left',padding:0});
+    mapLabel('花费 '+info.cost,{x:r.x+12,y:r.y+56,w:r.w-124,h:20},14,amber,{align:'left',padding:0});
+    battleCommand(l.towerUpgrade,tower?(info.level>=info.levelCap?'已满级':'升级'):'清除',tower?info.canUpgrade:info.canClear);
+  }
+  // Repeat unscaled mechanical modules instead of stretching the source scene's perimeter.
+  function battleScenePatch(sx,sy,sw,sh,r){return imageRegion('battle-scene-surround',r.x,r.y,r.w,r.h,sx/258,1-sy/258,(sx+sw)/258,1-(sy+sh)/258,[1,1,1,1],1,false,0);}
+  function battleRepeat(sx,sy,sw,sh,r,scale){var x,y,w,h,tw=sw*scale,th=sh*scale;for(y=0;y<r.h;y+=th)for(x=0;x<r.w;x+=tw){w=Math.min(tw,r.w-x);h=Math.min(th,r.h-y);battleScenePatch(sx,sy,w/scale,h/scale,{x:r.x+x,y:r.y+y,w:w,h:h});}}
+  function battleEnvironment(l){
+    var area={x:4,y:l.top+4,w:l.w-8,h:l.usable-8},y,x;
+    battleRepeat(83,104,32,32,area,1.5);
+    drawRect(area.x,area.y,area.w,area.h,[.012,.035,.05,.64]);
+    // Industrial floor panels and side conduits connect HUD, battlefield and deployment dock.
+    for(y=l.top+118;y<l.heroBarY-12;y+=60){
+      for(x=20;x<l.w-20;x+=62){rect(x,y,56,1,[.22,.33,.36,.4]);rect(x,y,1,52,[.22,.33,.36,.35]);rect(x+4,y+5,2,2,[.43,.48,.45,.55]);}
+    }
+    battleRepeat(20,78,22,74,{x:0,y:l.top+40,w:16,h:l.usable-40},.72);
+    battleRepeat(216,78,22,74,{x:l.w-16,y:l.top+40,w:16,h:l.usable-40},.72);
+    battleRepeat(22,19,210,48,{x:12,y:l.top+106,w:l.w-24,h:30},.65);
+
+  }
+  function battleFieldGround(l,v){
+    var r=l.battleArena,g=M3.CombatProjection.geometry(l,v.combat.board),x,y,startY=g.y-Math.ceil((g.y-r.y)/g.cy)*g.cy;
+    // Extend the same terrain into the headroom and surrounding scenery, without adding playable cells.
+    for(y=startY;y<r.y+r.h;y+=g.cy)for(x=g.x;x<g.x+g.w-.01;x+=g.cx){
+      var top=Math.max(y,r.y),bottom=Math.min(y+g.cy,r.y+r.h);
+      if(bottom>top)pixelTerrain(0,0,{x:x,y:top,w:g.cx,h:bottom-top});
+    }
+    // The perimeter uses the outer scene wall; no second armored box shrinks the battlefield.
+    battleRepeat(20,78,22,74,{x:0,y:r.y,w:8,h:r.h},.7);
+    battleRepeat(216,78,22,74,{x:l.w-8,y:r.y,w:8,h:r.h},.7);
+    battleRepeat(22,25,210,48,{x:8,y:r.y-16,w:l.w-16,h:16},.75);
+    battleRepeat(24,220,202,20,{x:8,y:r.y+r.h,w:l.w-16,h:10},.75);
+    // Sparse scene props stay outside the playable matrix, clear of the top-row unit silhouettes.
+    if(g.y-r.y>g.cx*1.3){pixelTerrain(2,1,{x:g.x+g.w-g.cx*1.3,y:r.y+14,w:g.cx*.9,h:g.cx*.9});pixelTerrain(2,1,{x:g.x+g.cx*2.8,y:r.y+22,w:g.cx*.7,h:g.cx*.7});}
+    if(r.y+r.h-g.y-g.h>g.cx){pixelTerrain(2,1,{x:g.x+g.cx*3.4,y:r.y+r.h-g.cx*.85,w:g.cx*.8,h:g.cx*.8});}
+  }
+  function battle(l,v){var b=l.board,cell=l.cell,x,y,t,e,i,r,col,path={},p,dmg,progress,palette=uiPalette(v),mp=v.combat.mapPresentation||{},style=mp.style||{},tile,gap=style.tileGap||1,inset,count=v.combat.deckIds.length;
+    drawRect(0,l.top,l.w,l.usable,[.024,.106,.149,1]);battleEnvironment(l);battleBackdrop(l,v);
+    var arena=l.battleArena;
+    battleFieldGround(l,v);
+    var sx=gl.drawingBufferWidth/l.w,sy=gl.drawingBufferHeight/l.h;
+    gl.enable(gl.SCISSOR_TEST);gl.scissor(Math.round(l.board.x*sx),Math.round((l.h-l.board.y-l.board.h)*sy),Math.round(l.board.w*sx),Math.round(l.board.h*sy));
+    try{obliqueWorld(l,v);}finally{gl.disable(gl.SCISSOR_TEST);}
+    battleOuterArmor({x:6,y:l.heroBarY-10,w:l.w-12,h:l.top+l.usable-l.heroBarY+6});
+    for(i=0;i<v.combat.heroIds.length;i+=1){r=l.battleHeroCard(i,v.combat.heroIds.length,count);pixelBattleCard(r,v.combat.heroUnits[v.combat.heroIds[i]],heroDisplayName(v.combat.heroNames[v.combat.heroIds[i]]),0,v.combat.selectedHero===v.combat.heroIds[i]);}
+    for(i=0;i<count;i+=1){r=l.battleTowerCard(i,count);pixelBattleCard(r,v.combat.cardUnits[v.combat.deckIds[i]],v.combat.cardNames[v.combat.deckIds[i]],v.combat.cardCosts[v.combat.deckIds[i]],v.combat.selectedCard===v.combat.deckIds[i]);}
+    if(v.combat.crisisActive){chamfer(l.battleHint,[.085,.045,.018,1],4);mapLabel('资源危机：基地受损可转化资源',l.battleHint,12,[1,.76,.40,1]);}battleCommand(l.battleItems,'支援',false);
+    battleWaveNotice(l,v);if(!v.paused)battleCommand(l.pauseButton,'暂停',false);battleInspection(l,v);if(v.paused){drawRect(l.board.x,l.board.y,l.board.w,l.board.h,[.01,.025,.04,.60]);var pauseBox={x:l.w*.18,y:l.board.y+l.board.h*.5-46,w:l.w*.64,h:92};battleArmor(pauseBox,false);mapLabel('游戏暂停',{x:pauseBox.x,y:pauseBox.y+10,w:pauseBox.w,h:30},22,[.835,.957,.937,1]);mapLabel('点击继续恢复对局',{x:pauseBox.x,y:pauseBox.y+47,w:pauseBox.w,h:24},14,[.278,.863,.906,1]);battleCommand(l.pauseButton,'继续',true);}
   }
   function result(l,v){var palette=uiPalette(v),win=v.result==='win',data=v.resultData||{},accent=win?tone(v,'success',[.2,.8,.5,1]):tone(v,'accent',[.92,.34,.32,1]),panel=l.resultPanel,rewards=l.resultRewards,rewardAccents=[tone(v,'gold',[1,.78,.28,1]),tone(v,'primary',[.34,.82,1,1])],rewardFills=[[.18,.13,.045,.98],[.035,.13,.22,.98]],pulse=.88+Math.sin(M3._now()*.004)*.08,i,r;imageAsset(v.presentation&&v.presentation.sceneAssets&&v.presentation.sceneAssets.worldMapBackground,0,l.top,l.w,l.usable,.18);rect(0,l.top,l.w,l.usable,[.01,.025,.05,.66]);rect(panel.x+6,panel.y+8,panel.w,panel.h,[0,0,0,.34]);rect(panel.x,panel.y,panel.w,panel.h,palette.panelVariants[1]||tone(v,'panel',[.035,.09,.13,.98]));frame(panel,alphaColor(accent,.94),3);rect(panel.x,panel.y,panel.w,7,accent);rect(panel.x+panel.w*.12,panel.y+panel.h*.23,panel.w*.76,1,alphaColor(accent,.38));diamond(l.w*.5,l.resultBadge.y+l.resultBadge.h*.5,l.resultBadge.w*pulse,l.resultBadge.h*pulse,alphaColor(accent,.25));diamond(l.w*.5,l.resultBadge.y+l.resultBadge.h*.5,l.resultBadge.w*.72,l.resultBadge.h*.72,accent);if(win){line(l.w*.5-l.resultBadge.w*.16,l.resultBadge.y+l.resultBadge.h*.53,l.w*.5-l.resultBadge.w*.02,l.resultBadge.y+l.resultBadge.h*.67,5,palette.navy);line(l.w*.5-l.resultBadge.w*.02,l.resultBadge.y+l.resultBadge.h*.67,l.w*.5+l.resultBadge.w*.20,l.resultBadge.y+l.resultBadge.h*.36,5,palette.navy);}else{line(l.w*.5-l.resultBadge.w*.14,l.resultBadge.y+l.resultBadge.h*.36,l.w*.5+l.resultBadge.w*.14,l.resultBadge.y+l.resultBadge.h*.66,5,palette.navy);line(l.w*.5+l.resultBadge.w*.14,l.resultBadge.y+l.resultBadge.h*.36,l.w*.5-l.resultBadge.w*.14,l.resultBadge.y+l.resultBadge.h*.66,5,palette.navy);}text(win?copy(v,'resultWin','守护成功'):copy(v,'resultLose','前哨失守'),l.w*.5,panel.y+panel.h*.27,1.90,palette.paper,panel.w*.78,'center','resultTitle');text(win?'防线稳固 · 奖励已结算':'防线失守 · 成长仍会保留',l.w*.5,panel.y+panel.h*.36,.74,accent,panel.w*.84,'center','resultBody');for(i=0;i<2;i+=1){r=rewards[i];rect(r.x+3,r.y+4,r.w,r.h,[0,0,0,.25]);rect(r.x,r.y,r.w,r.h,rewardFills[i]);frame(r,rewardAccents[i],2);rect(r.x,r.y,r.w,5,rewardAccents[i]);text(i?'成长经验':'局外货币',r.x+r.w*.5,r.y+r.h*.20,.64,palette.paper,r.w*.88,'center','resultBody');text('+'+(i?(data.xp||0):(data.outerCurrency||0)),r.x+r.w*.5,r.y+r.h*.50,1.34,rewardAccents[i],r.w*.86,'center','resultLabel');}text('奖励将用于英雄强化与永久成长',l.w*.5,panel.y+panel.h*.83,.68,palette.muted,panel.w*.86,'center','resultBody');rect(l.resultDouble.x+4,l.resultDouble.y+5,l.resultDouble.w,l.resultDouble.h,[0,0,0,.30]);rect(l.resultDouble.x,l.resultDouble.y,l.resultDouble.w,l.resultDouble.h,data.doubled?palette.disabled:palette.buttonGreen);frame(l.resultDouble,data.doubled?palette.muted:palette.borderVariants[3],2);text(data.doubled?'双倍奖励已领取':'观看广告 · 奖励翻倍',l.w*.5,l.resultDouble.y+l.resultDouble.h*.26,.98,palette.paper,l.resultDouble.w*.90,'center','resultButton');rect(l.resultButton.x,l.resultButton.y,l.resultButton.w,l.resultButton.h,palette.buttonBlue);frame(l.resultButton,palette.cyan,2);text(copy(v,'resultAction','返回地图'),l.w*.5,l.resultButton.y+l.resultButton.h*.27,1.16,palette.paper,l.resultButton.w*.88,'center','resultButton');}
   function itemModalLegacy(l,v){var palette=uiPalette(v),modal=l.itemModal,choiceColor,choiceFill,action,i,r,item;rect(0,l.top,l.w,l.usable,[.005,.018,.035,.88]);rect(modal.x+5,modal.y+7,modal.w,modal.h,[0,0,0,.36]);rect(modal.x,modal.y,modal.w,modal.h,palette.panelVariants[1]||tone(v,'panel',[.025,.08,.12,.99]));frame(modal,palette.cyan,2);rect(modal.x,modal.y,modal.w,6,palette.primary);text('战术补给',l.w*.5,modal.y+20,.68,palette.cyan,modal.w*.84,'center');text('选择本局支援',l.w*.5,modal.y+48,1.38,palette.paper,modal.w*.86,'center','title');text('二选一 · 不占用地图位置',l.w*.5,modal.y+82,.68,palette.muted,modal.w*.86,'center');rect(modal.x+modal.w*.08,modal.y+108,modal.w*.84,1,alphaColor(palette.cyan,.34));for(i=0;i<2;i+=1){r=l.itemChoices[i];item=v.battleItemChoices[i];choiceColor=i?palette.violet:palette.primary;choiceFill=i?[.18,.075,.22,.98]:[.035,.19,.19,.98];rect(r.x+4,r.y+5,r.w,r.h,[0,0,0,.28]);rect(r.x,r.y,r.w,r.h,choiceFill);frame(r,choiceColor,3);rect(r.x,r.y,r.w,6,choiceColor);if(item){itemChoiceIcon(r,item.effect,choiceColor);text(item.displayName||(item.effect==='clear_all_enemies'?'清除怪物':'经济强化'),r.x+r.w*.5,r.y+r.h*.48,.98,palette.paper,r.w*.88,'center');text(item.description||(item.effect==='clear_all_enemies'?'清除当前全部怪物':'提高本局经济收益'),r.x+r.w*.5,r.y+r.h*.63,.64,palette.muted,r.w*.88,'center');action={x:r.x+r.w*.04,y:r.y+r.h*.75,w:r.w*.92,h:r.h*.20};rect(action.x,action.y,action.w,action.h,i?palette.buttonViolet:palette.buttonGreen);frame(action,choiceColor,2);text('观看广告',action.x+action.w*.5,action.y+action.h*.08,.58,palette.paper,action.w*.90,'center','compactButton');text('立即使用',action.x+action.w*.5,action.y+action.h*.52,.58,palette.paper,action.w*.90,'center','compactButton');}}rect(l.itemSkip.x,l.itemSkip.y,l.itemSkip.w,l.itemSkip.h,palette.buttonBlue);frame(l.itemSkip,palette.cyan,2);text('暂不使用',l.itemSkip.x+l.itemSkip.w*.5,l.itemSkip.y+l.itemSkip.h*.24,.82,palette.paper,l.itemSkip.w*.84,'center','compactButton');}
@@ -136,87 +268,186 @@
     }else if(kind==='energy')solid([cx+half*.35,cy-half,cx-half*.65,cy+half*.12,cx-half*.05,cy+half*.12,cx-half*.35,cy+half,cx+half*.65,cy-half*.12,cx+half*.05,cy-half*.12],accent);
     else{diamond(cx,cy,half*1.4,half*1.8,accent);line(cx-half*.4,cy,cx,cy-half*.4,2,[.94,.97,.98,1]);line(cx,cy-half*.4,cx+half*.4,cy,2,[.94,.97,.98,1]);}
   }
+  function mapMetalPanel(r,accent,fill){
+    var steel=[.45,.51,.55,1],light=[.66,.74,.78,1],cut=5,i,x,y;
+    chamfer({x:r.x+2,y:r.y+3,w:r.w,h:r.h},[0,0,0,.65],cut);
+    chamfer(r,fill||[.043,.145,.204,.98],cut);
+    chamferOutline(r,steel,2,cut);
+    chamferOutline({x:r.x+3,y:r.y+3,w:r.w-6,h:r.h-6},[accent[0],accent[1],accent[2],.45],.8,3);
+    line(r.x+8,r.y+1,r.x+r.w-8,r.y+1,.8,light);
+    for(i=0;i<4;i+=1){
+      x=i%2?r.x+r.w-5:r.x+5;y=i<2?r.y+6:r.y+r.h-7;
+      rect(x-1.5,y-1.5,3,3,light);rect(x-1,y,2,1,[.08,.15,.19,1]);
+    }
+  }
+  // Reference art is used only for independent skins, icons and terrain swatches.
+  // No reference card, map thumbnail, currency or lock state is drawn as a composite.
+  function mapSkin(sx,sy,sw,sh,r,opacity){
+    return imageRegion('ui-map-reference',r.x,r.y,r.w,r.h,sx/286,1-sy/618,(sx+sw)/286,1-(sy+sh)/618,[1,1,1,1],opacity===undefined?1:opacity,false,0);
+  }
+  function mapSkinFrame(source,r,border,fill,skin,pixelScale){
+    skin=skin||mapSkin;
+    var s=pixelScale||M3.UILayout.get().mapScale||1,b=Math.min(border*s,r.w*.2,r.h*.2),i,j,
+      dx=[r.x,r.x+b,r.x+r.w-b],dy=[r.y,r.y+b,r.y+r.h-b],dw=[b,r.w-2*b,b],dh=[b,r.h-2*b,b],
+      sx=[source[0],source[0]+border,source[0]+source[2]-border],sy=[source[1],source[1]+border,source[1]+source[3]-border],
+      sw=[border,source[2]-2*border,border],sh=[border,source[3]-2*border,border],ready=true;
+    rect(r.x,r.y,r.w,r.h,fill||[.024,.106,.149,1]);
+    for(j=0;j<3;j+=1)for(i=0;i<3;i+=1)if(i!==1||j!==1)ready=skin(sx[i],sy[j],sw[i],sh[j],{x:dx[i],y:dy[j],w:dw[i],h:dh[j]})&&ready;
+    if(!ready)mapMetalPanel(r,[.278,.863,.906,1],fill);
+  }
+  function mapTerrain(cell,tile,theme,x,y){
+    var row=theme==='factory'?1:theme==='wasteland'?2:theme==='forest'?3:0,
+      road=tile==='road'||tile==='spawn'||tile==='goal',col=(x*3+y*5)%4+(road?4:0);
+    imageRegion('ui-map-terrain',cell.x,cell.y,cell.w,cell.h,col/8,1-row/4,(col+1)/8,1-(row+1)/4,[1,1,1,1],1,false,0);
+    if(tile==='obstacle')mapSkin(36,319,13,13,cell);
+  }
+  function mapTacticalPreview(r,level){
+    var m=level&&level.map,cw,ch,mw,mh,x0,y0,x,y,tile,cell,theme=M3.MapUI.theme(level);
+    rect(r.x,r.y,r.w,r.h,[.055,.10,.10,1]);
+    if(!m||!m.tiles||!m.width||!m.height)return;
+    cw=ch=Math.min((r.w-6)/m.width,(r.h-6)/m.height);
+    for(y=0;y<Math.ceil(r.h/ch);y+=1)for(x=0;x<Math.ceil(r.w/cw);x+=1)mapTerrain({x:r.x+x*cw,y:r.y+y*ch,w:Math.min(cw,r.w-x*cw),h:Math.min(ch,r.h-y*ch)},'grass',theme,x,y);
+    mw=cw*m.width;mh=ch*m.height;x0=r.x+(r.w-mw)*.5;y0=r.y+(r.h-mh)*.5;
+    for(y=0;y<m.height;y+=1)for(x=0;x<m.width;x+=1){
+      tile=m.tiles[y*m.width+x];cell={x:x0+x*cw,y:y0+y*ch,w:cw,h:ch};
+      mapTerrain(cell,tile,theme,x,y);
+      if(tile==='tower_slot'||tile==='buildable'||tile==='hero_slot'){
+        var k=cw*.48,bx=cell.x+(cw-k)*.5,by=cell.y+(ch-k)*.5,col=tile==='hero_slot'?[.28,.86,.91,1]:[.48,.68,.40,1];
+        frame({x:bx,y:by,w:k,h:k},col,1);
+        line(bx+k*.25,by+k*.5,bx+k*.75,by+k*.5,1,col);
+        line(bx+k*.5,by+k*.25,bx+k*.5,by+k*.75,1,col);
+      }
+      if(tile==='spawn')mapSkin(23,130,26,28,cell);
+      if(tile==='goal')mapSkin(111,212,23,23,cell);
+    }
+    frame(r,[.27,.43,.44,1],1);
+  }
+  function mapLabel(value,r,size,color,options){
+    if(M3.BitmapFont&&M3.BitmapFont.drawLabel&&M3.BitmapFont.drawLabel(M3.Renderer,value,r,size,color,options))return;
+    text(value,r.x+r.w*.5,r.y+(r.h-size)*.5,size/16,color,r.w-4,'center','cardBody');
+  }
+  function mapStatusFrame(r,accent){
+    var cut=2,arm=Math.min(5,r.h*.22),x=r.x,y=r.y,w=r.w,h=r.h;
+    chamfer({x:x+1,y:y+1,w:w,h:h},[0,0,0,.7],cut);
+    chamfer(r,[.018,.075,.10,.98],cut);
+    chamferOutline(r,[accent[0],accent[1],accent[2],.42],.7,cut);
+    // Four terminal brackets echo the reference, leaving an uncluttered text well.
+    line(x+2,y,x+arm+2,y,1.5,accent);line(x,y+2,x,y+arm+2,1.5,accent);
+    line(x+w-arm-2,y,x+w-2,y,1.5,accent);line(x+w,y+2,x+w,y+arm+2,1.5,accent);
+    line(x+2,y+h,x+arm+2,y+h,1.5,accent);line(x,y+h-arm-2,x,y+h-2,1.5,accent);
+    line(x+w-arm-2,y+h,x+w-2,y+h,1.5,accent);line(x+w,y+h-arm-2,x+w,y+h-2,1.5,accent);
+  }
+  function mapResourceFrame(r,accent){
+    chamfer({x:r.x+1,y:r.y+1,w:r.w,h:r.h},[0,0,0,.8],3);
+    chamfer(r,[.024,.07,.09,1],3);chamferOutline(r,accent,1,3);
+    chamferOutline({x:r.x+2,y:r.y+2,w:r.w-4,h:r.h-4},[accent[0],accent[1],accent[2],.28],.6,1);
+    line(r.x+4,r.y+1,r.x+r.w-4,r.y+1,.75,[1,.88,.62,.8]);
+  }
   function mapShortcut(r,v,key,label,value,accent,kind){
-    var hasValue=value!==null,size=Math.min(hasValue?27:34,r.h*.48),groupW=hasValue?size+34:size,
-      iconX=r.x+(r.w-groupW)*.5,iconY=r.y+r.h*.42;
-    refinedPanel(r,accent,[.025,.065,.09,.97],'button');
-    if(!imageAsset(key,iconX,iconY,size,size,1))mapShortcutFallback(kind,iconX+size*.5,iconY+size*.5,size,accent);
-    text(label,r.x+r.w*.5,r.y+5,.62,[.88,.93,.95,1],r.w-8,'center','label');
-    if(hasValue)text(String(value),iconX+size+17,iconY+(size-16)*.5,.88,[.94,.97,.98,1],30,'center','label');
+    var s=M3.UILayout.get().mapScale||1,art=kind==='video'?[24,567,25,24]:kind==='share'?[91,561,29,28]:kind==='energy'?[164,561,24,29]:[230,560,30,31],
+      icon={x:r.x+r.w*.5-14*s,y:r.y+10*s,w:28*s,h:28*s},badge;
+    mapSkin(art[0],art[1],art[2],art[3],icon);
+    if(value!==null){
+      badge={x:icon.x+22*s,y:r.y+4*s,w:Math.max(25,M3.BitmapFont.measureLabel(String(value),12,.15)+6),h:Math.max(18,12*s)};
+      mapResourceFrame(badge,accent);
+      mapLabel(String(value),badge,12,accent,{spacing:.15,padding:3});
+    }
+    mapLabel(label,{x:r.x+2,y:r.y+r.h-32,w:r.w-4,h:22},16,[.64,.94,.96,1]);
   }
   function mapV2(l,v){
-    var p=uiPalette(v),entries=v.levelEntries||[],energyCfg=v.systems&&v.systems.M14_energy||{},
-      adAmount=Number(energyCfg.ad_refill_amount)||5,shareAmount=Number(energyCfg.share_refill_amount)||3,
-      header=l.mapHeader,top=l.mapList.y,bottom=top+l.mapList.h,i,item,node,level,r,preview,info,active,accent,fill,badge,action,
-      total=Math.max(0,entries.length*(l.levelRowH+l.levelGap)-l.levelGap),thumbH,trackX,lockBox,titleY,dividerY,descriptionY,
-      scroll=v.mapScroll||0,maxScroll=Math.max(0,total-l.mapList.h),canDown=scroll<maxScroll-1,
-      first=Math.min(entries.length,Math.floor((scroll+l.levelGap)/(l.levelRowH+l.levelGap))+1),
-      last=Math.min(entries.length,Math.ceil((scroll+l.mapList.h)/(l.levelRowH+l.levelGap))),
-      footer=l.mapFooter,scaleX=gl.drawingBufferWidth/l.w,scaleY=gl.drawingBufferHeight/l.h,fade,arrowY,arrowDir;
-    sceneBackdrop(l,v,null,1,true);
-    chamfer(header,[.045,.050,.052,.68],10);
-    chamferOutline(header,[.76,.77,.71,.32],1,10);
-    imageAsset('ui-result-map',header.x+14,header.y+(header.h-34)*.5,34,34,1);
-    line(header.x+58,header.y+15,header.x+58,header.y+header.h-15,.8,[.78,.78,.71,.22]);
-    text(copy(v,'mapTitle','潮汐战图'),header.x+73,header.y+10,1.16,[.96,.95,.90,1],header.w-86,'left','title');
-    text('选择已解锁的关卡',header.x+73,header.y+34,.60,[.73,.75,.72,1],header.w-86,'left');
-    mapShortcut(l.energyAd,v,'ui-result-video','广告','+'+adAmount,[.81,.65,.31,1],'video');
-    mapShortcut(l.energyShare,v,'ui-map-share','分享','+'+shareAmount,p.cyan,'share');
-    mapShortcut(l.energyCurrent,v,'ui-map-energy','体力',v.energy,[.87,.71,.33,1],'energy');
-    mapShortcut(l.mapUpgrade,v,'ui-map-hero-upgrade','英雄强化',null,p.violet,'hero');
-    text('全部关卡',l.mapSection.x+2,l.mapSection.y+2,.68,p.paper,l.mapSection.w*.45,'left','label');
-    text('共 '+(v.totalLevelCount||entries.length)+' 关',l.mapSection.x+l.mapSection.w-2,l.mapSection.y+2,.68,p.cyan,l.mapSection.w*.45,'right','label');
-    // Clip the moving list rather than hiding cards that cross its edges.
+    var s=l.mapScale,entries=v.levelEntries||[],energyCfg=v.systems&&v.systems.M14_energy||{},
+      cyan=[.278,.863,.906,1],paper=[.835,.957,.937,1],muted=[.557,.667,.698,1],amber=[.957,.718,.173,1],navy=[.024,.106,.149,1],
+      top=l.mapList.y,bottom=top+l.mapList.h,i,item,node,level,r,preview,active,badge,action,name,titleY,parts,lines,j,scroll=v.mapScroll||0,
+      scaleX=gl.drawingBufferWidth/l.w,scaleY=gl.drawingBufferHeight/l.h;
+    rect(0,l.top,l.w,l.usable,navy);
+    mapSkin(0,0,15,618,{x:0,y:l.top,w:15*s,h:l.usable});
+    mapSkin(271,0,15,618,{x:l.w-15*s,y:l.top,w:15*s,h:l.usable});
+    mapSkin(111,0,77,31,{x:15*s,y:l.top,w:l.w-30*s,h:l.mapTopH});
+    mapSkin(43,8,67,22,l.mapBrand);
+    // These are independent controls, with real home/menu/exit handlers.
+    mapSkin(193,5,23,24,{x:l.mapHome.x+8,y:l.mapHome.y+8,w:32,h:32});
+    mapSkin(222,5,24,24,{x:l.mapMore.x+8,y:l.mapMore.y+8,w:32,h:32});
+    mapSkin(251,5,24,24,{x:l.mapExit.x+8,y:l.mapExit.y+8,w:32,h:32});
+    if(!mapSkin(20,31,246,62,l.mapHeader)){
+      mapMetalPanel(l.mapHeader,cyan,navy);
+      text('未来都市战图',l.w*.5,l.mapHeader.y+12,2.5,paper,l.mapHeader.w-20,'center','title');
+      text('选择已解锁的关卡',l.w*.5,l.mapHeader.y+53,.9,cyan,l.mapHeader.w-20,'center');
+    }
+    mapSkinFrame([7,94,272,458],l.mapShell,6,navy);
+    mapLabel('全部关卡',{x:l.mapSection.x,y:l.mapSection.y,w:68*s,h:18*s},16,cyan);
+    mapLabel('共'+(v.totalLevelCount||entries.length)+'关',{x:l.mapSection.x+l.mapSection.w-62*s,y:l.mapSection.y,w:62*s,h:18*s},16,cyan);
+    line(l.mapSection.x+72*s,l.mapSection.y+9*s,l.mapSection.x+l.mapSection.w-63*s,l.mapSection.y+9*s,.65,[.16,.43,.46,1]);
     gl.enable(gl.SCISSOR_TEST);
-    gl.scissor(Math.floor((l.mapList.x-5)*scaleX),Math.floor((l.h-bottom)*scaleY),Math.ceil((l.mapList.w+10)*scaleX),Math.ceil(l.mapList.h*scaleY));
+    gl.scissor(Math.floor((l.mapList.x-1)*scaleX),Math.floor((l.h-bottom)*scaleY),Math.ceil((l.mapList.w+2)*scaleX),Math.ceil(l.mapList.h*scaleY));
     for(i=0;i<entries.length;i+=1){
-      item=entries[i];node=item.node||{};level=item.level||{};r=l.levelCard(i,v.mapScroll);
+      item=entries[i];node=item.node||{};level=item.level||{};r=l.levelCard(i,scroll);
       if(r.y+r.h<=top||r.y>=bottom)continue;
-      active=!!node.unlocked;accent=active?[.76,.79,.71,1]:[.55,.58,.56,1];fill=active?[.045,.050,.052,.72]:[.040,.045,.047,.64];
-      chamfer({x:r.x+2,y:r.y+4,w:r.w,h:r.h},[.01,.012,.012,.12],12);
-      chamfer(r,fill,12);
-      chamferOutline(r,[accent[0],accent[1],accent[2],active?.34:.20],1.2,12);
-      preview={x:r.x+14,y:r.y+14,w:Math.min(r.w*.40,r.h-28),h:r.h-28};preview.y=r.y+(r.h-preview.w)*.5;preview.h=preview.w;
-      mapPreview(preview,level,v);cutCorners(preview,fill,10);chamferOutline(preview,[accent[0],accent[1],accent[2],.70],1.2,10);
+      active=!!node.unlocked;
+      mapSkinFrame([16,122,122,170],r,4,navy);
+      parts=M3.MapUI.content(l,r);preview=parts.preview;
+      mapTacticalPreview(preview,level);
       if(!active){
-        chamfer(preview,[.01,.018,.032,.54],10);
-        lockBox={x:preview.x+preview.w*.5-20,y:preview.y+preview.h*.5-22,w:40,h:44};
-        chamfer(lockBox,[.025,.05,.07,.94],6);chamferOutline(lockBox,[.48,.63,.69,.35],.8,6);lockIcon(lockBox,[.64,.74,.79,1]);
+        rect(preview.x,preview.y,preview.w,preview.h,[.01,.025,.04,.43]);
+        var lock={x:preview.x+preview.w*.5-25*s,y:preview.y+preview.h*.5-25*s,w:50*s,h:50*s};
+        lockIcon(lock,[.66,.74,.78,1]);
       }
-      info={x:preview.x+preview.w+18,y:r.y+17,w:r.x+r.w-18-(preview.x+preview.w+18),h:r.h-34};
-      badge={x:info.x,y:info.y,w:active?51:55,h:20};
-      chamfer(badge,active?[.22,.27,.22,.56]:[.18,.20,.19,.48],4);
-      text(active?'可挑战':'未解锁',badge.x+badge.w*.5,badge.y+4,.54,active?[.78,.87,.74,1]:[.66,.70,.66,1],badge.w-6,'center');
-      titleY=info.y+27;descriptionY=titleY+26;
-      text(node.displayName||level.uiName||('第 '+(i+1)+' 关'),info.x,titleY,1.16,active?[.97,.96,.91,1]:[.70,.73,.70,1],info.w,'left','title');
-      text(active?(node.description||level.description||'守住防线'):'完成上一关解锁',info.x,descriptionY,.68,active?[.77,.79,.74,1]:[.60,.64,.61,1],info.w,'left');
-      if(active){
-        action={x:info.x,y:r.y+r.h-45,w:info.w,h:29};
-        chamfer(action,[.32,.35,.30,.42],6);
-        chamferOutline(action,[.81,.82,.73,.38],.8,6);
-        text('进入关卡',action.x+12,action.y+7,.65,[.94,.94,.84,1],action.w-30,'left');
-        line(action.x+action.w-16,action.y+10,action.x+action.w-12,action.y+14.5,1.3,[.83,.86,.77,1]);
-        line(action.x+action.w-12,action.y+14.5,action.x+action.w-16,action.y+19,1.3,[.83,.86,.77,1]);
-      }
+      badge={x:preview.x+preview.w-39*s,y:preview.y+3*s,w:Math.max(48,37*s),h:Math.max(20,16*s)};
+      badge.x=preview.x+preview.w-badge.w-2*s;
+      mapStatusFrame(badge,active?cyan:[.65,.78,.82,1]);
+      mapLabel(active?'可挑战':'未解锁',badge,12,active?cyan:paper,{padding:4,spacing:.25});
+      name=String(level.uiName||node.displayName||'城市防线').replace(/\s*[·•—]\s*第.*关\s*$/,'');
+      mapLabel('第'+(i+1)+'关',parts.number,18,cyan,{padding:0});
+      line(parts.divider.x,parts.divider.y,parts.divider.x+parts.divider.w,parts.divider.y,.7,[.16,.43,.46,1]);
+      lines=M3.MapUI.wrap(name,14,parts.name.w);
+      for(j=0;j<lines.length;j+=1)mapLabel(lines[j],{x:parts.name.x,y:parts.name.y+(parts.name.h-lines.length*16)/2+j*16,w:parts.name.w,h:16},14,cyan,{padding:0});
+      if(!active)mapLabel('完成上一关解锁',parts.hint,12,muted,{spacing:.2,padding:0});
+      action=parts.action;
+      mapSkinFrame(active?[22,263,112,24]:[22,435,112,23],action,3,active?amber:[.35,.43,.48,1]);
+      mapLabel('进入关卡',action,16.5,active?navy:[.70,.77,.80,1],{spacing:.6});
     }
     gl.disable(gl.SCISSOR_TEST);
-    if(maxScroll>0){
-      for(fade=0;fade<8;fade+=1){
-        if(scroll>1)rect(l.mapList.x,top+fade*2,l.mapList.w,2,[.008,.02,.03,(8-fade)*.055]);
-        if(canDown)rect(l.mapList.x,bottom-(fade+1)*2,l.mapList.w,2,[.008,.02,.03,(8-fade)*.055]);
-      }
-      trackX=l.mapList.x+l.mapList.w+7;thumbH=Math.max(28,(l.mapList.h-8)*l.mapList.h/total);
-      rect(trackX-2,top+4,4,l.mapList.h-8,[p.cyan[0],p.cyan[1],p.cyan[2],.18]);
-      chamfer({x:trackX-2,y:top+4+(l.mapList.h-8-thumbH)*scroll/maxScroll,w:4,h:thumbH},[p.cyan[0],p.cyan[1],p.cyan[2],.90],2);
+    mapSkinFrame([5,553,276,64],l.mapDock,6,navy);
+    for(i=1;i<4;i+=1)line(l.energyAd.x+l.energyAd.w*i,l.mapDock.y+16*s,l.energyAd.x+l.energyAd.w*i,l.mapDock.y+53*s,.7,[.17,.53,.57,1]);
+    mapShortcut(l.energyAd,v,'','看广告','+'+(Number(energyCfg.ad_refill_amount)||5),amber,'video');
+    mapShortcut(l.energyShare,v,'','分享','+'+(Number(energyCfg.share_refill_amount)||3),amber,'share');
+    mapShortcut(l.energyCurrent,v,'','体力',v.energy,paper,'energy');
+    mapShortcut(l.mapUpgrade,v,'','英雄强化',null,cyan,'hero');
+    if(v.message){
+      var notice={x:l.w*.10,y:l.mapDock.y-38,w:l.w*.80,h:30};
+      chamfer(notice,[.024,.106,.149,.97],4);chamferOutline(notice,amber,1,4);
+      text(v.message,l.w*.5,notice.y+7,.9,paper,notice.w-16,'center','label');
     }
-    chamfer(footer,[.045,.050,.052,.68],8);chamferOutline(footer,[.76,.77,.71,.30],1,8);
-    arrowY=footer.y+18+(maxScroll>0?Math.sin(M3._now()*.004)*2:0);arrowDir=canDown?1:-1;
-    if(maxScroll>0)for(i=0;i<2;i+=1){
-      line(footer.x+13,arrowY+i*6-arrowDir*3,footer.x+18,arrowY+i*6+arrowDir*2,1.5,p.cyan);
-      line(footer.x+18,arrowY+i*6+arrowDir*2,footer.x+23,arrowY+i*6-arrowDir*3,1.5,p.cyan);
+  }
+  function mapDialog(l,v){
+    var d=v.mapDialog,r=l.mapDialog,lines=d.lines||[],i,j,button,row,wrapped,lineH=20,
+      navy=[.024,.106,.149,1],cyan=[.278,.863,.906,1],paper=[.835,.957,.937,1],muted=[.557,.667,.698,1],
+      labels={home:'指挥中心',menu:'作战终端',help:'行动指南',energy:'补给情报',exit:'离开确认',exited:'行动结束'},
+      contentTop=r.y+104,contentBottom=l.mapDialogActions[0].y-14,rowH=Math.min(58,(contentBottom-contentTop)/Math.max(1,lines.length)),title={x:r.x+24,y:r.y+31,w:r.w-48,h:46};
+    drawRect(0,l.top,l.w,l.usable,[0,0,0,.66]);
+    mapSkinFrame([25,322,886,1245],r,36,navy,heroSkin,r.w/886);
+    var tab={x:r.x+r.w*.25,y:r.y-9,w:r.w*.5,h:29};
+    mapSkinFrame([254,300,426,86],tab,35,navy,heroSkin,r.w/886);mapLabel(labels[d.kind]||'作战终端',tab,16,paper);
+    // One code-drawn title circuit fits dynamic headings without distorting text.
+    chamferOutline({x:title.x-4,y:title.y-6,w:title.w+8,h:58},[cyan[0],cyan[1],cyan[2],.6],1,8);
+    mapLabel(d.title,title,26,paper);
+    for(i=0;i<lines.length;i+=1){
+      row={x:r.x+20,y:contentTop+i*rowH,w:r.w-40,h:rowH-6};
+      chamfer(row,[.035,.14,.19,1],5);chamferOutline(row,[.13,.32,.37,1],1,5);
+      var badge={x:row.x+8,y:row.y+(row.h-22)/2,w:24,h:22};
+      mapStatusFrame(badge,cyan);mapLabel(String(i+1),badge,12,cyan);
+      wrapped=M3.MapUI.wrap(lines[i],14,row.w-52);
+      for(j=0;j<wrapped.length&&j<2;j+=1)mapLabel(wrapped[j],{x:row.x+42,y:row.y+(row.h-Math.min(2,wrapped.length)*lineH)/2+j*lineH,w:row.w-50,h:lineH},14,paper,{align:'left',padding:0});
     }
-    text(v.message||(maxScroll>0?(canDown?'上滑查看更多关卡':'下滑查看前面关卡'):'全部关卡已显示'),footer.x+32,footer.y+12,.64,v.message?p.paper:p.cyan,footer.w*.55-32,'left');
-    text((entries.length?first:0)+'-'+last+'/'+(v.totalLevelCount||entries.length),footer.x+footer.w-12,footer.y+12,.64,p.paper,footer.w*.40,'right','label');
+    for(i=0;i<d.actions.length;i+=1){
+      button=l.mapDialogActions[i];
+      // Amber is the action, steel is the secondary return/close control.
+      mapSkinFrame(i===0?[478,1415,387,102]:[68,1415,387,102],button,20,navy,heroSkin,.5);
+      // Source centers stay empty so each live label is centered without a baked-in arrow.
+      var inside={x:button.x+10,y:button.y+6,w:button.w-20,h:button.h-12};
+      heroSkin(i===0?540:125,1438,140,45,inside);
+      mapLabel(d.actions[i],button,18,i===0?navy:paper);
+    }
+    heroSkin(798,329,100,92,{x:l.mapDialogClose.x+8,y:l.mapDialogClose.y+8,w:32,h:32});
   }
   function detailLegend(r,level,p){
     var map=level.map||{},types=['spawn','goal','hero_slot'],labels=['敌人入口','核心基地','英雄部署'],colors=[p.violet,[.86,.71,.36,1],p.cyan],groupW=r.w/3,i,x,key;
@@ -237,34 +468,49 @@
     chamferOutline(r,primary?[.88,.86,.69,.48]:[.82,.87,.80,.30],1,8);
     text(label,r.x+r.w*.5,r.y+(r.h-18)*.5,1.02,[.97,.97,.91,1],r.w*.88,'center','button');
   }
+  function briefingSkin(sx,sy,sw,sh,r){
+    return imageRegion('ui-level-briefing',r.x,r.y,r.w,r.h,sx/853,1-sy/1844,(sx+sw)/853,1-(sy+sh)/1844,[1,1,1,1],1,false,0);
+  }
+  function briefingButton(r,label,primary){
+    var navy=[.024,.106,.149,1],paper=[.835,.957,.937,1];
+    mapSkinFrame(primary?[336,1690,490,113]:[28,1690,292,113],r,25,primary?[.957,.718,.173,1]:[.29,.38,.45,1],briefingSkin,.45);
+    mapLabel(label,{x:r.x+8,y:r.y,w:r.w-16,h:r.h},18,primary?navy:paper);
+  }
   function detailV2(l,v){
-    var p=uiPalette(v),level=v.levelPreview||{},header=l.detailHeader,mapFrame=l.detailMapFrame,desc=l.detailObjective,
-      objective=level.objective||level.description||'守住防线',title=String(level.uiName||'关卡详情').replace(/\s*[·•]\s*第\s*[\d\s-]+\s*关\s*$/,''),
-      badgeWidth=Math.max(62,String(v.difficulty||1).length*14+44),badge={x:header.x+header.w-badgeWidth-16,y:header.y+14,w:badgeWidth,h:24},icon={x:header.x+16,y:header.y+(header.h-42)*.5,w:42,h:42},
-      legend={x:mapFrame.x+10,y:mapFrame.y+mapFrame.h-46,w:mapFrame.w-20,h:36},goalX=desc.x+31,goalY=desc.y+desc.h*.5;
-    sceneBackdrop(l,v,null,1,true);
-    detailGlassPanel(header,.38,false);
-    chamfer(icon,[.18,.23,.19,.32],7);chamferOutline(icon,[.82,.87,.80,.25],.8,7);
-    levelBriefIcon(icon.x+21,icon.y+21,28,p);
-    text('关卡简报',header.x+72,header.y+15,.64,[.78,.84,.77,1],header.w-170,'left','label');
-    text(title||level.uiName,header.x+72,header.y+40,1.8,[.97,.97,.91,1],header.w-88,'left','title');
-    chamfer(badge,[.78,.82,.69,.12],4);chamferOutline(badge,[.84,.87,.75,.28],.7,4);
-    text('第'+(v.difficulty||1)+'关',badge.x+badge.w*.5,badge.y+5,.61,[.88,.91,.81,1],badge.w-6,'center','label');
-    detailGlassPanel(mapFrame,.28,false);
-    line(mapFrame.x+16,mapFrame.y+18,mapFrame.x+25,mapFrame.y+18,1.5,p.cyan);diamond(mapFrame.x+25,mapFrame.y+18,4,4,p.cyan);
-    text('战术地图',mapFrame.x+34,mapFrame.y+10,.64,[.85,.90,.82,1],mapFrame.w-50,'left','label');
-    mapPreview(l.detailPreview,level,v);cutCorners(l.detailPreview,[.035,.045,.040,.28],9);
-    chamferOutline(l.detailPreview,[.82,.87,.80,.36],1,9);
-    line(legend.x+5,legend.y-2,legend.x+legend.w-5,legend.y-2,.65,[p.cyan[0],p.cyan[1],p.cyan[2],.24]);
-    detailLegend(legend,level,p);
-    detailGlassPanel(desc,.42,true);
-    diamond(goalX,goalY,34,34,[.77,.66,.39,.13]);diamond(goalX,goalY,19,19,[.82,.73,.48,.8]);diamond(goalX,goalY,11,11,p.navy);
-    line(goalX-14,goalY,goalX+14,goalY,.8,[.94,.86,.62,.9]);line(goalX,goalY-14,goalX,goalY+14,.8,[.94,.86,.62,.9]);
-    text('关卡目标',desc.x+61,desc.y+15,.64,[.88,.83,.67,1],desc.w-78,'left','label');
-    text(objective,desc.x+61,desc.y+39,1.10,[.97,.97,.91,1],desc.w-78,'left','body');
-    if(desc.h>=100)text('选定防御塔后即可出战',desc.x+61,desc.y+desc.h-28,.61,[.78,.84,.77,1],desc.w-78,'left');
-    detailGlassButton(l.detailBack,copy(v,'detailBack','返回'),false);
-    detailGlassButton(l.detailStart,copy(v,'detailAction','选择四座防御塔'),true);
+    var level=v.levelPreview||{},header=l.detailHeader,mapFrame=l.detailMapFrame,desc=l.detailObjective,
+      cyan=[.278,.863,.906,1],paper=[.835,.957,.937,1],muted=[.557,.667,.698,1],amber=[.957,.718,.173,1],navy=[.024,.106,.149,1],
+      title=String(level.uiName||'关卡详情').replace(/\s*[·•]\s*第\s*[\d\s-]+\s*关\s*$/,''),objective=String(level.objective||level.description||'守住防线'),
+      badge={x:header.x+header.w-94,y:header.y+(header.h-36)/2,w:78,h:36},nameRect={x:header.x+18,y:header.y+14,w:header.w-128,h:header.h-28},i,j,parts;
+    sceneBackdrop(l,v,null,1,true);drawRect(0,l.top,l.w,l.usable,[0,0,0,.66]);
+    // Component crops omit the concept artwork's static map, names and sample numbers.
+    briefingSkin(83,59,230,88,{x:14,y:l.top+10,w:110,h:36});
+    var tab={x:Math.max(130,l.w*.36),y:l.top+16,w:l.w<360?106:132,h:30};
+    mapSkinFrame([322,88,320,70],tab,22,navy,briefingSkin,.4);mapLabel('关卡简报',tab,16,cyan);
+    mapSkinFrame([22,159,809,193],header,30,navy,briefingSkin,.45);
+    mapStatusFrame(badge,cyan);mapLabel('第'+(v.difficulty||1)+'关',badge,18,cyan);
+    parts=M3.MapUI.wrap(title,l.w<360?22:28,nameRect.w);
+    for(i=0;i<Math.min(2,parts.length);i+=1)mapLabel(parts[i],{x:nameRect.x,y:nameRect.y+(nameRect.h-Math.min(2,parts.length)*30)/2+i*30,w:nameRect.w,h:30},l.w<360?22:28,paper,{align:'left',padding:0});
+    mapSkinFrame([22,355,809,1032],mapFrame,30,navy,briefingSkin,.45);
+    mapLabel('战术地图',{x:mapFrame.x+18,y:mapFrame.y+(l.w<360?4:8),w:100,h:26},18,cyan,{align:'left',padding:0});
+    line(mapFrame.x+130,mapFrame.y+23,mapFrame.x+mapFrame.w-22,mapFrame.y+23,1,[.13,.43,.47,1]);
+    mapPreview(l.detailPreview,level,v);
+    var legend=l.detailLegend,group=legend.w/3,types=['spawn','goal','hero_slot'],labels=['敌人入口','核心基地','英雄部署'],colors=[[.68,.30,.95,1],amber,cyan];
+    for(i=0;i<3;i+=1){
+      var x=legend.x+i*group,key=level.map&&level.map.tileAssets&&level.map.tileAssets[types[i]];
+      if(!imageAssetContain(key,x,legend.y+4,22,22,1))diamond(x+11,legend.y+15,14,14,colors[i]);
+      mapLabel(labels[i],{x:x+26,y:legend.y,w:group-28,h:30},l.w<360?12:14,paper,{align:'left',padding:0});
+    }
+    mapSkinFrame([22,1385,809,232],desc,24,navy,briefingSkin,.5);
+    mapLabel('关卡目标',{x:desc.x+18,y:desc.y+9,w:120,h:24},18,cyan,{align:'left',padding:0});
+    briefingSkin(96,1483,82,80,{x:desc.x+15,y:desc.y+43,w:30,h:30});
+    var objectiveSize=l.w<360?14:16,objectiveLine=l.w<360?18:22;
+    parts=M3.MapUI.wrap(objective,objectiveSize,desc.w-74);
+    for(i=0;i<Math.min(2,parts.length);i+=1)mapLabel(parts[i],{x:desc.x+55,y:desc.y+34+i*objectiveLine,w:desc.w-74,h:objectiveLine},objectiveSize,paper,{align:'left',padding:0});
+    mapLabel('先选择英雄，再搭配四座防御塔',{x:desc.x+18,y:desc.y+desc.h-22,w:desc.w-36,h:18},12,muted,{align:'left',padding:0});
+    var flow=l.detailFlow,flowLabels=['关卡简报','选择英雄','搭配防御塔'],flowW=flow.w/3;
+    for(j=0;j<3;j+=1){mapLabel(flowLabels[j],{x:flow.x+j*flowW,y:flow.y,w:flowW-14,h:flow.h},12,j===0?cyan:muted);if(j<2)mapLabel('→',{x:flow.x+(j+1)*flowW-16,y:flow.y,w:18,h:flow.h},12,cyan);}
+    briefingButton(l.detailBack,'返回',false);briefingButton(l.detailStart,'选择出战英雄',true);
+    briefingSkin(741,76,85,75,{x:l.detailClose.x+7,y:l.detailClose.y+7,w:34,h:34});
   }
   function loadoutPanel(r,selected){
     chamfer(r,selected?[.095,.10,.075,.82]:[.035,.042,.043,.72],9);
@@ -289,24 +535,64 @@
     chamferOutline(r,primary&&available?[.86,.82,.64,.68]:[.68,.73,.69,.28],1,8);
     text(label,r.x+r.w*.5,r.y+(r.h-18)*.5,.90,available?[.96,.95,.88,1]:[.52,.58,.55,1],r.w*.9,'center','button');
   }
+  function towerSkin(sx,sy,sw,sh,r){
+    return imageRegion('ui-tower-interface',r.x,r.y,r.w,r.h,sx/286,1-sy/618,(sx+sw)/286,1-(sy+sh)/618,[1,1,1,1],1,false,0);
+  }
+  function towerBlueprint(r){
+    var s=M3.Layout.w/286,tile=40*s,x,y,w,h;
+    for(y=0;y<r.h;y+=tile)for(x=0;x<r.w;x+=tile){w=Math.min(tile,r.w-x);h=Math.min(tile,r.h-y);towerSkin(40,211,w/s,h/s,{x:r.x+x,y:r.y+y,w:w,h:h});}
+  }
+  function towerSelectionMark(r,selected){
+    var x=r.x+r.w-16,y=r.y+15,c=selected?[.957,.718,.173,1]:[.38,.72,.76,1],i,a,b,vertices=[];
+    if(towerSkin(selected?244:116,184,18,18,{x:x-10,y:y-10,w:20,h:20}))return;
+    for(i=0;i<12;i+=1){a=i*Math.PI/6;b=(i+1)*Math.PI/6;if(selected)vertices.push(x,y,x+9*Math.cos(a),y+9*Math.sin(a),x+9*Math.cos(b),y+9*Math.sin(b));else line(x+8*Math.cos(a),y+8*Math.sin(a),x+8*Math.cos(b),y+8*Math.sin(b),1,c);}
+    if(selected){solid(vertices,c);line(x-4,y,x-1,y+3,2,[.03,.10,.13,1]);line(x-1,y+3,x+5,y-4,2,[.03,.10,.13,1]);}
+  }
+  function towerModalButton(r,label,primary,enabled){
+    var amber=[.957,.718,.173,1],steel=enabled?[.45,.54,.58,1]:[.27,.34,.39,1],navy=[.024,.106,.149,1];
+    if(!towerSkin(primary&&enabled?146:20,496,121,31,r))mapMetalPanel(r,amber,primary&&enabled?amber:steel);
+    mapLabel(label,r,18,enabled?navy:[.28,.36,.40,1]);
+  }
   function deckV2(l,v){
-    var rows=l.loadoutCards||l.cards,chosen={},i,r,c,art,selected;
+    var rows=l.towerCards,chosen={},i,j,r,c,art,selected,back={},p=l.towerModal,
+      cyan=[.278,.863,.906,1],paper=[.835,.957,.937,1],muted=[.557,.667,.698,1],amber=[.957,.718,.173,1],navy=[.024,.106,.149,1],
+      ready=v.deckValid&&v.heroes.length===1,required=v.deckSize||4,tag,coinX,costW;
+    for(i in v)if(Object.prototype.hasOwnProperty.call(v,i))back[i]=v[i];back.message='';back.mapDialog=null;
+    mapV2(l,back);drawRect(0,l.top,l.w,l.usable,[0,0,0,.66]);
+    mapSkinFrame([8,107,270,431],p,10,navy,towerSkin);
+    tag={x:p.x+p.w*.25,y:p.y-9,w:p.w*.50,h:29};
+    mapSkinFrame([78,97,130,29],tag,10,navy,towerSkin);mapLabel('出战准备 2 / 2',tag,16,paper);
+    // Keep the complete title circuit border instead of cropping only its text and bottom line.
+    towerSkin(26,128,230,43,{x:p.x+24,y:p.y+27,w:p.w-48,h:(p.w-48)*43/230});
+    var subtitle='选择'+required+'座防御塔',subtitleW=M3.BitmapFont.measureLabel(subtitle,16)+12;
+    rect(l.w*.5-subtitleW*.5,p.y+70,subtitleW,22,navy);
+    mapLabel(subtitle,{x:p.x+28,y:p.y+70,w:p.w-56,h:22},16,cyan);
+    // Close control stays above the complete title artwork and its circuit border.
+    towerSkin(244,108,35,31,{x:l.towerClose.x+8,y:l.towerClose.y+8,w:32,h:32});
+
     (v.deck||[]).forEach(function(id){chosen[id]=true;});
-    sceneBackdrop(l,v,null,1,true);
-    loadoutHeader(l,'选择防御塔','搭配四座防御塔，组成你的出战阵容',v.deck.length+' / 4','01 / 02');
     for(i=0;i<rows.length;i+=1){
       r=rows[i];c=v.cards[i];if(!c)continue;selected=!!chosen[c.id];
-      loadoutPanel(r,selected);
-      art={x:r.x+8,y:r.y+7,w:r.w-16,h:r.h*.55};
+      mapSkinFrame(selected?[145,177,122,98]:[19,177,122,98],r,6,[.028,.115,.16,1],towerSkin);
+      art={x:r.x+8,y:r.y+26,w:r.w-16,h:r.h-49};
+      towerBlueprint(art);
+      mapLabel(c.uiName||('防御塔 '+(i+1)),{x:r.x+8,y:r.y+4,w:r.w-35,h:22},18,paper,{align:'left',padding:0});
       imageAssetContain(c.portraitAsset,art.x,art.y,art.w,art.h,1)||actor(r.x+r.w*.5,art.y+art.h*.5,Math.min(art.w,art.h)*.8,c.appearance,c.color);
-      rect(r.x+10,r.y+r.h*.59,r.w-20,1,[.77,.80,.72,.16]);
-      text(c.uiName||('防御塔 '+(i+1)),r.x+12,r.y+r.h*.63,.81,[.97,.96,.91,1],r.w-24,'left','label');
-      text(c.roleDescription||'通用防御单位',r.x+12,r.y+r.h*.76,.55,[.72,.77,.72,1],r.w-24,'left');
-      text('部署  '+c.purchaseCost,r.x+12,r.y+r.h*.88,.56,[.88,.82,.64,1],r.w-24,'left');
-      if(selected)loadoutCheck(r);
+      costW=M3.BitmapFont.measureLabel(String(c.purchaseCost),14)+22;coinX=r.x+r.w-costW-6;
+      var coinVertices=[],angle,nextAngle,k,cx=coinX+7,cy=r.y+r.h-14;
+      for(k=0;k<12;k+=1){angle=k*Math.PI/6;nextAngle=(k+1)*Math.PI/6;coinVertices.push(cx,cy,cx+6*Math.cos(angle),cy+6*Math.sin(angle),cx+6*Math.cos(nextAngle),cy+6*Math.sin(nextAngle));}
+      solid(coinVertices,amber);line(cx-2,cy-3,cx-2,cy+2,1,[1,.90,.48,1]);
+      mapLabel(String(c.purchaseCost),{x:coinX+16,y:r.y+r.h-24,w:costW-16,h:20},14,paper,{align:'right',padding:0});
+      mapLabel(c.roleDescription||'通用防御单位',{x:r.x+8,y:r.y+r.h-23,w:Math.max(35,coinX-r.x-12),h:18},12,muted,{align:'left',padding:0,spacing:0});
+      towerSelectionMark(r,selected);
     }
-    loadoutButton(l.pagePrev,'返回',false,true);
-    loadoutButton(l.deckStart,v.deckValid?'进入英雄选择':'已选 '+v.deck.length+' / 4',true,v.deckValid);
+    mapLabel('已选 '+v.deck.length+' / '+required,l.towerCounter,16,v.deck.length===required?cyan:paper);
+    towerModalButton(l.towerPrev,'上一步',false,true);
+    towerModalButton(l.towerStart,'开始战斗',true,ready);
+    if(v.message){
+      var notice={x:p.x+18,y:l.towerCounter.y-31,w:p.w-36,h:28};
+      chamfer(notice,navy,4);chamferOutline(notice,amber,1,4);mapLabel(v.message,notice,13,paper);
+    }
   }
   function heroUpgradeHeader(l,v,selected,preview,rows){
     var margin=l.w*.045,y=l.top+Math.max(50,Math.min(58,l.usable*.065)),balance={x:l.w-margin-110,y:y-5,w:110,h:34},summary={x:margin,y:y+36,w:l.w-margin*2,h:Math.min(56,rows[0].y-y-46)},compact=summary.h<44,name=selected?heroDisplayName(selected.uiName):'选择下方英雄',level='',benefit='查看下一等级的强化效果';
@@ -336,14 +622,48 @@
     text('等级 '+h.level,badge.x+9,badge.y+4,.55,[.89,.85,.68,1],badge.w-14,'left','label');
     if(selected)loadoutCheck(r);
   }
+  function heroSkin(sx,sy,sw,sh,r){
+    return imageRegion('ui-hero-interface',r.x,r.y,r.w,r.h,sx/935,1-sy/1683,(sx+sw)/935,1-(sy+sh)/1683,[1,1,1,1],1,false,0);
+  }
+  function heroBust(h,r){
+    var key=h.portraitAsset,image=M3.TextureAssets.get(key),meta=M3.TextureAssets.meta(key),region=meta&&meta.render&&meta.render.region||[0,0,1,1],sw=image&&(image.naturalWidth||image.width),sh=image&&(image.naturalHeight||image.height),c,u0,v0,u1,v1;
+    if(!sw||!sh)return false;
+    c=M3.MapUI.heroPortraitRegion(h,sw*(region[2]-region[0])/(sh*(region[3]-region[1])),r.w/r.h);
+    u0=region[0]+c[0]*(region[2]-region[0]);u1=region[0]+c[2]*(region[2]-region[0]);v0=region[1]+c[1]*(region[3]-region[1]);v1=region[1]+c[3]*(region[3]-region[1]);
+    return imageRegion(key,r.x,r.y,r.w,r.h,u0,1-v0,u1,1-v1,[1,1,1,1],1,false,0);
+  }
   function heroSelectV2(l,v){
-    var rows=l.loadoutHeroes||l.heroSelectCards,chosen={},i,h;
-    (v.heroes||[]).forEach(function(id){chosen[id]=true;});
-    sceneBackdrop(l,v,null,1,true);
-    loadoutHeader(l,'选择出战英雄','选择一名英雄，与防御塔一同守住防线',v.heroes.length+' / 1','02 / 02');
-    for(i=0;i<v.heroCards.length&&i<rows.length;i+=1){h=v.heroCards[i];loadoutHeroCard(rows[i],h,!!chosen[h.id]);}
-    loadoutButton(l.heroBack,'返回',false,true);
-    loadoutButton(l.heroStart,v.heroes.length===1?'消耗体力 · 开始防御':'请选择一名英雄',true,v.heroes.length===1);
+    var p=l.heroModal,rows=l.heroModalCards,back={},i,h,r,selected,art,infoX,infoW,tag,
+      navy=[.024,.106,.149,1],cyan=[.278,.863,.906,1],paper=[.835,.957,.937,1],muted=[.557,.667,.698,1];
+    for(i in v)if(Object.prototype.hasOwnProperty.call(v,i))back[i]=v[i];back.message='';back.mapDialog=null;
+    mapV2(l,back);drawRect(0,l.top,l.w,l.usable,[0,0,0,.66]);
+    // Sample only independent UI components; the reference map and blank portrait placeholders are never drawn.
+    mapSkinFrame([25,322,886,1245],p,36,navy,heroSkin,p.w/886);
+    tag={x:p.x+p.w*.25,y:p.y-9,w:p.w*.50,h:29};
+    mapSkinFrame([254,300,426,86],tag,35,navy,heroSkin,p.w/886);mapLabel('出战准备 1 / 2',tag,16,paper);
+    heroSkin(83,397,765,152,{x:p.x+23,y:p.y+27,w:p.w-46,h:(p.w-46)*152/765});
+    var subW=M3.BitmapFont.measureLabel('选择一名英雄',16)+16;
+    rect(l.w/2-subW/2,p.y+70,subW,22,navy);mapLabel('选择一名英雄',{x:p.x+28,y:p.y+70,w:p.w-56,h:22},16,cyan);
+    // Close control stays above the complete title artwork and its circuit border.
+    heroSkin(798,329,100,92,{x:l.heroClose.x+8,y:l.heroClose.y+8,w:32,h:32});
+    for(i=0;i<rows.length;i+=1){
+      h=v.heroCards[i];if(!h)continue;r=rows[i];selected=(v.heroes||[]).indexOf(h.id)!==-1;
+      // Nine-slicing keeps the outer armor crisp while the live portrait and labels fit each screen.
+      mapSkinFrame(selected?[58,585,818,260]:[58,860,818,256],r,22,navy,heroSkin,p.w/886);
+      art={x:r.x+6,y:r.y+6,w:(r.w-12)*.44,h:r.h-12};
+      heroSkin(96,889,326,200,art);heroBust(h,art)||actor(art.x+art.w/2,art.y+art.h/2,art.h,h.appearance,h.color);
+      infoX=art.x+art.w+12;infoW=r.x+r.w-infoX-10;
+      // Clear the generated placeholder UI; all text and selected state are live.
+      rect(infoX-3,r.y+10,infoW+4,r.h-20,navy);
+      mapLabel(heroDisplayName(h.uiName),{x:infoX,y:r.y+12,w:infoW-23,h:25},18,paper,{align:'left',padding:0});
+      tag={x:infoX,y:r.y+r.h*.43,w:Math.min(94,infoW-6),h:22};
+      heroSkin(487,975,182,50,tag);mapLabel((h.roleDescription||'战役支援').replace(/角色$/,''),tag,12,cyan);
+      mapLabel('等级 '+(h.level||1),{x:infoX,y:r.y+r.h-32,w:infoW,h:22},14,muted,{align:'left',padding:0});
+      heroSkin(selected?775:776,selected?637:914,62,62,{x:r.x+r.w-30,y:r.y+12,w:21,h:21});
+    }
+    heroSkin(68,1415,387,102,l.heroCancel);mapLabel('取消',l.heroCancel,18,paper);
+    heroSkin(v.heroes.length===1?478:68,1415,387,102,l.heroNext);
+    mapLabel('下一步',{x:l.heroNext.x,y:l.heroNext.y,w:l.heroNext.w-25,h:l.heroNext.h},18,v.heroes.length===1?navy:muted);
   }
   function progressionV2(l,v){progression(l,v);}
   function resultV2(l,v){
@@ -374,16 +694,37 @@
     imageAsset('ui-result-map',back.x+back.w*.17,back.y+back.h*.16,back.h*.66,back.h*.66,1);
     text(copy(v,'resultAction','返回地图'),back.x+back.w*.60,back.y+back.h*.40,1.06,p.paper,back.w*.54,'center','button');
   }
-  function battleHudRects(l){var gap=6,y=l.battleHudTop-5,h=44,total=l.w-16-gap*2,leftW=total*.29,centerW=total*.40,rightW=total-leftW-centerW,left={x:8,y:y,w:leftW,h:h},center={x:8+leftW+gap,y:y,w:centerW,h:h},right={x:8+leftW+gap+centerW+gap,y:y,w:rightW,h:h};return[left,center,right];}
-  function battleHudIcon(type,x,y,size,color){var cx=x+size*.5,cy=y+size*.5,half=size*.42;if(type==='coin'){if(imageAsset('ui-result-coins',x,y,size,size,1))return;diamond(cx,cy,size*.78,size*.78,color);diamond(cx,cy,size*.46,size*.46,[.98,.84,.38,1]);return;}if(type==='wave'){line(cx-half,cy-half*.42,cx-half*.28,cy+half*.06,2,color);line(cx-half*.28,cy+half*.06,cx+half*.04,cy-half*.24,2,color);line(cx+half*.04,cy-half*.24,cx+half*.34,cy+half*.16,2,color);line(cx+half*.34,cy+half*.16,cx+half,cy-half*.05,2,color);line(cx-half,cy+half*.55,cx+half,cy+half*.55,1.3,[color[0],color[1],color[2],.55]);return;}solid([cx,cy,cx,cy-half,cx+half,cy-half*.38,cx,cy,cx+half,cy-half*.38,cx+half*.82,cy+half*.34,cx,cy,cx+half*.82,cy+half*.34,cx,cy+half,cx,cy,cx,cy+half,cx-half*.82,cy+half*.34,cx,cy,cx-half*.82,cy+half*.34,cx-half,cy-half*.38,cx,cy,cx-half,cy-half*.38,cx,cy-half],color);rect(cx-size*.07,cy-size*.20,size*.14,size*.40,[.025,.055,.075,1]);rect(cx-size*.20,cy-size*.07,size*.40,size*.14,[.025,.055,.075,1]);}
-  function battleHudText(v,r,label,value,accent,icon){
-    var p=uiPalette(v),isWave=icon==='wave',iconSize=isWave?14:Math.min(24,r.h*.58),iconX=r.x+10,iconY=isWave?r.y+4:r.y+(r.h-iconSize)*.5,textX=iconX+iconSize+7,textW=r.x+r.w-8-textX,labelY=r.y+4,valueY=r.y+22;
-    text(label,textX+textW*.5,labelY,.60,accent,textW,'center','compactButton');
-    // Keep the complete wave counter on its own row below the icon and label.
-    text(String(value),isWave?r.x+r.w*.5:textX+textW*.5,valueY,.92,p.paper,isWave?r.w-16:textW,'center','compactButton');
-    battleHudIcon(icon,iconX,iconY,iconSize,accent);
+  function battleHudRects(l){var gap=5,w=(l.w-24-gap*2)/3,y=l.battleHudTop;return[{x:12,y:y,w:w,h:56},{x:12+w+gap,y:y,w:w,h:56},{x:12+2*(w+gap),y:y,w:w,h:56}];}
+  function battleHudIcon(type,x,y,size,color){
+    var cx=x+size*.5,cy=y+size*.5,ink=[.012,.05,.075,1],cyan=[.278,.863,.906,1];
+    if(type==='coin'){
+      chamfer({x:x+1,y:y+2,w:size-2,h:size-2},[.36,.20,.025,1],size*.23);
+      chamfer({x:x+2,y:y,w:size-4,h:size-3},[.98,.74,.15,1],size*.22);
+      chamferOutline({x:x+4,y:y+2,w:size-8,h:size-7},[1,.88,.36,1],1.5,size*.17);
+      chamfer({x:x+7,y:y+5,w:size-14,h:size-13},[.86,.55,.08,1],size*.10);line(x+size*.30,y+size*.23,x+size*.65,y+size*.23,1,[1,.91,.43,1]);line(x+size*.25,y+size*.30,x+size*.25,y+size*.62,1,[1,.91,.43,1]);line(x+size*.70,y+size*.38,x+size*.70,y+size*.70,1,[.65,.34,.015,1]);return;
+    }
+    if(type==='wave'){
+      solid([x+size*.12,y+size*.12,x+size*.34,y+size*.18,cx,y+size*.30,cx,y+size*.30,x+size*.66,y+size*.18,x+size*.88,y+size*.12,x+size*.88,y+size*.12,x+size*.96,y+size*.48,x+size*.78,y+size*.72,x+size*.78,y+size*.72,x+size*.22,y+size*.72,x+size*.04,y+size*.48,x+size*.04,y+size*.48,x+size*.12,y+size*.12,cx,y+size*.30,cx,y+size*.30,x+size*.88,y+size*.12,x+size*.78,y+size*.72,cx,y+size*.30,x+size*.78,y+size*.72,x+size*.22,y+size*.72,cx,y+size*.30,x+size*.22,y+size*.72,x+size*.04,y+size*.48],cyan);
+      solid([x+size*.20,y+size*.40,x+size*.43,y+size*.46,x+size*.32,y+size*.57,x+size*.57,y+size*.46,x+size*.80,y+size*.40,x+size*.68,y+size*.57],ink);
+      for(var i=0;i<3;i++)rect(x+size*(.28+i*.17),y+size*.67,size*.10,size*.25,cyan);return;
+    }
+    var points=[[cx,y+size*.08],[x+size*.90,y+size*.24],[x+size*.85,y+size*.65],[cx,y+size*.94],[x+size*.15,y+size*.65],[x+size*.10,y+size*.24]],i,next;
+    for(i=0;i<points.length;i++){next=(i+1)%points.length;solid([cx,cy,points[i][0],points[i][1],points[next][0],points[next][1]],cyan);}
+    for(i=0;i<points.length;i++){points[i]=[cx+(points[i][0]-cx)*.72,cy+(points[i][1]-cy)*.72];}for(i=0;i<points.length;i++){next=(i+1)%points.length;line(points[i][0],points[i][1],points[next][0],points[next][1],2,ink);}
   }
-  function battleBackdrop(l,v){var p=uiPalette(v),panels=battleHudRects(l),left=panels[0],center=panels[1],right=panels[2],gold=p.borderVariants[4],life=p.borderVariants[5];refinedPanel(left,gold,[.025,.060,.080,.98],'button');refinedPanel(center,p.cyan,[.022,.055,.085,.98],'button');refinedPanel(right,life,[.075,.035,.060,.98],'button');battleHudText(v,left,copy(v,'battleGold','金币'),v.combat.gold,gold,'coin');battleHudText(v,center,'波次',String(v.combat.wave)+'/'+String(v.combat.waveCount),p.cyan,'wave');battleHudText(v,right,copy(v,'battleLife','基地生命'),v.combat.baseHp,life,'base');}
+  function battleHudText(v,r,label,value,accent,icon){
+    var small=r.w<110,iconSize=small?26:32,offset=small?36:43;
+    battleHudIcon(icon,r.x+8,r.y+(r.h-iconSize)/2,iconSize,accent);
+    mapLabel(label,{x:r.x+offset,y:r.y+5,w:r.w-offset-5,h:19},small?12:14,[.278,.863,.906,1],{padding:0});
+    mapLabel(small?String(value).replace(/ /g,''):String(value),{x:r.x+offset-2,y:r.y+26,w:r.w-offset-3,h:25},small?18:22,icon==='coin'?[.957,.718,.173,1]:[.835,.957,.937,1],{padding:0});
+  }
+  function battleBackdrop(l,v){
+    var panels=battleHudRects(l),i,cyan=[.278,.863,.906,1];
+    battleRepeat(22,19,210,48,{x:6,y:l.top,w:l.w-12,h:42},.9);
+    mapSkinFrame([43,8,67,22],{x:16,y:l.top+5,w:142,h:34},5,[.024,.106,.149,1],mapSkin,1.2);mapLabel('启元传说',{x:20,y:l.top+7,w:134,h:28},20,cyan);
+    for(i=0;i<3;i++)mapSkinFrame([16,122,122,170],panels[i],4,[.024,.106,.149,1],mapSkin,1.5);
+    battleHudText(v,panels[0],'金币',v.combat.gold,cyan,'coin');battleHudText(v,panels[1],'波次',v.combat.wave+' / '+v.combat.waveCount,cyan,'wave');battleHudText(v,panels[2],'基地生命',v.combat.baseHp,cyan,'base');
+  }
   function battleBoardFrame(l,v){var p=uiPalette(v),r={x:l.board.x,y:l.board.y,w:l.board.w,h:l.board.h};chamferOutline(r,p.frame,2,8);chamferOutline({x:r.x+2,y:r.y+2,w:r.w-4,h:r.h-4},[p.cyan[0],p.cyan[1],p.cyan[2],.78],1,6);diamond(r.x+r.w*.5,r.y,10,10,p.accent);diamond(r.x+r.w*.5,r.y+r.h,10,10,p.primary);diamond(r.x,r.y+r.h*.5,8,8,p.frame);diamond(r.x+r.w,r.y+r.h*.5,8,8,p.frame);}
   function itemModalV2(l,v){
     var p=uiPalette(v),modal=l.itemModal,i,r,item,accent,iconKey,action,iconSize;
@@ -415,42 +756,57 @@
     text('暂不使用',l.itemSkip.x+l.itemSkip.w*.5,l.itemSkip.y+(l.itemSkip.h-16)*.5,1,p.paper,l.itemSkip.w*.88,'center','button');
   }
   function loadingScreen(l,v,failed){
-    var width=Math.min(l.w*.72,320),x=(l.w-width)*.5,barY=l.top+l.usable*.81,
-      phase=v.loadingPhase,progress=v.loadingProgress||{ratio:0,total:0},ratio=Math.max(0,Math.min(1,Number(progress.ratio)||0)),
-      known=phase==='assets'&&progress.total>0||phase==='render',accent=failed?[.92,.48,.39,1]:[.38,.83,.91,1],
-      gold=[.82,.74,.55,1],label=failed?'资源加载失败':phase==='render'?'正在准备画面':phase==='assets'?'正在加载游戏':'正在读取配置',
-      i,bandH=l.usable*.36/24,segment=width*.22,travel=(Math.sin(M3._now()*.0018)+1)*.5,imageReady;
+    // Keep the entire reference composition visible, including its title and hero silhouettes.
+    var coverW=Math.min(l.w,l.usable*414/896),coverH=coverW*896/414,
+      cover={x:(l.w-coverW)*.5,y:l.top+(l.usable-coverH)*.5,w:coverW,h:coverH},unit=coverW/414,
+      panel={x:cover.x+9*unit,y:cover.y+coverH*.833,w:coverW-18*unit,h:coverH*.141},
+      phase=v.loadingPhase,progress=v.loadingProgress||{ratio:0,total:0},value=Number(progress.ratio),
+      ratio=isFinite(value)?Math.max(0,Math.min(1,value)):0,known=phase==='assets'&&progress.total>0||phase==='render',
+      cyan=[.278,.863,.906,1],paper=[.835,.957,.937,1],steel=[.45,.51,.55,1],
+      accent=failed?[.851,.341,.333,1]:cyan,label=failed?'资源加载失败':phase==='render'?'正在准备画面…':phase==='assets'?'正在加载游戏…':'正在读取配置…',
+      x=cover.x+43*unit,barY=panel.y+53*unit,width=coverW-86*unit,barH=24*unit,
+      count=24,gap=3*unit,inset=5*unit,cell=(width-inset*2-gap*(count-1))/count,
+      i,fill,travel=(Math.sin(M3._now()*.0018)+1)*.5,imageReady;
     if(gl&&gl.disable)gl.disable(gl.SCISSOR_TEST);
-    rect(0,l.top,l.w,l.usable,[.018,.035,.055,1]);
-    imageReady=loadingBackground(l);
-    if(!imageReady)text('启元-狼人队',l.w*.5,l.top+l.usable*.24,2.4,[.87,.94,.97,1],l.w*.86,'center','title');
-    for(i=0;i<24;i+=1)rect(0,l.top+l.usable*.64+i*bandH,l.w,bandH+.5,[.008,.020,.036,.10+i*.016]);
-    line(x,barY-55,x+width*.38,barY-55,.65,[gold[0],gold[1],gold[2],.42]);
-    line(x+width*.62,barY-55,x+width,barY-55,.65,[gold[0],gold[1],gold[2],.42]);
-    diamond(l.w*.5,barY-55,5,5,[gold[0],gold[1],gold[2],.8]);
-    text(label,l.w*.5,barY-36,1.12,[.9,.95,.97,1],l.w*.82,'center','label');
-    chamfer({x:x-2,y:barY-2,w:width+4,h:10},[.008,.025,.043,.86],2);
-    chamferOutline({x:x-2,y:barY-2,w:width+4,h:10},[accent[0],accent[1],accent[2],.32],.65,2);
-    rect(x,barY,width,6,[.12,.22,.28,.7]);
-    if(!failed){
-      if(known){
-        if(phase==='render')ratio=1;
-        if(ratio>0){rect(x,barY,width*ratio,6,accent);rect(x,barY,width*ratio,1.2,[.78,.96,1,.72]);diamond(x+width*ratio,barY+3,4,8,[.9,1,1,.82]);}
-        text(Math.round(ratio*100)+'%',x+width,barY-17,.64,[.75,.87,.91,1],62,'right','label');
-      }else{
-        rect(x+(width-segment)*travel,barY,segment,6,accent);
-        rect(x+(width-segment)*travel,barY,segment,1.2,[.78,.96,1,.72]);
+    rect(0,l.top,l.w,l.usable,[.024,.106,.149,1]);
+    imageReady=loadingBackground(cover);
+    if(!imageReady){
+      text('启元传说',l.w*.5,cover.y+coverH*.09,3.2*unit,paper,coverW*.86,'center','title');
+      text('防线系统启动中',l.w*.5,cover.y+coverH*.20,1*unit,cyan,coverW*.80,'center');
+    }
+    // Opaque runtime terminal replaces ALL sample copy and the baked-in 68% bar.
+    chamfer(panel,[.043,.145,.204,1],7*unit);
+    chamferOutline(panel,steel,2*unit,7*unit);
+    chamferOutline({x:panel.x+5*unit,y:panel.y+5*unit,w:panel.w-10*unit,h:panel.h-10*unit},[.10,.25,.29,1],unit,4*unit);
+    line(panel.x+20*unit,panel.y+2*unit,panel.x+panel.w-20*unit,panel.y+2*unit,unit,[.66,.74,.78,1]);
+    for(i=0;i<4;i+=1){
+      var boltX=i%2?panel.x+panel.w-9*unit:panel.x+9*unit,boltY=i<2?panel.y+12*unit:panel.y+panel.h-12*unit;
+      rect(boltX-3*unit,boltY-3*unit,6*unit,6*unit,steel);
+      rect(boltX-2*unit,boltY,4*unit,unit,[.024,.106,.149,1]);
+    }
+    mapLabel(label,{x:x+4*unit,y:panel.y+18*unit,w:width-80*unit,h:24*unit},16*unit,accent,{align:'left',padding:0});
+    if(phase==='render')ratio=1;
+    mapLabel(failed?'失败':known?Math.round(ratio*100)+'%':'连接中',{x:x+width-74*unit,y:panel.y+18*unit,w:70*unit,h:24*unit},14*unit,paper,{align:'right',padding:0});
+    chamfer({x:x,y:barY,w:width,h:barH},[.024,.106,.149,1],4*unit);
+    chamferOutline({x:x,y:barY,w:width,h:barH},[.66,.74,.78,1],unit,4*unit);
+    chamferOutline({x:x+2*unit,y:barY+2*unit,w:width-4*unit,h:barH-4*unit},[.12,.36,.40,1],unit,2*unit);
+    for(i=0;i<count;i+=1){
+      var cellX=x+inset+i*(cell+gap);
+      rect(cellX,barY+inset,cell,barH-inset*2,[.065,.20,.24,1]);
+      fill=failed?0:known?Math.max(0,Math.min(1,ratio*count-i)):Math.max(0,1-Math.abs(i-travel*(count-1))/3);
+      if(fill>0){
+        rect(cellX,barY+inset,cell*fill,barH-inset*2,accent);
+        rect(cellX,barY+inset,cell*fill,2*unit,[.63,.98,.97,1]);
       }
     }
-    text(failed?'轻触屏幕，重新连接':'请稍候，完成后自动进入游戏',l.w*.5,barY+27,.7,[.65,.76,.80,1],l.w*.88,'center');
-    if(failed)text(String(v.loadingError||'请检查网络后重试').slice(0,64),l.w*.5,barY+55,.64,[.88,.65,.56,1],l.w*.88,'center');
+    mapLabel(failed?'轻触屏幕，重新连接':'搭配防御塔，守住城市防线',{x:cover.x+coverW*.105,y:panel.y+87*unit,w:coverW*.79,h:20*unit},14*unit,failed?accent:paper);
+    line(x,panel.y+101*unit,x+17*unit,panel.y+101*unit,unit,cyan);
+    line(x+width-17*unit,panel.y+101*unit,x+width,panel.y+101*unit,unit,cyan);
   }
-  function loadingBackground(l){
-    var key='ui-loading-background',image=M3.TextureAssets&&M3.TextureAssets.get(key),iw=image&&(image.naturalWidth||image.width),ih=image&&(image.naturalHeight||image.height),aspect,boxAspect,u0=0,u1=1,v0=0,v1=1,span;
-    if(!iw||!ih)return false;
-    aspect=iw/ih;boxAspect=l.w/l.usable;
-    if(aspect>boxAspect){span=boxAspect/aspect;u0=(1-span)*.5;u1=1-u0;}else{span=aspect/boxAspect;v0=(1-span)*.5;v1=1-v0;}
-    return imageRegion(key,0,l.top,l.w,l.usable,u0,1-v0,u1,1-v1,[1,1,1,1],1,false,0);
+  function loadingBackground(r){
+    var key='ui-loading-background',image=M3.TextureAssets&&M3.TextureAssets.get(key);
+    if(!image||!(image.naturalWidth||image.width)||!(image.naturalHeight||image.height))return false;
+    return imageRegion(key,r.x,r.y,r.w,r.h,0,1,1,0,[1,1,1,1],1,false,0);
   }
   function prepareAssets(keys){
     var i,key,error;
@@ -485,6 +841,7 @@
     else if(below>=height+12)y=l.board.y+l.board.h+(below-height)*.5;
     else if(above>=height+12)y=l.battleHudBottom+(above-height)*.5;
     else y=l.battleHudBottom+8;
+    if(!v.itemMenuOpen)y=l.board.y+8;
     r={x:(l.w-width)*.5,y:y+(1-opacity)*4,w:width,h:height};cx=r.x+25;cy=r.y+r.h*.5;
     chamfer({x:r.x+2,y:r.y+3,w:r.w,h:r.h},[0,0,0,.24*opacity],8);
     chamfer(r,[.022,.048,.062,.94*opacity],8);
@@ -496,6 +853,6 @@
     for(i=0;i<lines.length;i+=1)text(lines[i],r.x+47,r.y+(r.h-lines.length*17)*.5+i*17,.92,alphaColor(p.paper,opacity),r.w-60,'left','label');
     line(r.x+47,r.y+r.h-5,r.x+47+(r.w-60)*Math.min(1,remaining/2200),r.y+r.h-5,.7,[accent[0],accent[1],accent[2],.28*opacity]);
   }
-  function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]);init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')loadingScreen(l,v,false);else if(v.state==='LOADING'){if(v.loadingPhase==='render'){try{prepareAssets(v.assetKeys);mapV2(l,v);if(gl.getError&&gl.getError()!==gl.NO_ERROR)throw new Error('地图画面渲染失败');loadingScreen(l,v,false);if(M3.Game&&M3.Game.assetsRendered)M3.Game.assetsRendered();}catch(error){if(M3.Game&&M3.Game.assetRenderFailed)M3.Game.assetRenderFailed(error);loadingScreen(l,{loadingError:error&&error.message||'图片渲染失败'},true);}}else loadingScreen(l,v,false);}else if(v.state==='LOAD_ERROR')loadingScreen(l,v,true);else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.message){if(v.state==='BATTLE')battleToast(l,v);else if(v.state!=='WORLD_MAP')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
+  function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]);init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')loadingScreen(l,v,false);else if(v.state==='LOADING'){if(v.loadingPhase==='render'){try{prepareAssets(v.assetKeys);mapV2(l,v);if(gl.getError&&gl.getError()!==gl.NO_ERROR)throw new Error('地图画面渲染失败');loadingScreen(l,v,false);if(M3.Game&&M3.Game.assetsRendered)M3.Game.assetsRendered();}catch(error){if(M3.Game&&M3.Game.assetRenderFailed)M3.Game.assetRenderFailed(error);loadingScreen(l,{loadingError:error&&error.message||'图片渲染失败'},true);}}else loadingScreen(l,v,false);}else if(v.state==='LOAD_ERROR')loadingScreen(l,v,true);else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.mapDialog)mapDialog(l,v);if(v.message){if(v.state==='BATTLE')battleToast(l,v);else if(v.state!=='WORLD_MAP'&&v.state!=='DECK_SELECT'&&v.state!=='HERO_SELECT')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
   M3.Renderer={draw:draw,rect:rect,triangles:solid,imageRegion:imageRegion};
 })();

@@ -15,13 +15,26 @@ ENTRY_FILES = (
 RUNTIME_DIRS = ('js', 'api', 'standard', 'subpackages', 'assets')
 
 
+def atlas_source_files():
+    """Keep editable icon originals in the repo, but ship their shared runtime atlas once."""
+    if not (ROOT / 'assets/Image/ui/ui-icons.webp').exists():
+        return set()
+    atlas = (ROOT / 'js/render/ui-icon-assets.js').read_text()
+    keys = {entry['key'] for entry in json.loads(re.search(r'var entries=(.*);', atlas).group(1))}
+    source = (ROOT / 'js/play/neutral-config.js').read_text()
+    manifest = json.loads(re.search(r'var manifest = (.*);', source).group(1))
+    return {ROOT / entry['url'] for entry in manifest['assetManifest']
+            if entry['key'] in keys and entry['url'].startswith('assets/')
+            and entry['url'] != 'assets/Image/ui/ui-icons.webp'} | {ROOT / 'assets/Image/ui/ui-icons.png'}
+
+
 def runtime_files():
     paths = [ROOT / name for name in ENTRY_FILES]
     for directory in RUNTIME_DIRS:
         paths.extend(path for path in (ROOT / directory).rglob('*')
                      if path.is_file() and not any(part.startswith('.') for part in path.relative_to(ROOT).parts)
-                     and path.name != 'README.md' and not path.name.endswith('.prompt.txt'))
-    return sorted(set(paths))
+                     and path.name != 'README.md' and not path.name.endswith(('.prompt.txt', '.source.md')))
+    return sorted(set(paths) - atlas_source_files())
 
 
 def check_references(paths):
@@ -43,7 +56,7 @@ def check_references(paths):
                 candidate = candidate.with_suffix('.js')
             if candidate.is_relative_to(ROOT) and candidate.relative_to(ROOT).as_posix() not in included:
                 raise ValueError(f'Unpackaged reference in {path.relative_to(ROOT)}: {name}')
-    required = ['assets/home-asset/home-loading-wolf-team.jpg', 'assets/Image/ui/ui-icons.png']
+    required = ['assets/home-asset/home-loading-qiyuan.webp', 'assets/Image/ui/ui-icons.webp', 'assets/Image/ui/ui-map-reference.webp', 'assets/Image/ui/ui-tower-interface-v1.webp', 'assets/Image/ui/ui-hero-interface-v1.webp', 'assets/Image/ui/ui-level-briefing-v1.webp', 'assets/Image/ui/pixel-units-25d-v1.webp', 'assets/Image/ui/battle-scene-surround.webp', 'assets/Font/font-cn-ui-hd.png']
     required += [f'assets/Font/font-cn-main-{index}.png' for index in range(9)]
     for name in required:
         if name not in included:

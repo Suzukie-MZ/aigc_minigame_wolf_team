@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>战斗素材验证</title>
+<style>body{margin:0;background:#111;color:#eee;font:16px sans-serif}aside{position:fixed;left:8px;top:8px;width:180px}button{display:block;margin:10px 0;padding:8px}iframe{position:absolute;left:200px;top:0;width:712px;height:908px;border:0}</style>
+<aside>CDN 动作与特效验证<p id="status">正在读取游戏和远端素材…</p><button id="flight" disabled>查看飞行阶段</button><button id="hit" disabled>查看命中阶段</button><button id="idle" disabled>查看待机</button></aside><iframe id="game" src="../index.html"></iframe>
+<script>
+const frame=document.querySelector('iframe'),status=document.querySelector('#status');
+const timer=setInterval(async()=>{
+ const M=frame.contentWindow.M3;if(!M||!M.Game||M.Game.getViewModel().state!=='WORLD_MAP')return;clearInterval(timer);
+ try{
+ const base=M.Game.getViewModel(),m=M.RuntimeConfig.getManifest(),l=M.RuntimeConfig.getLevel(Object.keys(m.levels)[0]);
+ const c=M.Combat.create(l,m,['card-1','card-4','card-5','card-6'],['hero-1']);
+ const tower={unitId:'tower-1',cardId:'card-1',x:1,y:1,level:6,cooldown:1},cannon={unitId:'tower-4',cardId:'card-4',x:3,y:1,level:1,cooldown:1},income={unitId:'tower-5',cardId:'card-5',x:4,y:4,level:1,cooldown:1},hero={unitId:'hero-1',heroId:'hero-1',x:1,y:4,level:1,cooldown:1};
+ c.towers=[tower,cannon,income];c.heroes=[hero];c.waveWarning=c.bossWarning=0;
+ const enemyId=l.units.find(u=>u.kind==='enemy').id;c.enemies=[{unitId:enemyId,x:2.5,y:2.2,hp:100,maxHp:100,segment:1,progress:.5}];
+ c.elapsed=10;c._recordAttack(tower,{x:2.5,y:2.2},'tower');c._recordAttack(cannon,{x:2.5,y:2.2},'tower');c._recordAttack(hero,{x:2.5,y:2.2},'hero');c._recordAttack(income,{x:4.5,y:4.5},'income');
+ const keys=[];for(const a of [tower,cannon,hero]){const f=M.DefenderAnimations.frameFor(a,10);keys.push(f.atlas.key);}for(const e of c.attackEvents){e.age=.15;keys.push(M.DefenderAnimations.effectFor(e).atlas.key);}keys.push('combat-hero-1-down-attack');
+ await M.TextureAssets.waitFor(keys);
+ function sample(age){c.elapsed=10+age;c.attackEvents.forEach(e=>e.age=age);status.textContent='远端素材已加载：'+(age>1?'待机':age<.3?'飞行':'命中')+'；塔等级 Lv6 / Lv1';}
+ M.Game.update=function(){};M.Game.getViewModel=()=>Object.assign({},base,{state:'BATTLE',levelPreview:l,combat:c.view(),paused:false,tutorial:null,message:'',mapDialog:null});
+ document.querySelector('#flight').onclick=()=>sample(.15);document.querySelector('#hit').onclick=()=>sample(.35);document.querySelector('#idle').onclick=()=>sample(2);
+ for(const b of document.querySelectorAll('button'))b.disabled=false;sample(.15);
+ }catch(e){status.textContent=e.stack;console.error(e);}
+},100);
+</script>

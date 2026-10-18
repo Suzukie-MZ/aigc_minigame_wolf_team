@@ -169,12 +169,12 @@
       }else{
         h=g.cx*(o.kind==='hero'?1.38:1.48);w=h;
         r={x:p.x-w/2,y:p.y-h*.91,w:w,h:h};
-        imageAssetContain(o.kind==='tower'?towerLevelAsset(v,unit.unitId,unit.level):c.unitAssets[unit.unitId],r.x,r.y,r.w,r.h,1);
+        if(!(M3.DefenderAnimations&&M3.DefenderAnimations.draw(imageRegion,unit,c.elapsed,r.x,r.y,r.w,r.h,1,c.units&&c.units[unit.unitId])))imageAssetContain(o.kind==='tower'?towerLevelAsset(v,unit.unitId,unit.level):c.unitAssets[unit.unitId],r.x,r.y,r.w,r.h,1);
         if(c.selectedTower&&unit.x===c.selectedTower.x&&unit.y===c.selectedTower.y&&o.kind==='tower')chamferOutline({x:p.x-g.cx*.40,y:p.y-g.cy*.4,w:g.cx*.8,h:g.cy*.55},amber,2,4);
         if((unit.level||1)>1)mapLabel('Lv'+unit.level,{x:p.x-16,y:p.y+1,w:32,h:14},10,amber);
       }
     }
-    for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i],from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
+    for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i];if(M3.DefenderAnimations&&M3.DefenderAnimations.drawEffect(imageRegion,ev,{x:g.x,y:g.y,point:function(x,y){var p=projection.point(g,x,y);return{x:p.x,y:p.y};}},g.cx))continue;if(ev.type==='income')continue;var from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
     for(i=0;i<(c.damageEvents||[]).length;i+=1){var ev=c.damageEvents[i];p=projection.point(g,ev.x,ev.y);mapLabel(String(ev.value),{x:p.x-18,y:p.y-g.cx*.65-ev.age*16,w:36,h:18},12,[1,.72,.30,Math.max(0,1-ev.age/ev.duration)]);}
   }
   // Share the exact armor skins used by the hero selection screen. Fixed corner sizes never stretch.
@@ -187,8 +187,8 @@
     var size=Math.min(18,r.h-4),value=String(cost),tw=Math.min(r.w-25,Math.max(14,value.length*11)),start=r.x+(r.w-tw-size-5)/2;
     battleHudIcon('coin',start,r.y+(r.h-size)/2,size,[.957,.718,.173,1]);mapLabel(value,{x:start+size+5,y:r.y,w:tw,h:r.h},16,[.957,.718,.173,1],{padding:0});
   }
-  function battleUnitCard(r,id,assetKey,name,cost,selected){
-    var paper=[.835,.957,.937,1],cyan=[.278,.863,.906,1],hero=/^hero-/.test(id);
+  function battleDeploymentCard(r,assetKey,name,cost,selected,hero){
+    var paper=[.835,.957,.937,1],cyan=[.278,.863,.906,1];
     battleArmor(r,selected);
     if(hero){var portrait=Math.min(r.h-14,r.w*.42),art={x:r.x+7,y:r.y+7,w:portrait,h:r.h-14},tx=art.x+art.w+7,infoW=r.x+r.w-tx-8;
       battleArmor(art,false);imageAssetContain(assetKey,art.x+7,art.y+7,art.w-14,art.h-14,1);
@@ -257,8 +257,8 @@
       if(M3.DeploymentHints)M3.DeploymentHints.draw(v);
     }finally{gl.disable(gl.SCISSOR_TEST);}
     battleOuterArmor({x:6,y:l.heroBarY-10,w:l.w-12,h:l.top+l.usable-l.heroBarY+6});
-    for(i=0;i<v.combat.heroIds.length;i+=1){r=l.battleHeroCard(i,v.combat.heroIds.length,count);battleUnitCard(r,v.combat.heroUnits[v.combat.heroIds[i]],v.combat.unitAssets[v.combat.heroUnits[v.combat.heroIds[i]]],heroDisplayName(v.combat.heroNames[v.combat.heroIds[i]]),0,v.combat.selectedHero===v.combat.heroIds[i]);}
-    for(i=0;i<count;i+=1){r=l.battleTowerCard(i,count);battleUnitCard(r,v.combat.cardUnits[v.combat.deckIds[i]],towerLevelAsset(v,v.combat.cardUnits[v.combat.deckIds[i]],1),v.combat.cardNames[v.combat.deckIds[i]],v.combat.cardCosts[v.combat.deckIds[i]],v.combat.selectedCard===v.combat.deckIds[i]);}
+    for(i=0;i<v.combat.heroIds.length;i+=1){var heroId=v.combat.heroIds[i];r=l.battleHeroCard(i,v.combat.heroIds.length,count);battleDeploymentCard(r,v.combat.heroAssets[heroId]||v.combat.unitAssets[v.combat.heroUnits[heroId]],heroDisplayName(v.combat.heroNames[heroId]),0,v.combat.selectedHero===heroId,true);}
+    for(i=0;i<count;i+=1){var cardId=v.combat.deckIds[i];r=l.battleTowerCard(i,count);battleDeploymentCard(r,v.combat.cardAssets[cardId]||towerLevelAsset(v,v.combat.cardUnits[cardId],1),v.combat.cardNames[cardId],v.combat.cardCosts[cardId],v.combat.selectedCard===cardId,false);}
     battleCommand(l.battleItems,'支援',false);
     battleMessagePanel(l,v);if(!v.paused)battleCommand(l.pauseButton,'暂停',false);battleInspection(l,v);if(v.paused){drawRect(l.board.x,l.board.y,l.board.w,l.board.h,[.01,.025,.04,.60]);var pauseBox={x:l.w*.18,y:l.board.y+l.board.h*.5-46,w:l.w*.64,h:92};battleArmor(pauseBox,false);mapLabel('游戏暂停',{x:pauseBox.x,y:pauseBox.y+10,w:pauseBox.w,h:30},22,[.835,.957,.937,1]);mapLabel('点击继续恢复对局',{x:pauseBox.x,y:pauseBox.y+47,w:pauseBox.w,h:24},14,[.278,.863,.906,1]);battleCommand(l.pauseButton,'继续',true);}
   }

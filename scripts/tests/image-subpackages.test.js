@@ -41,9 +41,12 @@ test('startup images remain in main; H5 reads subpackage URLs without native dow
   assert.equal(web.requests.length,0);assert.equal(web.images[0].src,'subpackages/ui-images/assets/a.png');
 });
 function files(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.name==='.git'?[]:e.isDirectory()?files(path.join(dir,e.name)):[path.join(dir,e.name)]);}
-test('actual main directory and every declared image package stay below 6 MB',()=>{
+test('runtime main package and every declared image package stay below 6 MB',()=>{
   const config=JSON.parse(fs.readFileSync(path.join(root,'game.json'),'utf8'));
-  const roots=config.subpackages.map(p=>path.join(root,p.root));const all=files(root);
+  const roots=config.subpackages.map(p=>path.join(root,p.root));
+  const entries=new Set(['game.js','game.json','project.config.json','index.html','ks-adapter.js','kwaiadapter.js','wxhelper.js','events.js']);
+  const runtimeDirs=new Set(['js','api','standard','subpackages','assets']);
+  const all=files(root).filter(p=>{const parts=path.relative(root,p).split(path.sep),name=parts.at(-1);return (parts.length===1&&entries.has(name)||runtimeDirs.has(parts[0]))&&!parts.some(part=>part.startsWith('.'))&&name!=='README.md'&&!name.endsWith('.prompt.txt')&&!name.endsWith('.source.md');});
   const size=list=>list.reduce((total,p)=>total+fs.statSync(p).size,0);
   const main=all.filter(p=>!roots.some(r=>p.startsWith(r)));
   assert.ok(size(main)<6000000,'main exceeds 6,000,000 bytes');

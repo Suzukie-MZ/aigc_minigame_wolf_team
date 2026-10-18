@@ -1,7 +1,7 @@
 (function () {
   var M3=window.M3,entries={},handles={},sources={},fallbackEntries={};
   function remote(url){return /^https?:\/\//.test(url||'');}
-  function runtimeArtwork(key){return key==='battle-arena-background'||key==='battle-scene-surround'||key==='demo-scene'||/^(tile[-_]|tower[-_]|hero[-_])/.test(key||'');}
+  function runtimeArtwork(key){return key==='battle-arena-background'||key==='battle-scene-surround'||key==='demo-scene'||/^(combat-|tile[-_]|tower[-_]|hero[-_])/.test(key||'');}
   function start(item,cacheKey,onFail,onSuccess){
     if(remote(item.url)){
       if(M3.CdnLoader&&!handles[cacheKey])handles[cacheKey]=M3.CdnLoader.loadImage(cacheKey,item.url,'runtime-images',{onSuccess:function(image){if(onSuccess)onSuccess(image);},onFail:function(error){console.warn('[TextureAssets] remote image failed',item.key,item.url,error&&error.message||'load failed');if(onFail)onFail(error);}}).catch(function(){delete handles[cacheKey];return null;});
@@ -19,10 +19,12 @@
     return 'hero-1';
   }
   function startEntry(entry){
-    start(entry.item,entry.cacheKey,function(){entry.failed=true;entry.ready=false;},function(){entry.failed=false;entry.ready=true;});
+    entry.error=null;
+    start(entry.item,entry.cacheKey,function(error){entry.failed=true;entry.ready=false;entry.error=error;},function(){entry.failed=false;entry.ready=true;entry.error=null;});
   }
-  function loadRemaining(){Object.keys(entries).forEach(function(key){startEntry(entries[key]);});}
+  function loadRemaining(){Object.keys(entries).forEach(function(key){if(!entries[key].item.lazy)startEntry(entries[key]);});}
   function configure(manifest,initialKeys){
+    if(M3.DefenderAnimations)M3.DefenderAnimations.configure(manifest);
     var defaults=(M3.NeutralConfig&&M3.NeutralConfig.manifest&&M3.NeutralConfig.manifest.assetManifest||[]).slice(0),list=(manifest&&manifest.assetManifest||[]).slice(0),builtin=(M3.UIIconAssets&&M3.UIIconAssets.manifest||[]).concat(M3.EnemyAnimations&&M3.EnemyAnimations.manifest||[],M3.CombatProjection&&M3.CombatProjection.manifest||[],M3.BattleMessages&&M3.BattleMessages.assets||[]),defaultIndex={},listed={},required=[],i,item,cacheKey,sourceKey,fallback;
     // Only bundled files may be fallback resources. Snapshot network URLs belong to
     // old development releases; missing split-manifest keys must wait for the extra manifest.
@@ -40,12 +42,12 @@
       item=list[i];
       if(!item||item.type!=='image'||!item.key||!item.url)continue;
       sourceKey=item.url+'@'+(item.version||'1');
-      cacheKey=sources[sourceKey]||item.key+'@'+(item.version||'1');
+      cacheKey=sources[sourceKey]||item.key+'@'+(item.version||'1')+(/^combat-/.test(item.key)?'@'+item.url:'');
       sources[sourceKey]=cacheKey;
       fallback=runtimeArtwork(item.key)?null:fallbackEntries[fallbackKey(item,manifest)];
       entries[item.key]={cacheKey:cacheKey,item:item,fallback:fallback||null,failed:false,ready:false};
-      if(initialKeys?initialKeys.indexOf(item.key)>=0:runtimeArtwork(item.key)||/^subpackages\/monsters(-light|-heavy)?\//.test(item.url))required.push(item.key);
-      if(!initialKeys||initialKeys.indexOf(item.key)>=0)startEntry(entries[item.key]);
+      if(!item.lazy&&(initialKeys?initialKeys.indexOf(item.key)>=0:runtimeArtwork(item.key)||/^subpackages\/monsters(-light|-heavy)?\//.test(item.url)))required.push(item.key);
+      if(!item.lazy&&(!initialKeys||initialKeys.indexOf(item.key)>=0))startEntry(entries[item.key]);
     }
     return required;
   }
@@ -59,7 +61,7 @@
       if(onlyMissing&&existing)return;
       if(existing&&existing.item.url===item.url&&(existing.item.version||'1')===(item.version||'1'))return;
       sourceKey=item.url+'@'+(item.version||'1');
-      cacheKey=sources[sourceKey]||item.key+'@'+(item.version||'1');sources[sourceKey]=cacheKey;
+      cacheKey=sources[sourceKey]||item.key+'@'+(item.version||'1')+(/^combat-/.test(item.key)?'@'+item.url:'');sources[sourceKey]=cacheKey;
       // Registration stores addresses only. Rendering/waitFor starts the actual image request.
       entries[item.key]={cacheKey:cacheKey,item:item,fallback:null,failed:false,ready:false};
     });
@@ -88,6 +90,7 @@
         if(entry.fallback&&entry.fallback.cacheKey!==entry.cacheKey)return readyImage(entry.fallback.cacheKey);
         throw error;
       }).then(function(){return key;},function(error){
+        error=entry.error||error;
         var url=error&&error.url||entry.item.url,reason=error&&(error.reason||error.message||error.errMsg)||'图片读取或解码失败';
         console.error('[TextureAssets] required image failed',key,url,reason);
         var failure=new Error('图片加载失败: '+key+' ('+url+') '+reason);

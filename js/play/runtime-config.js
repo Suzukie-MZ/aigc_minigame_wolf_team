@@ -45,6 +45,8 @@
     var defaults = M3.NeutralConfig.manifest.presentation, supplied = manifest.presentation || {}, dc = defaults.colors, sc = supplied.colors || {}, cards = manifest.cards || [], rolePalette, enemyPalette, roleAppearances, enemyAppearances, cardByUnit = {}, assetKeys = {}, fallbackAssets = M3.NeutralConfig.manifest.assetManifest || [], key, i, j, units, enemyIndex, fallbackAppearance;
     manifest.presentation = clone(defaults); manifest.presentation.themeId = supplied.themeId || defaults.themeId; manifest.presentation.displayName = supplied.displayName || defaults.displayName;
     manifest.presentation.sceneAssets = merge({}, supplied.sceneAssets || {});
+    // Keep the server's atlas contract; validation belongs to the optional renderer.
+    if (Object.prototype.hasOwnProperty.call(supplied, 'combatAnimations')) manifest.presentation.combatAnimations = clone(supplied.combatAnimations);
     manifest.presentation.copy = merge(defaults.copy, supplied.copy || {});
     manifest.presentation.typography = merge(defaults.typography || {}, supplied.typography || {});
     manifest.presentation.typography.styles = merge((defaults.typography && defaults.typography.styles) || {}, (supplied.typography && supplied.typography.styles) || {});

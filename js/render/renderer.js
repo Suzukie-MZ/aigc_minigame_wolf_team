@@ -138,11 +138,6 @@
   function attackEffects(v,b,cell){var events=v.combat.attackEvents||[],configs=v.presentation&&v.presentation.combatEffects||{},i,event,cfg,progress,fade,sx,sy,tx,ty,dx,dy,distance,steps,j,ratio,width,size,px,py,color,impactColor;for(i=0;i<events.length;i+=1){event=events[i];cfg=configs[event.type]||{};progress=Math.min(1,event.age/event.duration);fade=Math.max(0,1-progress);sx=b.x+event.fromX*cell;sy=b.y+event.fromY*cell;tx=b.x+event.toX*cell;ty=b.y+event.toY*cell;dx=tx-sx;dy=ty-sy;distance=Math.sqrt(dx*dx+dy*dy);width=Math.max(2,cell*(Number(cfg.trailWidth)||(event.type==='hero'?.12:.07)));size=cell*(Number(cfg.impactScale)||(event.type==='hero'?.30:.18));color=cfg.color||(event.type==='hero'?[1,.76,.2,1]:[.42,.94,1,1]);impactColor=cfg.impactColor||(event.type==='hero'?[1,.34,.16,1]:[.88,1,1,1]);if(event.type==='hero'){steps=Math.max(3,Math.ceil(distance/Math.max(3,cell*.14)));for(j=0;j<=steps;j+=1){ratio=j/steps;px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(.45+.55*ratio)));}frame({x:tx-size*(.55+progress*.45),y:ty-size*(.55+progress*.45),w:size*(1.1+progress*.9),h:size*(1.1+progress*.9)},alphaColor(impactColor,fade),Math.max(2,width*.55));rect(tx-width*1.4,ty-width*.45,width*2.8,width*.9,alphaColor(impactColor,fade));rect(tx-width*.45,ty-width*1.4,width*.9,width*2.8,alphaColor(impactColor,fade));}else{for(j=0;j<4;j+=1){ratio=Math.max(0,progress-j*.10);px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(1-j*.18)));}frame({x:tx-size*.5,y:ty-size*.5,w:size,h:size},alphaColor(impactColor,fade),Math.max(1,width*.45));}}}
   function itemDisplay(l,v){var p=uiPalette(v),r=l.battleItems,size=Math.min(r.w,r.h),icon={x:r.x+(r.w-size)*.5,y:r.y+(r.h-size)*.5,w:size,h:size},art={x:0,y:0,w:0,h:0};rect(icon.x+3,icon.y+4,icon.w,icon.h,[0,0,0,.34]);rect(icon.x,icon.y,icon.w,icon.h,p.navy2);frame(icon,p.borderVariants[2],2);art={x:icon.x+2,y:icon.y+2,w:icon.w-4,h:icon.h-4};if(imageAsset('ui-item-question',art.x,art.y,art.w,art.h,1)){frame(art,[p.borderVariants[2][0],p.borderVariants[2][1],p.borderVariants[2][2],.78],1.5);return;}text('道具',icon.x+icon.w*.5,icon.y+icon.h*.20,.60,p.paper,icon.w*.84,'center');text('点击选择',icon.x+icon.w*.5,icon.y+icon.h*.66,.44,p.accent,icon.w*.88,'center');}
   function itemChoiceIcon(r,effect,color){var cx=r.x+r.w*.5,cy=r.y+r.h*.31,s=Math.min(r.w,r.h)*.22;if(effect==='clear_all_enemies'){frame({x:cx-s*.62,y:cy-s*.62,w:s*1.24,h:s*1.24},color,2);rect(cx-s*.9,cy-2,s*1.8,4,color);rect(cx-2,cy-s*.9,4,s*1.8,color);rect(cx-s*.16,cy-s*.16,s*.32,s*.32,color);}else{rect(cx-s*.72,cy+s*.16,s*.38,s*.42,color);rect(cx-s*.19,cy-s*.08,s*.38,s*.66,color);rect(cx+s*.34,cy-s*.36,s*.38,s*.94,color);rect(cx-s*.16,cy-s*.78,s*.32,s*.32,color);rect(cx-s*.42,cy-s*.53,s*.84,s*.08,color);}}
-  function pixelUnit(id,d,r){
-    var uv=M3.CombatProjection.region(id,d),aspect,w,h;if(!uv)return false;
-    aspect=(uv[2]-uv[0])*836/((uv[3]-uv[1])*1881);w=Math.min(r.w,r.h*aspect);h=w/aspect;
-    return imageRegion('pixel-units-25d',r.x+(r.w-w)/2,r.y+r.h-h,w,h,uv[0],1-uv[1],uv[2],1-uv[3],[1,1,1,1],1,false,0);
-  }
   function remoteTerrain(map,tile,r){
     var key=M3.TextureAssets.tileKey(map,tile);
     // Each server tile already includes its ground and 2.5D props. Draw it once, at its authored ratio.
@@ -173,16 +168,14 @@
         if(!unit.dying){drawRect(p.x-g.cx*.27,p.y-h*.88,g.cx*.54,4,[.025,.06,.08,1]);drawRect(p.x-g.cx*.27,p.y-h*.88,g.cx*.54*Math.max(0,unit.hp/unit.maxHp),3,[.70,.22,.47,1]);}
       }else{
         h=g.cx*(o.kind==='hero'?1.38:1.48);w=h;
-        if(unit.unitId==='tower-6')w=h*.70;
-        d=projection.directional(unit.unitId)?(unit.aimX!==undefined?projection.facing(unit.aimX,unit.aimY):projection.direction(unit,c.enemies)):0;
         r={x:p.x-w/2,y:p.y-h*.91,w:w,h:h};
-        if(!pixelUnit(unit.unitId,d,r))imageAssetContain(c.unitAssets[unit.unitId],r.x,r.y,r.w,r.h,1);
+        if(!(M3.DefenderAnimations&&M3.DefenderAnimations.draw(imageRegion,unit,c.elapsed,r.x,r.y,r.w,r.h,1,c.units&&c.units[unit.unitId])))imageAssetContain(o.kind==='tower'?towerLevelAsset(v,unit.unitId,unit.level):c.unitAssets[unit.unitId],r.x,r.y,r.w,r.h,1);
         if(c.selectedTower&&unit.x===c.selectedTower.x&&unit.y===c.selectedTower.y&&o.kind==='tower')chamferOutline({x:p.x-g.cx*.40,y:p.y-g.cy*.4,w:g.cx*.8,h:g.cy*.55},amber,2,4);
         if((unit.level||1)>1)mapLabel('Lv'+unit.level,{x:p.x-16,y:p.y+1,w:32,h:14},10,amber);
       }
     }
     if(M3.DeathParticles&&(c.deathEffects||[]).length){gl.blendFunc(M3.DeathParticles.blendSource,M3.DeathParticles.blendDestination);try{M3.DeathParticles.draw(c.deathEffects,{x:g.x,y:g.y},g.cx,function(key,x,y,w,h,u0,v0,u1,v1,tint,alpha,sharp){return imageRegion(key,x,g.y+(y-g.y)*g.cy/g.cx,w,h,u0,v0,u1,v1,tint,alpha,sharp);});}finally{gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}}
-    for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i],from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
+    for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i];if(M3.DefenderAnimations&&M3.DefenderAnimations.drawEffect(imageRegion,ev,{x:g.x,y:g.y,point:function(x,y){var p=projection.point(g,x,y);return{x:p.x,y:p.y};}},g.cx))continue;if(ev.type==='income')continue;var from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
     for(i=0;i<(c.damageEvents||[]).length;i+=1){var ev=c.damageEvents[i];p=projection.point(g,ev.x,ev.y);mapLabel(String(ev.value),{x:p.x-18,y:p.y-g.cx*.65-ev.age*16,w:36,h:18},12,[1,.72,.30,Math.max(0,1-ev.age/ev.duration)]);}
   }
   // Share the exact armor skins used by the hero selection screen. Fixed corner sizes never stretch.
@@ -190,31 +183,21 @@
     mapSkinFrame(selected?[58,585,818,260]:[58,860,818,256],r,22,fill||[.024,.106,.149,1],heroSkin,.43);
   }
   function battleOuterArmor(r){mapSkinFrame([58,860,818,256],r,22,[.024,.106,.149,1],heroSkin,.65);}
-  // Alpha bounds of the front-facing atlas cells, used only for compact UI portraits.
-  function battleUnitPortrait(r,id,bust){
-    var row=/^hero-/.test(id)?Number(id.slice(5))-1:Number(id.slice(6))+2,
-      ys=[0,207,430,606,805,979,1181,1374,1577,1881],
-      bounds=[[28,17,209,207],[15,0,209,223],[0,0,199,176],[29,0,199,199],[15,0,209,174],[25,0,195,202],[25,0,207,193],[15,0,209,203],[0,0,187,280]],box=bounds[row];
-    if(!box)return;var x0=box[0],y0=ys[row]+box[1],x1=box[2],y1=ys[row]+box[3];
-    if(bust){var bustBox=[[29,17,209,131],[15,0,201,133],[33,0,198,105]][row];if(bustBox){x0=bustBox[0];y0=ys[row]+bustBox[1];x1=bustBox[2];y1=ys[row]+bustBox[3];}}
-    var aspect=(x1-x0)/(y1-y0),w=Math.min(r.w,r.h*aspect),h=w/aspect;
-    imageRegion('pixel-units-25d',r.x+(r.w-w)/2,r.y+(r.h-h)/2,w,h,x0/836,1-y0/1881,x1/836,1-y1/1881,[1,1,1,1],1,false,0);
-  }
   function battlePrice(r,cost){
     chamfer(r,[.01,.045,.065,1],5);chamferOutline(r,[.24,.43,.48,1],1,5);
     var size=Math.min(18,r.h-4),value=String(cost),tw=Math.min(r.w-25,Math.max(14,value.length*11)),start=r.x+(r.w-tw-size-5)/2;
     battleHudIcon('coin',start,r.y+(r.h-size)/2,size,[.957,.718,.173,1]);mapLabel(value,{x:start+size+5,y:r.y,w:tw,h:r.h},16,[.957,.718,.173,1],{padding:0});
   }
-  function pixelBattleCard(r,id,name,cost,selected){
-    var paper=[.835,.957,.937,1],cyan=[.278,.863,.906,1],hero=/^hero-/.test(id);
+  function battleDeploymentCard(r,assetKey,name,cost,selected,hero){
+    var paper=[.835,.957,.937,1],cyan=[.278,.863,.906,1];
     battleArmor(r,selected);
     if(hero){var portrait=Math.min(r.h-14,r.w*.42),art={x:r.x+7,y:r.y+7,w:portrait,h:r.h-14},tx=art.x+art.w+7,infoW=r.x+r.w-tx-8;
-      battleArmor(art,false);battleUnitPortrait({x:art.x+7,y:art.y+7,w:art.w-14,h:art.h-14},id,true);
+      battleArmor(art,false);imageAssetContain(assetKey,art.x+7,art.y+7,art.w-14,art.h-14,1);
       mapLabel(name,{x:tx,y:r.y+8,w:infoW,h:23},17,cyan,{align:'left',padding:0});
       mapLabel('战役支援',{x:tx,y:r.y+33,w:infoW,h:20},14,[.45,.66,.72,1],{align:'left',padding:0});
       battlePrice({x:tx,y:r.y+61,w:Math.min(92,infoW),h:27},cost);
     }else{
-      battleUnitPortrait({x:r.x+9,y:r.y+10,w:r.w-18,h:r.h-60},id,false);
+      imageAssetContain(assetKey,r.x+9,r.y+10,r.w-18,r.h-60,1);
       mapLabel(name,{x:r.x+9,y:r.y+r.h-46,w:r.w-18,h:20},13,cyan,{padding:0});
       battlePrice({x:r.x+10,y:r.y+r.h-28,w:r.w-20,h:21},cost);
     }
@@ -275,8 +258,8 @@
       if(M3.DeploymentHints)M3.DeploymentHints.draw(v);
     }finally{gl.disable(gl.SCISSOR_TEST);}
     battleOuterArmor({x:6,y:l.heroBarY-10,w:l.w-12,h:l.top+l.usable-l.heroBarY+6});
-    for(i=0;i<v.combat.heroIds.length;i+=1){r=l.battleHeroCard(i,v.combat.heroIds.length,count);pixelBattleCard(r,v.combat.heroUnits[v.combat.heroIds[i]],heroDisplayName(v.combat.heroNames[v.combat.heroIds[i]]),0,v.combat.selectedHero===v.combat.heroIds[i]);}
-    for(i=0;i<count;i+=1){r=l.battleTowerCard(i,count);pixelBattleCard(r,v.combat.cardUnits[v.combat.deckIds[i]],v.combat.cardNames[v.combat.deckIds[i]],v.combat.cardCosts[v.combat.deckIds[i]],v.combat.selectedCard===v.combat.deckIds[i]);}
+    for(i=0;i<v.combat.heroIds.length;i+=1){var heroId=v.combat.heroIds[i];r=l.battleHeroCard(i,v.combat.heroIds.length,count);battleDeploymentCard(r,v.combat.heroAssets[heroId]||v.combat.unitAssets[v.combat.heroUnits[heroId]],heroDisplayName(v.combat.heroNames[heroId]),0,v.combat.selectedHero===heroId,true);}
+    for(i=0;i<count;i+=1){var cardId=v.combat.deckIds[i];r=l.battleTowerCard(i,count);battleDeploymentCard(r,v.combat.cardAssets[cardId]||towerLevelAsset(v,v.combat.cardUnits[cardId],1),v.combat.cardNames[cardId],v.combat.cardCosts[cardId],v.combat.selectedCard===cardId,false);}
     battleCommand(l.battleItems,'支援',false);
     battleMessagePanel(l,v);if(!v.paused)battleCommand(l.pauseButton,'暂停',false);battleInspection(l,v);if(v.paused){drawRect(l.board.x,l.board.y,l.board.w,l.board.h,[.01,.025,.04,.60]);var pauseBox={x:l.w*.18,y:l.board.y+l.board.h*.5-46,w:l.w*.64,h:92};battleArmor(pauseBox,false);mapLabel('游戏暂停',{x:pauseBox.x,y:pauseBox.y+10,w:pauseBox.w,h:30},22,[.835,.957,.937,1]);mapLabel('点击继续恢复对局',{x:pauseBox.x,y:pauseBox.y+47,w:pauseBox.w,h:24},14,[.278,.863,.906,1]);battleCommand(l.pauseButton,'继续',true);}
   }

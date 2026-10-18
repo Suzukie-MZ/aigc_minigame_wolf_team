@@ -77,7 +77,7 @@
   function setState(s){battleLoading=false;battleStartRequest+=1;nodeSelection+=1;mapDialogState=null;mapVelocity=0;state=s;message='';messageFailed=false;messageExpiresAt=0;}
   function showBattleMessage(value,failed){message=value||'';messageFailed=!!failed;messageExpiresAt=message?M3._now()+2200:0;}
   function beginDeck(){cardPage=0;setState('DECK_SELECT');}
-  function toggleCard(id){var at=deck.indexOf(id),size=manifest.deckRules.deckSize||4;if(at>=0)deck.splice(at,1);else if(deck.length<size)deck.push(id);}
+  function toggleCard(id){if(battleLoading)return;var at=deck.indexOf(id),size=manifest.deckRules.deckSize||4;if(at>=0)deck.splice(at,1);else if(deck.length<size)deck.push(id);}
   function beginHeroes(reset){if(reset){heroes=[];deck=[];}heroPage=0;setState('HERO_SELECT');}
   function toggleHero(id){var at=heroes.indexOf(id);if(at>=0)heroes=[];else heroes=[id];}
   function findUnit(unitId){var current=M3.RuntimeConfig.getLevel(levelId),i;if(current&&current.units)for(i=0;i<current.units.length;i+=1)if(current.units[i].id===unitId)return current.units[i];return null;}
@@ -87,16 +87,22 @@
   function beginBattle(assetsReady){var index;if(!M3.Deck.validate(manifest,deck).ok){message='请选择四座防御塔';return;}if(heroes.length!==1){message='请选择一名英雄';return;}level=M3.RuntimeConfig.getLevel(levelId);if(!level){message='关卡配置不可用';return;}
     if(assetsReady!==true&&M3.TextureAssets&&M3.TextureAssets.waitFor){
       if(battleLoading)return;
-      var request=++battleStartRequest,attempt=loadAttempt,keys=[],tileAssets=level.map.tileAssets||{};
+      var request=++battleStartRequest,attempt=loadAttempt,keys=[],tileAssets=level.map.tileAssets||{},selectedUnits=[],cardById={},heroById={};
       if(M3.TextureAssets.addAssets)M3.TextureAssets.addAssets(level.assetManifest,true);
       Object.keys(tileAssets).forEach(function(type){var key=tileAssets[type];if(key&&keys.indexOf(key)<0)keys.push(key);});
-      battleLoading=true;message='地图素材加载中…';
+      (manifest.cards||[]).forEach(function(card){cardById[card.id]=card;});
+      ((manifest.systems.M5_hero||{}).hero_unit_pool||[]).forEach(function(hero){heroById[hero.id]=hero;});
+      deck.forEach(function(id){var card=cardById[id],unit=card&&level.units.filter(function(u){return u.id===card.unitId;})[0];if(unit)selectedUnits.push(unit);});
+      heroes.forEach(function(id){var hero=heroById[id],unit=hero&&level.units.filter(function(u){return u.id===hero.unitId;})[0];if(unit)selectedUnits.push(unit);});
+      if(M3.DefenderAnimations&&M3.DefenderAnimations.requiredKeys)M3.DefenderAnimations.requiredKeys(selectedUnits).forEach(function(key){if(keys.indexOf(key)<0)keys.push(key);});
+      battleLoading=true;message='战斗素材加载中…';
       M3.TextureAssets.waitFor(keys).then(function(){
         if(request!==battleStartRequest||attempt!==loadAttempt||state!=='DECK_SELECT')return;
         battleLoading=false;beginBattle(true);
-      },function(){
+      },function(error){
         if(request!==battleStartRequest||attempt!==loadAttempt||state!=='DECK_SELECT')return;
-        battleLoading=false;message='地图素材加载失败，请点击开始重试';
+        battleLoading=false;message='战斗素材加载失败，请点击开始重试';
+        console.error('[Game] battle assets failed',error&&error.assetKey||'',error&&error.url||'',error&&error.message||error);
       });
       return;
     }

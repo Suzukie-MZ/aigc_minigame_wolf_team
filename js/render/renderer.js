@@ -554,10 +554,10 @@
     for(i=0;i<12;i+=1){a=i*Math.PI/6;b=(i+1)*Math.PI/6;if(selected)vertices.push(x,y,x+9*Math.cos(a),y+9*Math.sin(a),x+9*Math.cos(b),y+9*Math.sin(b));else line(x+8*Math.cos(a),y+8*Math.sin(a),x+8*Math.cos(b),y+8*Math.sin(b),1,c);}
     if(selected){solid(vertices,c);line(x-4,y,x-1,y+3,2,[.03,.10,.13,1]);line(x-1,y+3,x+5,y-4,2,[.03,.10,.13,1]);}
   }
-  function towerModalButton(r,label,primary,enabled){
+  function towerModalButton(r,label,primary,enabled,fontSize){
     var amber=[.957,.718,.173,1],steel=enabled?[.45,.54,.58,1]:[.27,.34,.39,1],navy=[.024,.106,.149,1];
     if(!towerSkin(primary&&enabled?146:20,496,121,31,r))mapMetalPanel(r,amber,primary&&enabled?amber:steel);
-    mapLabel(label,r,18,enabled?navy:[.28,.36,.40,1]);
+    mapLabel(label,r,fontSize||18,enabled?navy:[.28,.36,.40,1]);
   }
   function deckV2(l,v){
     var rows=l.towerCards,chosen={},i,j,r,c,art,selected,back={},p=l.towerModal,
@@ -870,5 +870,22 @@
     }finally{gl.disable(gl.SCISSOR_TEST);}
   }
   function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]);init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')loadingScreen(l,v,false);else if(v.state==='LOADING'){if(v.loadingPhase==='render'){try{prepareAssets(v.assetKeys);mapV2(l,v);if(gl.getError&&gl.getError()!==gl.NO_ERROR)throw new Error('地图画面渲染失败');loadingScreen(l,v,false);if(M3.Game&&M3.Game.assetsRendered)M3.Game.assetsRendered();}catch(error){if(M3.Game&&M3.Game.assetRenderFailed)M3.Game.assetRenderFailed(error);loadingScreen(l,{loadingError:error&&error.message||'图片渲染失败'},true);}}else loadingScreen(l,v,false);}else if(v.state==='LOAD_ERROR')loadingScreen(l,v,true);else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.mapDialog)mapDialog(l,v);if(v.message){if(v.state!=='BATTLE'&&v.state!=='WORLD_MAP'&&v.state!=='DECK_SELECT'&&v.state!=='HERO_SELECT'&&v.state!=='PROGRESSION')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
-  M3.Renderer={draw:draw,rect:rect,triangles:solid,imageRegion:imageRegion};
+  M3.Renderer={draw:draw,rect:rect,triangles:solid,imageRegion:imageRegion,terminal:{
+    // Tutorial panels need a continuous rail; the hero skin has a transparent title notch.
+    panel:function(r){
+      var steel=[.45,.51,.55,1],light=[.73,.82,.86,1],dark=[.13,.23,.29,1],i,x,y;
+      mapMetalPanel(r,[.278,.863,.906,1],[.043,.145,.204,1]);
+      chamferOutline({x:r.x+5,y:r.y+5,w:r.w-10,h:r.h-10},dark,2,5);
+      line(r.x+12,r.y+2,r.x+r.w-12,r.y+2,2,light);
+      line(r.x+12,r.y+r.h-2,r.x+r.w-12,r.y+r.h-2,2,steel);
+      for(i=0;i<4;i+=1){
+        x=i%2?r.x+r.w-13:r.x+3;y=i<2?r.y+3:r.y+r.h-13;
+        chamfer({x:x,y:y,w:10,h:10},steel,2);
+        line(x+2,y+1,x+8,y+1,1,light);
+        rect(x+4,y+4,3,3,[.03,.09,.12,1]);rect(x+4,y+4,2,1,light);
+      }
+    },
+    tag:function(r){mapMetalPanel(r,[.278,.863,.906,1],[.16,.26,.33,1]);},
+    label:mapLabel,button:towerModalButton,line:line,image:imageAssetContain
+  }};
 })();

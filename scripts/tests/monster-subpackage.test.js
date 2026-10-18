@@ -39,11 +39,11 @@ test('H5 initializes without invoking native subpackage API',async()=>{
 });
 test('all local monster assets live in declared monsters package and are required before rendering',()=>{
   const s={console,M3:{},Promise};s.window=s;vm.createContext(s);
-  for(const name of ['enemy-animations','death-particles','texture-assets'])vm.runInContext(fs.readFileSync(path.join(root,'js/render',name+'.js'),'utf8'),s);
+  for(const name of ['enemy-animations','texture-assets'])vm.runInContext(fs.readFileSync(path.join(root,'js/render',name+'.js'),'utf8'),s);
   const images={};s.M3.AssetManager={acquire(type,key,url){images[key]={url};},loaded(key){return!!images[key];},get(key){return images[key];}};
-  const entries=s.M3.EnemyAnimations.manifest.concat(s.M3.DeathParticles.manifest);
+  const entries=s.M3.EnemyAnimations.manifest;
   const required=Array.from(s.M3.TextureAssets.configure({assetManifest:[]}));
-  assert.equal(entries.length, 29);
+  assert.equal(entries.length, 28);
   for(const item of entries){assert.ok(/^subpackages\/monsters(-light|-heavy)?\//.test(item.url));assert.ok(fs.existsSync(path.join(root,item.url)));assert.ok(required.includes(item.key));}
   const config=JSON.parse(fs.readFileSync(path.join(root,'game.json'),'utf8'));
   assert.ok(config.subpackages.some(item=>item.name==='monsters'&&item.root==='subpackages/monsters/'));

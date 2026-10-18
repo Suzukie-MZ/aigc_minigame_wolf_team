@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--font', default='/System/Library/Fonts/STHeiti Medium.ttc')
 args = parser.parse_args()
 source = ''.join((ROOT / p).read_text() for p in (
-    'js/render/renderer.js', 'js/render/battle-messages.js', 'js/play/game-features.js', 'js/play/neutral-config.js'))
+    'js/render/renderer.js', 'js/render/tutorial-overlay.js', 'js/play/tutorial.js', 'js/render/battle-messages.js', 'js/play/game-features.js', 'js/play/neutral-config.js'))
 extra = '守住霓虹防线抵御来袭的敌人'+'前线守望者秘法先知远征先锋'+'守望棱塔穿云弩台秘法尖塔震荡重炮星辉工坊远征哨塔'+'霓虹防线钢铁苍穹量子哨站数据风暴峡谷哨戒线垂直贫民窟星子方舟极光要塞脉冲电网深蓝港区'
 chars = ''.join(chr(i) for i in range(32, 127)) + '！？。，、：；（）【】《》＋－−×÷％…·—→' + ''.join(sorted(set(re.findall(r'[\u3400-\u9fff]', source + extra + (ROOT / 'scripts/data/map-level-labels.json').read_text()))))
 chars = ''.join(dict.fromkeys(chars))

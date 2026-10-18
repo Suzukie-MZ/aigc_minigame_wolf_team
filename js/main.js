@@ -68,7 +68,6 @@
     require('./render/death-particles.js');
     require('./render/texture-assets.js');
     require('./render/bitmap-font.js');
-    require('./render/image-compatibility.js');
     require('./render/loading-assets.js');
     require('./render/map-ui-model.js');
     require('./render/combat-projection.js');

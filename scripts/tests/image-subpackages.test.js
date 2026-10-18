@@ -35,7 +35,7 @@ test('releasing a pending image prevents a late package callback from reading it
   requests[0].success({});await flush();assert.equal(images[0].src,'');assert.equal(M3.AssetManager.get('a'),null);
 });
 test('startup images remain in main; H5 reads subpackage URLs without native downloads',()=>{
-  const native=setup();native.M3.AssetManager.acquire('image','home','assets/home-asset/home-loading-qiyuan.webp');
+  const native=setup();native.M3.AssetManager.acquire('image','home','assets/home-asset/home-loading-qiyuan.png');
   assert.equal(native.requests.length,0);assert.ok(native.images[0].src.startsWith('assets/'));
   const web=setup(false);web.M3.AssetManager.acquire('image','a','subpackages/ui-images/assets/a.png');
   assert.equal(web.requests.length,0);assert.equal(web.images[0].src,'subpackages/ui-images/assets/a.png');
@@ -49,5 +49,5 @@ test('actual main directory and every declared image package stay below 6 MB',()
   assert.ok(size(main)<6000000,'main exceeds 6,000,000 bytes');
   for(const pkg of config.subpackages){const dir=path.join(root,pkg.root);assert.ok(size(files(dir))<6000000,pkg.name+' exceeds 6 MB');}
   for(const name of ['ui-images','battle-images','monsters','monsters-light','monsters-heavy'])assert.ok(config.subpackages.some(p=>p.name===name));
-  assert.ok(fs.existsSync(path.join(root,'assets/home-asset/home-loading-qiyuan.webp')));
+  assert.ok(fs.existsSync(path.join(root,'assets/home-asset/home-loading-qiyuan.png')));
 });

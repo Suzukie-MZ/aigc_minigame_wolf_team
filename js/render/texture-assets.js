@@ -32,7 +32,7 @@
     for(i=0;i<builtin.length;i+=1){
       item=builtin[i];
       if(defaultIndex[item.key]!==undefined)defaults[defaultIndex[item.key]]=item;else defaults.push(item);
-      if(!listed[item.key])list.push(item);else if(M3.UIIconAssets&&M3.UIIconAssets.manifest.indexOf(item)!==-1){for(var li=0;li<list.length;li+=1)if(list[li].key===item.key)list[li]=item;}
+      if(!listed[item.key])list.push(item);else if((M3.UIIconAssets&&M3.UIIconAssets.manifest.indexOf(item)!==-1)||(M3.BattleMessages&&M3.BattleMessages.assets.indexOf(item)!==-1)){for(var li=0;li<list.length;li+=1)if(list[li].key===item.key)list[li]=item;}
     }
     entries={};fallbackEntries={};sources={};
     for(i=0;i<defaults.length;i+=1){item=defaults[i];if(!item||item.type!=='image'||!item.key||!item.url||remote(item.url)||runtimeArtwork(item.key)&&listed[item.key]||initialKeys&&initialKeys.indexOf(item.key)<0)continue;sourceKey=item.url+'@'+(item.version||'1');cacheKey=sources[sourceKey]||'default:'+item.key+'@'+(item.version||'1');sources[sourceKey]=cacheKey;fallbackEntries[item.key]={cacheKey:cacheKey,item:item};start(item,cacheKey);}
@@ -51,7 +51,7 @@
   }
   function addAssets(list,onlyMissing){
     (list||[]).forEach(function(item){
-      var existing,sourceKey,cacheKey,i,builtin=M3.UIIconAssets&&M3.UIIconAssets.manifest||[];
+      var existing,sourceKey,cacheKey,i,builtin=(M3.UIIconAssets&&M3.UIIconAssets.manifest||[]).concat(M3.BattleMessages&&M3.BattleMessages.assets||[]);
       if(!item||item.type!=='image'||!item.key||!item.url)return;
       // Extra manifests must preserve the same local atlas and UVs as configure().
       for(i=0;i<builtin.length;i+=1)if(builtin[i].key===item.key){item=builtin[i];break;}

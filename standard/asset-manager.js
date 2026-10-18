@@ -69,7 +69,7 @@
       if (!_isMini && /^https?:\/\//.test(src || '')) {
         entry.resource.crossOrigin = 'anonymous';
       }
-      var image=entry.resource,compatibilityTried=false,activeSource=src;
+      var image=entry.resource,activeSource=src;
       function beginSource(imageSrc){
         activeSource=imageSrc;
         var packageMatch=_isKwai&&/^subpackages\/([^/]+)\//.exec(imageSrc||'');
@@ -93,8 +93,7 @@
       };
       entry.resource.onerror = function (cause) {
         if(entry.resource!==image)return;
-        var fallback=M3.ImageCompatibility&&M3.ImageCompatibility[src],reason=cause&&(cause.message||cause.errMsg||cause.errorMsg)||'图片读取或解码失败';
-        if(!compatibilityTried&&fallback){compatibilityTried=true;beginSource(fallback);return;}
+        var reason=cause&&(cause.message||cause.errMsg||cause.errorMsg)||'图片读取或解码失败';
         var error=new Error('图片加载失败: '+key+' ('+activeSource+') '+reason);
         error.assetKey=key;error.url=activeSource;error.reason=reason;error.cause=cause;
         entry.loaded = false;

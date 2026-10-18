@@ -221,7 +221,10 @@
     var attempt = ++session;
     state = { source: 'loading', manifest: null, levels: {}, errors: [] };
     inFlight = {}; backgroundStarted = false; extraStatus = 'idle'; extraCallbacks = [];
-    request(MANIFEST_URL, function (err, manifest) {
+    // This mutable CDN pointer may be cached for a year. Refresh it once per load;
+    // immutable, release-scoped level and image URLs retain their normal cache.
+    var manifestParts=MANIFEST_URL.split('#'),manifestRequestUrl=manifestParts[0]+(manifestParts[0].indexOf('?')<0?'?':'&')+'_runtime='+Date.now();
+    request(manifestRequestUrl, function (err, manifest) {
       var validation, refs, pending, levelErrors = [];
       if (attempt !== session) return;
       if (err) { fallback(err.message); done(); return; }

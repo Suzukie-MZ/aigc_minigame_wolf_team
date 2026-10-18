@@ -53,7 +53,7 @@ def check_references(paths):
         for name in re.findall(r"""['\"]((?:assets|subpackages)/[^'\"]+?\.(?:png|webp|jpe?g))(?:\?[^'\"]*)?['\"]""", source):
             if name not in included:
                 raise ValueError(f'Unpackaged image reference in {path.relative_to(ROOT)}: {name}')
-    required = ['assets/home-asset/home-loading-qiyuan.png', 'subpackages/ui-images/assets/Image/ui/ui-icons.png', 'subpackages/ui-map-images/assets/ui-map-reference.png', 'subpackages/ui-panel-images/assets/ui-tower-interface-v1.png', 'subpackages/ui-panel-images/assets/ui-hero-interface-v1.png', 'subpackages/ui-map-images/assets/ui-level-briefing-v1.png', 'subpackages/battle-images/assets/Image/ui/pixel-units-25d-v1.webp', 'subpackages/battle-images/assets/Image/ui/battle-scene-surround.webp', 'assets/Font/font-cn-ui-hd.png']
+    required = ['assets/home-asset/home-loading-qiyuan.png', 'subpackages/ui-images/assets/Image/ui/ui-icons.png', 'subpackages/ui-map-images/assets/ui-map-reference.png', 'subpackages/ui-panel-images/assets/ui-tower-interface-v1.png', 'subpackages/ui-panel-images/assets/ui-hero-interface-v1.png', 'subpackages/ui-map-images/assets/ui-level-briefing-v1.png', 'subpackages/battle-images/assets/Image/ui/battle-scene-surround.webp', 'assets/Font/font-cn-ui-hd.png']
     required += [f'assets/Font/font-cn-main-{index}.png' for index in range(9)]
     for name in required:
         if name not in included:

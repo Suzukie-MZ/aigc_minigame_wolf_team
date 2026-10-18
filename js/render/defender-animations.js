@@ -96,6 +96,7 @@
     actor.combatAction=null;
     if(!v || (type==='income')!==role.economy)return;
     event.generation=generation;event.roleKey=key;event.effectDelay=type==='income'?0:1/FPS;
+    event.impactDelay=role.economy?0:event.effectDelay+(v.effectGroups.projectile||[]).length/FPS;
     event.duration=event.effectDelay+((v.effectGroups[role.economy?'pulse':'projectile']||[]).length+(v.effectGroups[role.economy?'resource':'hit']||[]).length)/FPS;
     if(type!=='income'){
       atlas=role.kind==='hero'?role.directions[dir]:v.attack;
@@ -115,10 +116,12 @@
     return imageRegion(atlas.key,x+(mirror?s[0]-o[0]-r[2]:o[0])*sx,y+o[1]*sy,r[2]*sx,r[3]*sy,mirror?u1:u0,1-r[1]/atlas.height,mirror?u0:u1,1-(r[1]+r[3])/atlas.height,[1,1,1,1],alpha,false,0);
   }
   function draw(imageRegion,actor,elapsed,x,y,w,h,alpha,unit) {
-    var f=frameFor(actor,elapsed),key,role,atlas;
-    // A matched hero holds the first down-attack frame between attacks.
+    var f=frameFor(actor,elapsed),key,role,atlas,action=actor&&actor.combatAction,idleDirection='down';
+    // Hold the first frame of the last attack direction; new heroes initially face down.
     if(!f&&unit){
-      key=roleFor(unit);role=data.roles[key];atlas=role&&role.kind==='hero'&&role.directions.down;
+      key=roleFor(unit);role=data.roles[key];
+      if(action&&action.generation===generation&&action.roleKey===key&&elapsed>=action.startedAt)idleDirection=action.direction;
+      atlas=role&&role.kind==='hero'&&role.directions[idleDirection];
       if(atlas&&atlas.frames.length)f={atlas:atlas,frame:atlas.frames[0],mirror:!!atlas.mirror};
     }
     return !!f&&drawFrame(imageRegion,f.atlas,f.frame,f.mirror,x,y,w,h,alpha);

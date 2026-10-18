@@ -1,6 +1,6 @@
 <!doctype html><meta charset="utf-8"><title>战斗素材验证</title>
 <style>body{margin:0;background:#111;color:#eee;font:16px sans-serif}aside{position:fixed;left:8px;top:8px;width:180px}button{display:block;margin:10px 0;padding:8px}iframe{position:absolute;left:200px;top:0;width:712px;height:908px;border:0}</style>
-<aside>CDN 动作与特效验证<p id="status">正在读取游戏和远端素材…</p><button id="flight" disabled>查看飞行阶段</button><button id="hit" disabled>查看命中阶段</button><button id="idle" disabled>查看待机</button></aside><iframe id="game" src="../index.html"></iframe>
+<aside>CDN 动作与特效验证<p id="status">正在读取游戏和远端素材…</p><button id="flight" disabled>查看飞行阶段</button><button id="hit" disabled>查看命中阶段</button><button id="idle" disabled>查看待机</button><hr><button id="lethal-play" disabled>重播致死攻击</button><button id="lethal-before" disabled>致死攻击：命中前</button><button id="lethal-hit" disabled>致死攻击：命中</button><button id="lethal-fade" disabled>致死攻击：淡出</button><button id="lethal-done" disabled>致死攻击：结束</button></aside><iframe id="game" src="../index.html?combat-validation=5"></iframe>
 <script>
 const frame=document.querySelector('iframe'),status=document.querySelector('#status');
 const timer=setInterval(async()=>{
@@ -12,11 +12,21 @@ const timer=setInterval(async()=>{
  c.towers=[tower,cannon,income];c.heroes=[hero];c.waveWarning=c.bossWarning=0;
  const enemyId=l.units.find(u=>u.kind==='enemy').id;c.enemies=[{unitId:enemyId,x:2.5,y:2.2,hp:100,maxHp:100,segment:1,progress:.5}];
  c.elapsed=10;c._recordAttack(tower,{x:2.5,y:2.2},'tower');c._recordAttack(cannon,{x:2.5,y:2.2},'tower');c._recordAttack(hero,{x:2.5,y:2.2},'hero');c._recordAttack(income,{x:4.5,y:4.5},'income');
- const keys=[];for(const a of [tower,cannon,hero]){const f=M.DefenderAnimations.frameFor(a,10);keys.push(f.atlas.key);}for(const e of c.attackEvents){e.age=.15;keys.push(M.DefenderAnimations.effectFor(e).atlas.key);}keys.push('combat-hero-1-down-attack');
+ const keys=[];for(const a of [tower,cannon,hero]){const f=M.DefenderAnimations.frameFor(a,10);if(!f)throw Error(JSON.stringify({actor:a,unit:c.units[a.unitId],status:M.DefenderAnimations.status(),release:m.releaseId,fields:Object.keys(m.presentation),roles:M.DefenderAnimations.manifest.length}));keys.push(f.atlas.key);}for(const e of c.attackEvents){e.age=.15;keys.push(M.DefenderAnimations.effectFor(e).atlas.key);}keys.push('combat-hero-1-down-attack');
  await M.TextureAssets.waitFor(keys);
- function sample(age){c.elapsed=10+age;c.attackEvents.forEach(e=>e.age=age);status.textContent='远端素材已加载：'+(age>1?'待机':age<.3?'飞行':'命中')+'；塔等级 Lv6 / Lv1';}
- M.Game.update=function(){};M.Game.getViewModel=()=>Object.assign({},base,{state:'BATTLE',levelPreview:l,combat:c.view(),paused:false,tutorial:null,message:'',mapDialog:null});
+ let shownCombat=c,playing=false,lastPlayback=0;
+ function sample(age){playing=false;shownCombat=c;c.elapsed=10+age;c.attackEvents.forEach(e=>e.age=age);status.textContent='远端素材已加载：'+(age>1?'待机':age<.3?'飞行':'命中')+'；塔等级 Lv6 / Lv1';}
+ function lethal(age){
+  const f=M.Combat.create(l,m,['card-1','card-4','card-5','card-6'],['hero-1']);f.elapsed=10;f._updateWaves=()=>{};f.waveWarning=f.bossWarning=0;
+  playing=false;const segment=Math.min(2,f.board.path.length-2),a=f.board.path[segment],b=f.board.path[segment+1];
+  f.towers=[Object.assign({},tower,{cooldown:0})];f.enemies=[{unitId:enemyId,x:a.x+.5+(b.x-a.x)*.5,y:a.y+.5+(b.y-a.y)*.5,hp:1,maxHp:1,segment:segment,progress:.5,moveX:b.x-a.x,moveY:b.y-a.y}];f._updateDefenders(0);
+  for(let t=0;t<age-1e-8;t+=.05)f.update(Math.min(.05,age-t));shownCombat=f;
+  status.textContent='致死攻击 '+age.toFixed(2)+' 秒：'+(age<.3?'怪物继续行走，等待命中':age<.5?'命中后开始淡出':age<.75?'死亡淡出中':'怪物已移除');
+ }
+ M.Game.update=function(){if(playing){const now=M._now();shownCombat.update(Math.max(0,(now-lastPlayback)/1000));lastPlayback=now;status.textContent='致死攻击 '+(shownCombat.elapsed-10).toFixed(2)+' 秒：'+(shownCombat.elapsed<10.3?'继续行走':shownCombat.enemies.length?'命中后淡出':'已移除');if(shownCombat.elapsed>11.2)playing=false;}};M.Game.getViewModel=()=>Object.assign({},base,{state:'BATTLE',levelPreview:l,combat:shownCombat.view(),paused:false,tutorial:null,message:'',mapDialog:null});
  document.querySelector('#flight').onclick=()=>sample(.15);document.querySelector('#hit').onclick=()=>sample(.35);document.querySelector('#idle').onclick=()=>sample(2);
+ document.querySelector('#lethal-before').onclick=()=>lethal(.15);document.querySelector('#lethal-hit').onclick=()=>lethal(.3);document.querySelector('#lethal-fade').onclick=()=>lethal(.5);document.querySelector('#lethal-done').onclick=()=>lethal(.85);
+ document.querySelector('#lethal-play').onclick=()=>{lethal(0);lastPlayback=M._now();playing=true;};
  for(const b of document.querySelectorAll('button'))b.disabled=false;sample(.15);
  }catch(e){status.textContent=e.stack;console.error(e);}
 },100);

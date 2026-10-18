@@ -60,6 +60,18 @@ test('atlas UVs and trimmed sizes stay within every registered texture', () => {
     }
   }
 });
+test('enemies keep animating before lethal impact and freeze the walking frame only during fade', () => {
+  const a=setup().EnemyAnimations,enemy={unitId:'monster-1',moveX:1,moveY:0};
+  enemy.dying=true;enemy.deathHold=.3;
+  assert.notEqual(a.frameFor('monster-1',enemy,.125),a.frameFor('monster-1',enemy,.25));
+  enemy.dying=false;enemy.deathHold=0;
+  const last=a.frameFor('monster-1',enemy,.25);
+  enemy.dying=true;enemy.deathFrameTime=.25;
+  assert.equal(a.frameFor('monster-1',enemy,.4),last);
+  assert.equal(a.frameFor('monster-1',enemy,1),last);
+  const draws=[];assert.equal(a.draw((...args)=>{draws.push(args);return true;},'monster-1',enemy,1,0,0,256,256,.5),true);
+  assert.equal(draws[0][10],.5);
+});
 
 test('shared texture pipeline registers bundled directional atlases alongside a remote manifest', () => {
   const M3 = setup(), images = {}, acquired = [];

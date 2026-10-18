@@ -40,7 +40,12 @@
   }
   function frameFor(assetKey, enemy, elapsed) {
     var atlas = atlasFor(assetKey, enemy);
-    if (!atlas || !enemy || enemy.dying) return null;
+    if (!atlas || !enemy) return null;
+    // Finish walking during projectile flight; freeze only once impact starts the fade.
+    if (enemy.dying && !(enemy.deathHold > 1e-8)) {
+      if (typeof enemy.deathFrameTime !== 'number') return null;
+      elapsed = enemy.deathFrameTime;
+    }
     return atlas.frames[Math.floor(Math.max(0, Number(elapsed) || 0) * FPS) % atlas.frames.length];
   }
   function draw(imageRegion, assetKey, enemy, elapsed, x, y, w, h, alpha) {

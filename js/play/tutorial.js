@@ -26,11 +26,9 @@
       if(stage==='pause'&&v.paused)move('resume');
       if(stage==='resume'&&!v.paused)move('tower-card');
       if(stage==='tower-card'&&pending==='tower-card'&&c&&c.mode==='tower'&&c.selectedCard)move('tower-place');
-      if(stage==='tower-place'&&c&&!c.selectedCard)move('tower-card');
-      if(stage==='tower-place'&&c&&(c.towers||[]).length>0)move('hero-card');
+      if(stage==='tower-place'&&c){if((c.towers||[]).length>0)move('hero-card');else if(!c.selectedCard)move('tower-card');}
       if(stage==='hero-card'&&pending==='hero-card'&&c&&c.mode==='hero'&&c.selectedHero)move('hero-place');
-      if(stage==='hero-place'&&c&&!c.selectedHero)move('hero-card');
-      if(stage==='hero-place'&&c&&(c.heroes||[]).length>0)move('items');
+      if(stage==='hero-place'&&c){if((c.heroes||[]).length>0)move('items');else if(!c.selectedHero)move('hero-card');}
       if(stage==='items'&&v.itemMenuOpen)move('item-info');
       if(stage==='item-info'&&!v.itemMenuOpen){finish();return null;}
     }else return null;

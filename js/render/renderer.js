@@ -134,7 +134,28 @@
     }
   }
   function alphaColor(color,alpha){return[color[0],color[1],color[2],(color.length>3?color[3]:1)*alpha];}
-  function upgradeEffects(v,b,cell){var events=v.combat.upgradeEvents||[],i,event,progress,fade,cx,cy,ring,particle,j,angle,distance,px,py,color;for(i=0;i<events.length;i+=1){event=events[i];progress=Math.min(1,event.age/event.duration);fade=Math.max(0,1-progress);cx=b.x+event.x*cell;cy=b.y+event.y*cell;color=v.combat.cardColors[event.cardId]||tone(v,'gold',[1,.82,.28,1]);ring=cell*(.42+progress*.82);frame({x:cx-ring*.5,y:cy-ring*.5,w:ring,h:ring},alphaColor(color,fade),Math.max(2,cell*(.11-progress*.06)));frame({x:cx-cell*(.32+progress*.18),y:cy-cell*(.32+progress*.18),w:cell*(.64+progress*.36),h:cell*(.64+progress*.36)},alphaColor(tone(v,'frame',[.85,1,1,1]),fade*.72),Math.max(1,cell*.05));particle=Math.max(2,cell*(.10-progress*.045));distance=cell*(.16+progress*.68);for(j=0;j<8;j+=1){angle=Math.PI*.25*j;px=cx+Math.cos(angle)*distance;py=cy+Math.sin(angle)*distance;rect(px-particle*.5,py-particle*.5,particle,particle,alphaColor(j%2?color:tone(v,'frame',[.9,1,1,1]),fade));}text('升级成功',cx,cy-cell*(.82+progress*.32),.58,alphaColor(tone(v,'gold',[1,.85,.25,1]),fade),cell*2.4,'center');}}
+  function upgradeEffects(v,g){
+    var events=v.combat.upgradeEvents||[],i,event,progress,fade,p,cx,cy,height,width,radius,j,a,b,color;
+    for(i=0;i<events.length;i+=1){
+      event=events[i];progress=Math.max(0,Math.min(1,event.age/event.duration));fade=1-progress;
+      if(!fade)continue;
+      // Use the same projected standing position as the tower model.
+      p=M3.CombatProjection.point(g,event.x,event.y+.33);cx=p.x;cy=p.y;
+      color=(v.combat.cardColors||{})[event.cardId]||[.35,.9,1,1];
+      height=g.cx*(1.6+progress*.5);width=g.cx*(.34-progress*.18);
+      drawRect(cx-width*.9,cy-height,width*1.8,height,alphaColor(color,fade*.12));
+      drawRect(cx-width*.5,cy-height,width,height,alphaColor(color,fade*.32));
+      drawRect(cx-width*.12,cy-height,width*.24,height,alphaColor([.88,1,1,1],fade*.8));
+      radius=g.cx*(.3+progress*.42);
+      for(j=0;j<24;j+=1){
+        a=j*Math.PI/12;b=(j+1)*Math.PI/12;
+        line(cx+Math.cos(a)*radius,cy+Math.sin(a)*radius*g.cy/g.cx*.42,
+          cx+Math.cos(b)*radius,cy+Math.sin(b)*radius*g.cy/g.cx*.42,Math.max(1,g.cx*.035),alphaColor(color,fade));
+      }
+      mapLabel('升级成功',{x:cx-g.cx,y:cy-height-18,w:g.cx*2,h:18},12,alphaColor([1,.85,.25,1],fade));
+    }
+  }
+
   function attackEffects(v,b,cell){var events=v.combat.attackEvents||[],configs=v.presentation&&v.presentation.combatEffects||{},i,event,cfg,progress,fade,sx,sy,tx,ty,dx,dy,distance,steps,j,ratio,width,size,px,py,color,impactColor;for(i=0;i<events.length;i+=1){event=events[i];cfg=configs[event.type]||{};progress=Math.min(1,event.age/event.duration);fade=Math.max(0,1-progress);sx=b.x+event.fromX*cell;sy=b.y+event.fromY*cell;tx=b.x+event.toX*cell;ty=b.y+event.toY*cell;dx=tx-sx;dy=ty-sy;distance=Math.sqrt(dx*dx+dy*dy);width=Math.max(2,cell*(Number(cfg.trailWidth)||(event.type==='hero'?.12:.07)));size=cell*(Number(cfg.impactScale)||(event.type==='hero'?.30:.18));color=cfg.color||(event.type==='hero'?[1,.76,.2,1]:[.42,.94,1,1]);impactColor=cfg.impactColor||(event.type==='hero'?[1,.34,.16,1]:[.88,1,1,1]);if(event.type==='hero'){steps=Math.max(3,Math.ceil(distance/Math.max(3,cell*.14)));for(j=0;j<=steps;j+=1){ratio=j/steps;px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(.45+.55*ratio)));}frame({x:tx-size*(.55+progress*.45),y:ty-size*(.55+progress*.45),w:size*(1.1+progress*.9),h:size*(1.1+progress*.9)},alphaColor(impactColor,fade),Math.max(2,width*.55));rect(tx-width*1.4,ty-width*.45,width*2.8,width*.9,alphaColor(impactColor,fade));rect(tx-width*.45,ty-width*1.4,width*.9,width*2.8,alphaColor(impactColor,fade));}else{for(j=0;j<4;j+=1){ratio=Math.max(0,progress-j*.10);px=sx+dx*ratio;py=sy+dy*ratio;rect(px-width*.5,py-width*.5,width,width,alphaColor(color,fade*(1-j*.18)));}frame({x:tx-size*.5,y:ty-size*.5,w:size,h:size},alphaColor(impactColor,fade),Math.max(1,width*.45));}}}
   function itemDisplay(l,v){var p=uiPalette(v),r=l.battleItems,size=Math.min(r.w,r.h),icon={x:r.x+(r.w-size)*.5,y:r.y+(r.h-size)*.5,w:size,h:size},art={x:0,y:0,w:0,h:0};rect(icon.x+3,icon.y+4,icon.w,icon.h,[0,0,0,.34]);rect(icon.x,icon.y,icon.w,icon.h,p.navy2);frame(icon,p.borderVariants[2],2);art={x:icon.x+2,y:icon.y+2,w:icon.w-4,h:icon.h-4};if(imageAsset('ui-item-question',art.x,art.y,art.w,art.h,1)){frame(art,[p.borderVariants[2][0],p.borderVariants[2][1],p.borderVariants[2][2],.78],1.5);return;}text('道具',icon.x+icon.w*.5,icon.y+icon.h*.20,.60,p.paper,icon.w*.84,'center');text('点击选择',icon.x+icon.w*.5,icon.y+icon.h*.66,.44,p.accent,icon.w*.88,'center');}
   function itemChoiceIcon(r,effect,color){var cx=r.x+r.w*.5,cy=r.y+r.h*.31,s=Math.min(r.w,r.h)*.22;if(effect==='clear_all_enemies'){frame({x:cx-s*.62,y:cy-s*.62,w:s*1.24,h:s*1.24},color,2);rect(cx-s*.9,cy-2,s*1.8,4,color);rect(cx-2,cy-s*.9,4,s*1.8,color);rect(cx-s*.16,cy-s*.16,s*.32,s*.32,color);}else{rect(cx-s*.72,cy+s*.16,s*.38,s*.42,color);rect(cx-s*.19,cy-s*.08,s*.38,s*.66,color);rect(cx+s*.34,cy-s*.36,s*.38,s*.94,color);rect(cx-s*.16,cy-s*.78,s*.32,s*.32,color);rect(cx-s*.42,cy-s*.53,s*.84,s*.08,color);}}
@@ -176,6 +197,7 @@
     }
     for(i=0;i<(c.attackEvents||[]).length;i+=1){var ev=c.attackEvents[i];if(M3.DefenderAnimations&&M3.DefenderAnimations.drawEffect(imageRegion,ev,{x:g.x,y:g.y,point:function(x,y){var p=projection.point(g,x,y);return{x:p.x,y:p.y};}},g.cx))continue;if(ev.type==='income')continue;var from=projection.point(g,ev.fromX,ev.fromY),to=projection.point(g,ev.toX,ev.toY),alpha=Math.max(0,1-ev.age/ev.duration);if(ev.sourceUnitId==='tower-4'){var t=1-alpha,mx=from.x+(to.x-from.x)*t,my=from.y+(to.y-from.y)*t-g.cx*.45-Math.sin(t*Math.PI)*g.cx*.7;diamond(mx,my,5,5,[1,.64,.17,alpha]);}else line(from.x,from.y-g.cx*.58,to.x,to.y-g.cx*.28,ev.type==='hero'?1.5:2,[.24,.9,1,alpha]);}
     for(i=0;i<(c.damageEvents||[]).length;i+=1){var ev=c.damageEvents[i];if(ev.age<0)continue;p=projection.point(g,ev.x,ev.y);mapLabel(String(ev.value),{x:p.x-18,y:p.y-g.cx*.65-ev.age*16,w:36,h:18},12,[1,.72,.30,Math.max(0,1-ev.age/ev.duration)]);}
+    upgradeEffects(v,g);
   }
   // Share the exact armor skins used by the hero selection screen. Fixed corner sizes never stretch.
   function battleArmor(r,selected,fill){

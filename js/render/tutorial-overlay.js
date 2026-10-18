@@ -47,13 +47,13 @@
   }
   function overlay(t){
     var l=M3.UILayout.get(),p=t.panel,ui=M3.Renderer.terminal,compact=t.compact,lines=t.displayLines||t.lines,i,y,skip,next,target=t.focusTarget,
-      shade=shadeRects(t.targets,l),active=M3.Renderer._activeView,step=('0'+t.index).slice(-2)+' / '+t.total;
+      highlights=t.highlights||t.targets,shade=shadeRects(highlights,l),active=M3.Renderer._activeView,step=('0'+t.index).slice(-2)+' / '+t.total;
     M3.Renderer._activeView=null;
     try{
       for(i=0;i<shade.length;i+=1)rect(shade[i],[.004,.012,.023,.66]);
-      for(i=0;t.id!=='route'&&i<t.targets.length;i+=1){
-        frame({x:t.targets[i].x-2,y:t.targets[i].y-2,w:t.targets[i].w+4,h:t.targets[i].h+4},[cyan[0],cyan[1],cyan[2],.6]);
-        if(t.id!=='route')corners(t.targets[i],t.targets[i]===target?amber:[cyan[0],cyan[1],cyan[2],.65]);
+      for(i=0;t.id!=='route'&&i<highlights.length;i+=1){
+        frame({x:highlights[i].x-2,y:highlights[i].y-2,w:highlights[i].w+4,h:highlights[i].h+4},[cyan[0],cyan[1],cyan[2],.6]);
+        corners(highlights[i],highlights[i]===target||t.id==='tower-inspect'?amber:[cyan[0],cyan[1],cyan[2],.65]);
       }
       if(target&&t.id!=='route'){
         // The leader stays outside both panel and target; the tap pulse is local.

@@ -1,15 +1,21 @@
 (function () {
-  var M3=window.M3,stage=null,pending=null,progress={},steps=['energy-ad','energy-share','first-level','detail','hero-pick','hero-next','tower-pick','tower-next','route','pause','resume','tower-card','tower-place','hero-card','hero-place','items','item-info'];
+  var M3=window.M3,stage=null,pending=null,progress={},upgradeLesson=null,steps=['energy-ad','energy-share','first-level','detail','hero-pick','hero-next','tower-pick','tower-next','route','pause','resume','tower-card','tower-place','tower-inspect','tower-upgrade','hero-card','hero-place','items','item-info'];
   function saved(){var data=M3.SaveData.get();return data.tutorial||{};}
   function write(values){if(M3.SaveData.setTutorialProgress)M3.SaveData.setTutorialProgress(values);progress=saved();}
-  function init(){stage=null;pending=null;progress=saved();}
+  function init(){stage=null;pending=null;upgradeLesson=null;progress=saved();}
   function move(next){stage=next;pending=null;}
   function finish(){write({energySeen:true,battleDone:true});move(null);}
   function freeze(){return steps.indexOf(stage)>=steps.indexOf('route');}
-  function onBattleStart(first){progress=saved();if(first&&!progress.skipped&&!progress.battleDone)move('route');else move(null);}
+  function onBattleStart(first){upgradeLesson=null;progress=saved();if(first&&!progress.skipped&&!progress.battleDone)move('route');else move(null);}
   function inside(r,x,y){return!!r&&x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h;}
   function occupied(c,x,y){var list=(c.towers||[]).concat(c.heroes||[]),i;for(i=0;i<list.length;i+=1)if(list[i].x===x&&list[i].y===y)return true;return false;}
   function slots(c,l,hero){var result=[],x,y,board=c&&c.board;if(!board)return result;for(y=0;y<board.height;y+=1)for(x=0;x<board.width;x+=1)if((hero?board.isHeroSlot(x,y):board.isBuildable(x,y))&&!occupied(c,x,y)){var g=M3.CombatProjection&&M3.CombatProjection.geometry(l,board);result.push({x:g?g.x+x*g.cx:l.board.x+x*l.cell,y:g?g.y+y*g.cy:l.board.y+y*l.cell,w:g?g.cx:l.cell,h:g?g.cy:l.cell});}return result;}
+  function lessonTowerBounds(c,l){
+    var g=M3.CombatProjection.geometry(l,c.board),foot=M3.CombatProjection.point(g,upgradeLesson.x+.5,upgradeLesson.y+.83),size=g.cx*1.48,
+      x=Math.max(l.board.x,foot.x-size/2),y=Math.max(l.board.y,foot.y-size*.91),right=Math.min(l.board.x+l.board.w,foot.x+size/2),bottom=Math.min(l.board.y+l.board.h,foot.y+size*.09);
+    // Match the complete standing tower box, including the animated model and base.
+    return{x:x,y:y,w:right-x,h:bottom-y};
+  }
   function view(v){
     var l,c=v.combat,energy=v.systems&&v.systems.M14_energy||{},first=v.nodes&&v.nodes[0],out,i,targets=[],top,h,panelY,available;
     if(v.mapDialog)return null;
@@ -26,7 +32,14 @@
       if(stage==='pause'&&v.paused)move('resume');
       if(stage==='resume'&&!v.paused)move('tower-card');
       if(stage==='tower-card'&&pending==='tower-card'&&c&&c.mode==='tower'&&c.selectedCard)move('tower-place');
-      if(stage==='tower-place'&&c){if((c.towers||[]).length>0)move('hero-card');else if(!c.selectedCard)move('tower-card');}
+      if(stage==='tower-place'&&c){if((c.towers||[]).length>0){var placed=c.towers[0];upgradeLesson={x:placed.x,y:placed.y,level:placed.level||1};move('tower-inspect');}else if(!c.selectedCard)move('tower-card');}
+      if((stage==='tower-inspect'||stage==='tower-upgrade')&&c){
+        var taughtTower=(c.towers||[]).filter(function(t){return upgradeLesson&&t.x===upgradeLesson.x&&t.y===upgradeLesson.y;})[0],selected=c.selectedTower;
+        if(!taughtTower)move('hero-card');
+        else if((taughtTower.level||1)>upgradeLesson.level)move('hero-card');
+        else if(selected&&selected.x===upgradeLesson.x&&selected.y===upgradeLesson.y)move('tower-upgrade');
+        else move('tower-inspect');
+      }
       if(stage==='hero-card'&&pending==='hero-card'&&c&&c.mode==='hero'&&c.selectedHero)move('hero-place');
       if(stage==='hero-place'&&c){if((c.heroes||[]).length>0)move('items');else if(!c.selectedHero)move('hero-card');}
       if(stage==='items'&&v.itemMenuOpen)move('item-info');
@@ -51,6 +64,14 @@
       if(!targets.length){out.lines=['当前金币不足以建塔。','击败怪物可获得更多金币。'];out.button='知道了';}
     }else if(stage==='tower-place'){
       out.title='放置防御塔';out.lines=['点击高亮的可建塔格。','放置成功后会扣除对应金币。'];targets.push.apply(targets,slots(c,l,false));if(!targets.length){out.lines=['当前没有可用建塔格。','清除障碍后可以继续建塔。'];out.button='知道了';}else targets.push(l.battleTowerCard(c.deckIds.indexOf(c.selectedCard),c.deckIds.length));
+    }else if(stage==='tower-inspect'){
+      out.title='查看防御塔升级';out.lines=['点击刚放置的防御塔，','查看等级、升级效果和花费。'];
+      var towerGeometry=M3.CombatProjection.geometry(l,c.board);
+      targets.push({x:towerGeometry.x+upgradeLesson.x*towerGeometry.cx,y:towerGeometry.y+upgradeLesson.y*towerGeometry.cy,w:towerGeometry.cx,h:towerGeometry.cy});
+    }else if(stage==='tower-upgrade'){
+      var info=c.selectedTower;
+      out.title='升级防御塔';out.lines=['点击升级，消耗 '+info.cost+' 金币。','升级可提高'+(info.bonusLabel||'攻击')+'，增强防线。'];targets.push(l.towerUpgrade,l.towerPanel);
+      if(!info.canUpgrade){out.button='稍后升级';out.lines=info.level>=info.levelCap?['这座塔已达到等级上限。','其他塔也可点击查看升级。']:['升级需要 '+info.cost+' 金币，当前不足。','击败怪物赚取金币后再升级。'];}
     }else if(stage==='hero-card'){out.title='选择英雄';out.lines=['点击英雄卡片，','准备部署本局选择的英雄。'];if(c&&c.heroIds.length)targets.push(l.battleHeroCard(0,c.heroIds.length,c.deckIds.length));else out.button='知道了';}
     else if(stage==='hero-place'){
       out.title='部署英雄';out.lines=['点击高亮的英雄专属格。','英雄每局最多部署 1 名。'];targets.push.apply(targets,slots(c,l,true));if(!targets.length){out.lines=['当前没有可用英雄格。','英雄只能放在英雄专属格。'];out.button='知道了';}else targets.push(l.battleHeroCard(0,c.heroIds.length,c.deckIds.length));
@@ -63,7 +84,10 @@
       out.targets=(c.board.path||[]).map(function(cell){return{x:routeGeometry.x+cell.x*routeGeometry.cx,y:routeGeometry.y+cell.y*routeGeometry.cy,w:routeGeometry.cx,h:routeGeometry.cy};});
     }
     if(stage==='tower-pick')out.lines=['选择 4 座防御塔组成阵容。','已选 '+(v.deck||[]).length+'/4，可点击卡片取消。'];
+    if(stage==='tower-inspect'||stage==='tower-upgrade')out.highlights=[lessonTowerBounds(c,l)].concat(stage==='tower-upgrade'?out.targets:[]);
     arrange(out,l,v);
+    if(stage==='tower-inspect')out.focusTarget=out.targets[0];
+    if(stage==='tower-upgrade')out.focusTarget=l.towerUpgrade;
     return out;
   }
   function overlaps(a,b,gap){return a.x<b.x+b.w+gap&&a.x+a.w>b.x-gap&&a.y<b.y+b.h+gap&&a.y+a.h>b.y-gap;}
@@ -75,7 +99,7 @@
   function arrange(out,l,v){
     var width=l.w-32,normalLines=copyLines(out.lines,16,width-56),compactLines=copyLines(out.id==='tower-pick'?['已选 '+(v.deck||[]).length+'/4，点击卡片选择或取消。']:out.id==='hero-pick'?['点击卡片选择 1 名英雄。']:out.lines,14,width-44),
       sizes=[144+normalLines.length*20,90+compactLines.length*17],choice=null,pass,mode,i,j,y,p,candidates,blocked,
-      top=l.top||0,bottom=top+l.usable,targets=out.targets,anchor=v.state==='BATTLE'?l.board.y+l.board.h-8:(l.mapDock?l.mapDock.y-12:bottom-12),best=Infinity,score;
+      top=l.top||0,bottom=top+l.usable,targets=out.highlights||out.targets,anchor=v.state==='BATTLE'?l.board.y+l.board.h-8:(l.mapDock?l.mapDock.y-12:bottom-12),best=Infinity,score;
     if(v.state==='HERO_SELECT'||v.state==='DECK_SELECT')anchor=top+sizes[0]+12;
     // First use quiet battle space. On very short screens, cover only non-target UI.
     for(pass=0;pass<2&&!choice;pass+=1){
@@ -106,6 +130,8 @@
     out.hint='点击高亮区域继续';
     if(out.id==='first-level')out.hint='点击高亮关卡继续';
     else if(out.id==='hero-pick')out.hint='点击高亮英雄继续';
+    else if(out.id==='tower-inspect')out.hint='点击防御塔查看';
+    else if(out.id==='tower-upgrade')out.hint='点击升级按钮';
     else if(out.id==='tower-place'||out.id==='hero-place')out.hint='点击高亮地块继续';
     best=Infinity;out.focusTarget=null;
     for(i=0;i<targets.length;i+=1){
@@ -123,6 +149,7 @@
       else if(stage==='energy-share'){write({energySeen:true});move('first-level');}
       else if(stage==='route')move('pause');
       else if(stage==='tower-card'||stage==='tower-place')move('hero-card');
+      else if(stage==='tower-upgrade')move('hero-card');
       else if(stage==='hero-card'||stage==='hero-place')move('items');
       else if(stage==='item-info'){finish();return 'finish-items';}
       return true;

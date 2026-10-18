@@ -38,7 +38,7 @@
     M3.RuntimeConfig.init(function(){
       if(attempt!==loadAttempt)return;
       manifest=M3.RuntimeConfig.getManifest();
-      if(!manifest){loadingError=(M3.RuntimeConfig.getErrors()||[])[0]||'配置加载失败';console.error('[Game] config failed',loadingError);state='LOAD_ERROR';return;}
+      if(!manifest){loadingError=(M3.RuntimeConfig.getErrors()||[])[0]||'配置加载失败';state='LOAD_ERROR';return;}
       try{
         M3.SaveData.syncEnergy(manifest);
         if(M3.BitmapFont)M3.BitmapFont.configure(manifest);
@@ -73,7 +73,7 @@
     });
   }
   function assetsRendered(){if(state==='LOADING'&&loadingPhase==='render'){loadingPhase='done';state='WORLD_MAP';loadExtraContent();}}
-  function assetRenderFailed(error){if(state==='LOADING'){loadingError=error&&error.message||'图片渲染失败';console.error('[Game] rendering failed',error&&error.stack||loadingError);state='LOAD_ERROR';}}
+  function assetRenderFailed(error){if(state==='LOADING'){loadingError=error&&error.message||'图片渲染失败';state='LOAD_ERROR';}}
   function setState(s){battleLoading=false;battleStartRequest+=1;nodeSelection+=1;mapDialogState=null;mapVelocity=0;state=s;message='';messageFailed=false;messageExpiresAt=0;}
   function showBattleMessage(value,failed){message=value||'';messageFailed=!!failed;messageExpiresAt=message?M3._now()+2200:0;}
   function beginDeck(){cardPage=0;setState('DECK_SELECT');}

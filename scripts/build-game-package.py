@@ -5,11 +5,6 @@ import json
 from pathlib import Path
 import re
 import zipfile
-import shutil
-import io
-import struct
-import zlib
-from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 LIMIT = 6_000_000
@@ -18,14 +13,6 @@ ENTRY_FILES = (
     'ks-adapter.js', 'kwaiadapter.js', 'wxhelper.js', 'events.js',
 )
 RUNTIME_DIRS = ('js', 'api', 'standard', 'subpackages', 'assets')
-# Development sources remain in the checkout; combat images load from CDN.
-EXCLUDED_PREFIXES = ('subpackages/combat/', 'assets/terrain-depth/')
-EXCLUDED_FILES = {'js/render/combat-atlas-data.js', 'js/render/terrain-depth.js'}
-
-
-def release_file(path):
-    name = path.relative_to(ROOT).as_posix()
-    return name not in EXCLUDED_FILES and not name.startswith(EXCLUDED_PREFIXES)
 
 
 def runtime_files():
@@ -34,7 +21,7 @@ def runtime_files():
         paths.extend(path for path in (ROOT / directory).rglob('*')
                      if path.is_file() and not any(part.startswith('.') for part in path.relative_to(ROOT).parts)
                      and path.name != 'README.md' and not path.name.endswith(('.prompt.txt', '.source.md')))
-    return sorted(path for path in set(paths) if release_file(path))
+    return sorted(set(paths))
 
 
 def check_references(paths):
@@ -73,91 +60,40 @@ def check_references(paths):
             raise ValueError(f'Missing required local asset: {name}')
 
 
-def optimized_png(path):
-    """Lossless byte reduction, verified by exact decoded RGBA pixel equality."""
-    original = path.read_bytes()
-    with Image.open(path) as source:
-        expected = source.convert('RGBA').tobytes()
-        image = source.copy()
-        if image.mode == 'RGBA' and image.getchannel('A').getextrema() == (255, 255):
-            image = image.convert('RGB')
-        buffer = io.BytesIO()
-        image.save(buffer, format='PNG', optimize=True)
-    candidate = buffer.getvalue()
-    offset, chunks, compressed = 8, [], b''
-    while offset < len(candidate):
-        length = int.from_bytes(candidate[offset:offset + 4], 'big')
-        kind = candidate[offset + 4:offset + 8]
-        value = candidate[offset + 8:offset + 8 + length]
-        offset += length + 12
-        if kind == b'IDAT':
-            compressed += value
-        else:
-            chunks.append((kind, value))
-    raw = zlib.decompress(compressed)
-    choices = [original, candidate]
-    def chunk(kind, value):
-        return struct.pack('>I', len(value)) + kind + value + struct.pack('>I', zlib.crc32(kind + value) & 0xffffffff)
-    for strategy in (zlib.Z_FILTERED, zlib.Z_DEFAULT_STRATEGY, zlib.Z_RLE):
-        encoder = zlib.compressobj(9, zlib.DEFLATED, 15, 9, strategy)
-        payload = encoder.compress(raw) + encoder.flush()
-        output = candidate[:8]
-        for kind, value in chunks:
-            if kind == b'IEND':
-                output += chunk(b'IDAT', payload)
-            output += chunk(kind, value)
-        choices.append(output)
-    result = min(choices, key=len)
-    with Image.open(io.BytesIO(result)) as check:
-        if check.size != image.size or check.convert('RGBA').tobytes() != expected:
-            raise ValueError(f'PNG optimization changed pixels: {path}')
-    return result
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=ROOT.parent / 'outputs/builds/aigc_minigame_wolf_team.zip')
     args = parser.parse_args()
     if args.output.resolve().is_relative_to(ROOT):
         raise SystemExit('Build output must be outside package/ to avoid including the ZIP in the next upload')
+    config = json.loads((ROOT / 'game.json').read_text())
+    package_roots = [ROOT / item['root'] for item in config.get('subpackages', [])]
+    directory_files = [path for path in ROOT.rglob('*') if path.is_file()]
+    directory_main_size = sum(path.stat().st_size for path in directory_files
+                              if not any(path.is_relative_to(root) for root in package_roots))
+    directory_total_size = sum(path.stat().st_size for path in directory_files)
+    if directory_main_size > LIMIT:
+        raise SystemExit(f'Actual source-directory main package exceeds budget: {directory_main_size:,} > {LIMIT:,} bytes')
     paths = runtime_files()
     check_references(paths)
-    destination = args.output.with_suffix('').resolve()
-    if destination == ROOT or destination in ROOT.parents:
-        raise SystemExit('Refusing to overwrite source directory or its parents')
-    marker = destination / '.runtime-stage.json'
-    if destination.exists() and not marker.exists():
-        raise SystemExit('Output directory exists and is not a generated runtime stage')
-    if destination.exists():
-        shutil.rmtree(destination)
-    destination.mkdir(parents=True)
-    marker.write_text('{}\n')
-    for path in paths:
-        target = destination / path.relative_to(ROOT)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if path.suffix.lower() == '.png':
-            target.write_bytes(optimized_png(path))
-        else:
-            shutil.copy2(path, target)
-    config = json.loads((destination / 'game.json').read_text())
-    staged_files = [path for path in destination.rglob('*') if path.is_file() and path != marker]
-    subpackage_sizes = {item['name']: sum(path.stat().st_size for path in staged_files
-                        if path.is_relative_to(destination / item['root']))
+    raw_size = sum(path.stat().st_size for path in paths)
+    subpackage_sizes = {item['name']: sum(path.stat().st_size for path in paths
+                        if path.is_relative_to(ROOT / item['root']))
                         for item in config.get('subpackages', [])}
-    raw_size = sum(path.stat().st_size for path in staged_files)
+    directory_subpackage_sizes = {item['name']: sum(path.stat().st_size for path in directory_files
+                                  if path.is_relative_to(ROOT / item['root']))
+                                  for item in config.get('subpackages', [])}
     main_size = raw_size - sum(subpackage_sizes.values())
     if main_size > LIMIT:
         raise SystemExit(f'Runtime main package exceeds budget: {main_size:,} > {LIMIT:,} bytes')
-    for name, size in subpackage_sizes.items():
+    for name, size in directory_subpackage_sizes.items():
         if size > LIMIT:
             raise SystemExit(f'Subpackage {name} exceeds budget: {size:,} > {LIMIT:,} bytes')
-    if raw_size > 30_000_000:
-        raise SystemExit(f'Runtime total exceeds 30 MB: {raw_size:,} bytes')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix('.zip.tmp')
     with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for path in sorted(staged_files):
-            info = zipfile.ZipInfo(path.relative_to(destination).as_posix(), date_time=(2026, 1, 1, 0, 0, 0))
+        for path in paths:
+            info = zipfile.ZipInfo(path.relative_to(ROOT).as_posix(), date_time=(2026, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             archive.writestr(info, path.read_bytes(), compresslevel=9)
@@ -166,18 +102,21 @@ def main():
         if archive.testzip() is not None:
             raise SystemExit('ZIP integrity check failed')
     temporary.replace(args.output)
-    report = {'stage_directory': str(destination),
+    config = json.loads((ROOT / 'game.json').read_text())
+    subpackage_sizes = {item['name']: sum(path.stat().st_size for path in paths
+                        if path.is_relative_to(ROOT / item['root']))
+                        for item in config.get('subpackages', [])}
+    main_size = raw_size - sum(subpackage_sizes.values())
+    report = {'directory_main_bytes': directory_main_size, 'directory_total_bytes': directory_total_size,
               'main_package_bytes': main_size, 'subpackage_bytes': subpackage_sizes,
+              'directory_subpackage_bytes': directory_subpackage_sizes,
               'limit_bytes': LIMIT, 'runtime_bytes': raw_size, 'zip_bytes': zip_size,
-              'lossless_png_savings': sum(path.stat().st_size for path in paths) - raw_size,
-              'file_count': len(staged_files),
-              'files': [path.relative_to(destination).as_posix() for path in sorted(staged_files)]}
+              'file_count': len(paths), 'files': [path.relative_to(ROOT).as_posix() for path in paths]}
     args.output.with_suffix('.size.json').write_text(json.dumps(report, indent=2) + '\n')
     print(f'Runtime total: {raw_size:,} bytes; ZIP: {zip_size:,} bytes; per-package limit: {LIMIT:,} bytes')
     print(f'Main package: {main_size:,} bytes; subpackages: {subpackage_sizes}')
-    print(f'Upload staged runtime directory: {destination}')
+    print(f'Actual directory: main {directory_main_size:,} bytes; total {directory_total_size:,} bytes (no hidden-file exclusions)')
     print(args.output)
-
 
 
 if __name__ == '__main__':

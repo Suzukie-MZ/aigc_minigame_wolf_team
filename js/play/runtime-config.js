@@ -5,11 +5,8 @@
   function color(value, fallback) { return Array.isArray(value) && value.length >= 3 ? value.slice(0, 4) : clone(fallback); }
   function appearance(value, fallback, primary) { var out = merge(fallback, value || {}); out.primaryColor = color(value && value.primaryColor, primary); out.secondaryColor = color(value && value.secondaryColor, fallback.secondaryColor); out.accentColor = color(value && value.accentColor, fallback.accentColor); return out; }
   function configOrigin(url) { var match = /^(https?:\/\/[^/]+)/.exec(url || ''); return match ? match[1] : ''; }
-  function normalizeAssetUrls(manifest) { var origin = configOrigin(MANIFEST_URL), list = manifest && manifest.assetManifest || [], i; if (!origin) return manifest; for (i = 0; i < list.length; i += 1) if (list[i] && typeof list[i].url === 'string' && list[i].url.charAt(0) === '/') list[i].url = origin + list[i].url; var animation=manifest.presentation&&manifest.presentation.combatAnimations;
-    function normalizeAtlasUrls(value){if(!value||typeof value!=='object')return;if(value.key&&Array.isArray(value.frames)){if(typeof value.url==='string'&&value.url.charAt(0)==='/')value.url=origin+value.url;return;}Object.keys(value).forEach(function(key){normalizeAtlasUrls(value[key]);});}
-    if(animation&&animation.roles)normalizeAtlasUrls(animation.roles);
-    return manifest; }
-  function applyLegacyUnitRole(unit,role,kind,economy){if(!unit||!role)return;unit.combatRole=role;if(role==='economy'){unit.kind='economy';unit.skill='none';if(unit.productionInterval===undefined)unit.productionInterval=Number(economy&&economy.production_interval)||5;if(unit.productionAmount===undefined)unit.productionAmount=Number(economy&&economy.production_amount)||1;return;}unit.kind=kind;if(role==='slow_control'||role==='long_range_slow'){unit.skill='slow';if(typeof unit.skillPower!=='number')unit.skillPower=.25;if(typeof unit.skillDuration!=='number')unit.skillDuration=1.2;}else if(role==='area_damage'){unit.skill='splash';if(typeof unit.skillPower!=='number')unit.skillPower=.35;}else unit.skill='none';}
+  function normalizeAssetUrls(manifest) { var origin = configOrigin(MANIFEST_URL), list = manifest && manifest.assetManifest || [], i; if (!origin) return manifest; for (i = 0; i < list.length; i += 1) if (list[i] && typeof list[i].url === 'string' && list[i].url.charAt(0) === '/') list[i].url = origin + list[i].url; return manifest; }
+  function applyLegacyUnitRole(unit,role,kind,economy){if(!unit||!role)return;unit.combatRole=role;if(role==='economy'){unit.kind='economy';unit.skill='none';if(typeof unit.productionInterval!=='number')unit.productionInterval=Number(economy&&economy.production_interval)||5;if(typeof unit.productionAmount!=='number')unit.productionAmount=Number(economy&&economy.production_amount)||1;return;}unit.kind=kind;if(role==='slow_control'||role==='long_range_slow'){unit.skill='slow';if(typeof unit.skillPower!=='number')unit.skillPower=.25;if(typeof unit.skillDuration!=='number')unit.skillDuration=1.2;}else if(role==='area_damage'){unit.skill='splash';if(typeof unit.skillPower!=='number')unit.skillPower=.35;}else unit.skill='none';}
   function applyUnitRole(unit,role,kind,economy,authoritative){
     if(!authoritative){applyLegacyUnitRole(unit,role,kind,economy);return;}
     if(!unit||!role)return;
@@ -47,7 +44,6 @@
   function applyPresentationFallback(manifest, levels) {
     var defaults = M3.NeutralConfig.manifest.presentation, supplied = manifest.presentation || {}, dc = defaults.colors, sc = supplied.colors || {}, cards = manifest.cards || [], rolePalette, enemyPalette, roleAppearances, enemyAppearances, cardByUnit = {}, assetKeys = {}, fallbackAssets = M3.NeutralConfig.manifest.assetManifest || [], key, i, j, units, enemyIndex, fallbackAppearance;
     manifest.presentation = clone(defaults); manifest.presentation.themeId = supplied.themeId || defaults.themeId; manifest.presentation.displayName = supplied.displayName || defaults.displayName;
-    if(Object.prototype.hasOwnProperty.call(supplied,'combatAnimations'))manifest.presentation.combatAnimations=clone(supplied.combatAnimations);
     manifest.presentation.sceneAssets = merge({}, supplied.sceneAssets || {});
     manifest.presentation.copy = merge(defaults.copy, supplied.copy || {});
     manifest.presentation.typography = merge(defaults.typography || {}, supplied.typography || {});
@@ -128,10 +124,8 @@
     if (state.levels[id]) { done(null, state.levels[id]); return; }
     if (!manifest || !manifest.levels[id]) { done(new Error('关卡配置不可用')); return; }
     if (inFlight[id]) { inFlight[id].push(done); return; }
-    var url = levelUrl(manifest, id);
-    if (!url) { done(new Error('关卡地址缺失，请检查最新发布清单: ' + id)); return; }
     var callbacks = inFlight[id] = [done];
-    request(url, function (err, level) {
+    request(levelUrl(manifest, id), function (err, level) {
       var levels = {}, bundle;
       if (attempt !== session || target !== state) return;
       if (!err) {
@@ -221,16 +215,11 @@
       finish(err);
     });
   }
-  // 固定清单会更新，每次初始化使用独立请求；版本化关卡和图片继续使用缓存。
-  function freshManifestUrl(attempt) {
-    var parts = MANIFEST_URL.split('#'), url = parts.shift();
-    return url + (url.indexOf('?') === -1 ? '?' : '&') + '_runtime=' + Date.now() + '-' + attempt + '-' + Math.random().toString(36).slice(2) + (parts.length ? '#' + parts.join('#') : '');
-  }
   function loadRemote(done, options) {
     var attempt = ++session;
     state = { source: 'loading', manifest: null, levels: {}, errors: [] };
     inFlight = {}; backgroundStarted = false; extraStatus = 'idle'; extraCallbacks = [];
-    request(freshManifestUrl(attempt), function (err, manifest) {
+    request(MANIFEST_URL, function (err, manifest) {
       var validation, refs, pending, levelErrors = [];
       if (attempt !== session) return;
       if (err) { fallback(err.message); done(); return; }
@@ -253,7 +242,7 @@
     });
   }
   M3.RuntimeConfig = {
-    init: function (done, options) { if (!MANIFEST_URL) { fallback('runtime endpoints empty'); setTimeout(done, 0); } else loadRemote(done, options); },
+    init: function (done, options) { if (!MANIFEST_URL || !LEVEL_URL_TEMPLATE) { fallback('runtime endpoints empty'); setTimeout(done, 0); } else loadRemote(done, options); },
     ensureLevel: ensureLevel, loadRemaining: loadRemaining, getExtraStatus: function () { return extraStatus; },
     getManifest: function () { return state.manifest; }, getLevel: function (id) { return state.levels[id]; },
     getSource: function () { return state.source; }, getErrors: function () { return state.errors.slice(0); }, getBaseUrl: function () { return BASE; }, getManifestUrl: function () { return MANIFEST_URL; }, normalizeLevelCompatibility: normalizeLevelCompatibility, normalizeRoleContracts: normalizeRoleContracts

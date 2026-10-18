@@ -51,7 +51,7 @@
     M3.Renderer._activeView=null;
     try{
       for(i=0;i<shade.length;i+=1)rect(shade[i],[.004,.012,.023,.66]);
-      for(i=0;i<t.targets.length;i+=1){
+      for(i=0;t.id!=='route'&&i<t.targets.length;i+=1){
         frame({x:t.targets[i].x-2,y:t.targets[i].y-2,w:t.targets[i].w+4,h:t.targets[i].h+4},[cyan[0],cyan[1],cyan[2],.6]);
         if(t.id!=='route')corners(t.targets[i],t.targets[i]===target?amber:[cyan[0],cyan[1],cyan[2],.65]);
       }
@@ -79,9 +79,8 @@
       ui.button(skip,'跳过引导',false,true,compact?14:16);
       if(t.nextRect){next={x:t.nextRect.x,y:t.nextRect.y+(compact?8:2),w:t.nextRect.w,h:compact?32:44};ui.button(next,t.button,true,true,compact?14:16);}
       else{
-        var hintRect={x:t.skipRect.x+t.skipRect.w+10,y:skip.y-1,w:p.x+p.w-inset-(t.skipRect.x+t.skipRect.w+10),h:skip.h},hint=t.hint||'点击高亮区域继续',hintSize=compact?14:16;
-        label(hint,hintRect,hintSize,cyan,{align:'right',padding:0});
-        label(hint,{x:hintRect.x+.35,y:hintRect.y,w:hintRect.w,h:hintRect.h},hintSize,cyan,{align:'right',padding:0});
+        var hintRect={x:t.skipRect.x+t.skipRect.w+10,y:skip.y-1,w:p.x+p.w-inset-(t.skipRect.x+t.skipRect.w+10),h:skip.h},hint=t.hint||'点击高亮区域继续',hintSize=compact?15:17,hintColor=cyan;
+        label(hint,hintRect,hintSize,hintColor,{align:'right',padding:0,spacing:.45});
       }
     }finally{M3.Renderer._activeView=active;}
   }

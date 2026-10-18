@@ -1,5 +1,5 @@
 (function () {
-  var M3 = window.M3, BASE = (window.RUNTIME_CONFIG_BASE_URL || '').replace(/\/$/, ''), ENDPOINTS = window.RUNTIME_CONFIG_ENDPOINTS || {}, MANIFEST_URL = ENDPOINTS.manifestUrl || (BASE ? BASE + '/v1/games/ks654147848546150500/runtime-manifest' : ''), LEVEL_URL_TEMPLATE = ENDPOINTS.levelUrlTemplate || (BASE ? BASE + '/v1/games/ks654147848546150500/levels/{levelId}' : ''), state = { source: 'loading', manifest: null, levels: {}, errors: [] };
+  var M3 = window.M3, ENDPOINTS = window.RUNTIME_CONFIG_ENDPOINTS || {}, MANIFEST_URL = ENDPOINTS.manifestUrl || '', LEVEL_URL_TEMPLATE = ENDPOINTS.levelUrlTemplate || '', state = { source: 'loading', manifest: null, levels: {}, errors: [] };
   function clone(v) { return JSON.parse(JSON.stringify(v)); }
   function merge(base, extra) { var out = {}, key; for (key in base) if (Object.prototype.hasOwnProperty.call(base, key)) out[key] = base[key]; for (key in extra) if (Object.prototype.hasOwnProperty.call(extra, key)) out[key] = extra[key]; return out; }
   function color(value, fallback) { return Array.isArray(value) && value.length >= 3 ? value.slice(0, 4) : clone(fallback); }

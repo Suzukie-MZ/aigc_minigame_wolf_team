@@ -159,7 +159,7 @@
     for(i=0;i<c.enemies.length;i+=1)objects.push({kind:'enemy',x:c.enemies[i].x,y:c.enemies[i].y+.15,unit:c.enemies[i]});
     objects.sort(function(a,b){return a.y-b.y||a.x-b.x;});
     for(i=0;i<objects.length;i+=1){
-      var o=objects[i],h,w,d,fade=1;p=projection.point(g,o.x,o.y);unit=o.unit;
+      var o=objects[i],h,w,fade=1;p=projection.point(g,o.x,o.y);unit=o.unit;
       groundShadow(p.x,p.y,g.cx*(o.kind==='enemy'?.22:.30),g.cy*.11);
       if(o.kind==='enemy'){
         fade=unit.dying?Math.max(0,1-(unit.deathAge||0)/(unit.deathDuration||.45)):1;
@@ -554,10 +554,10 @@
     for(i=0;i<12;i+=1){a=i*Math.PI/6;b=(i+1)*Math.PI/6;if(selected)vertices.push(x,y,x+9*Math.cos(a),y+9*Math.sin(a),x+9*Math.cos(b),y+9*Math.sin(b));else line(x+8*Math.cos(a),y+8*Math.sin(a),x+8*Math.cos(b),y+8*Math.sin(b),1,c);}
     if(selected){solid(vertices,c);line(x-4,y,x-1,y+3,2,[.03,.10,.13,1]);line(x-1,y+3,x+5,y-4,2,[.03,.10,.13,1]);}
   }
-  function towerModalButton(r,label,primary,enabled){
+  function towerModalButton(r,label,primary,enabled,fontSize){
     var amber=[.957,.718,.173,1],steel=enabled?[.45,.54,.58,1]:[.27,.34,.39,1],navy=[.024,.106,.149,1];
     if(!towerSkin(primary&&enabled?146:20,496,121,31,r))mapMetalPanel(r,amber,primary&&enabled?amber:steel);
-    mapLabel(label,r,18,enabled?navy:[.28,.36,.40,1]);
+    mapLabel(label,r,fontSize||18,enabled?navy:[.28,.36,.40,1]);
   }
   function deckV2(l,v){
     var rows=l.towerCards,chosen={},i,j,r,c,art,selected,back={},p=l.towerModal,
@@ -744,34 +744,45 @@
     battleHudText(v,panels[0],'金币',v.combat.gold,cyan,'coin');battleHudText(v,panels[1],'波次',v.combat.wave+' / '+v.combat.waveCount,cyan,'wave');battleHudText(v,panels[2],'基地生命',v.combat.baseHp,cyan,'base');
   }
   function battleBoardFrame(l,v){var p=uiPalette(v),r={x:l.board.x,y:l.board.y,w:l.board.w,h:l.board.h};chamferOutline(r,p.frame,2,8);chamferOutline({x:r.x+2,y:r.y+2,w:r.w-4,h:r.h-4},[p.cyan[0],p.cyan[1],p.cyan[2],.78],1,6);diamond(r.x+r.w*.5,r.y,10,10,p.accent);diamond(r.x+r.w*.5,r.y+r.h,10,10,p.primary);diamond(r.x,r.y+r.h*.5,8,8,p.frame);diamond(r.x+r.w,r.y+r.h*.5,8,8,p.frame);}
+  // Coordinates refer to the approved 941 x 1672 concept, packed as an 800 x 1080 crop.
+  function supportSkin(sx,sy,sw,sh,r){
+    return imageRegion('ui-support-dossier',r.x,r.y,r.w,r.h,(sx-70)/800,1-(sy-260)/1080,(sx+sw-70)/800,1-(sy+sh-260)/1080,[1,1,1,1],1,false,0);
+  }
+  function supportButton(r,purple,label,secondary){
+    var source=secondary?[287,1178,367,113]:[purple?502:133,1022,307,96],
+      fill=secondary?[.025,.075,.12,1]:purple?[.075,.025,.15,1]:[.015,.14,.16,1],
+      ink=[.87,.96,1,1],size=r.w<125?12:14,groupW=6*size+17,start=r.x+(r.w-groupW)/2;
+    mapSkinFrame(source,r,18,fill,supportSkin,.60);
+    if(!secondary){
+      chamfer({x:start,y:r.y+r.h/2-8,w:16,h:16},purple?[.64,.47,.93,1]:[.32,.87,.96,1],2);
+      solid([start+6,r.y+r.h/2-4,start+6,r.y+r.h/2+4,start+12,r.y+r.h/2],[.015,.04,.08,1]);
+      mapLabel(label,{x:start+21,y:r.y+5,w:groupW-17,h:r.h-10},size,ink,{padding:0,spacing:0});
+    }else mapLabel(label,{x:r.x+12,y:r.y+6,w:r.w-24,h:r.h-12},18,ink,{padding:0});
+  }
   function itemModalV2(l,v){
-    var p=uiPalette(v),modal=l.itemModal,i,r,item,accent,iconKey,action,iconSize;
-    rect(0,l.top,l.w,l.usable,[.004,.014,.022,.92]);
-    refinedPanel(modal,p.cyan,[.025,.055,.09,.99],'panel');
-    if(!imageAsset('ui-item-supply',l.w*.5-18,modal.y+18,36,36,1)){
-      diamond(l.w*.5,modal.y+36,20,20,p.primary);
-      diamond(l.w*.5,modal.y+36,10,10,p.navy);
-    }
-    text('选择本局支援',l.w*.5,modal.y+68,1.36,p.paper,modal.w*.84,'center','title');
-    text('二选一  ·  不占用地图位置',l.w*.5,modal.y+100,.64,p.muted,modal.w*.86,'center');
-    line(modal.x+modal.w*.08,modal.y+126,modal.x+modal.w*.92,modal.y+126,1,[p.frame[0],p.frame[1],p.frame[2],.30]);
+    var modal=l.itemModal,navy=[.018,.045,.075,1],paper=[.85,.95,1,1],cyan=[.25,.87,.97,1],
+      i,r,item,clear,art,artH,nameY,description,lines,j,action,crestW=Math.min(136,modal.w*.36);
+    rect(0,l.top,l.w,l.usable,[.003,.01,.018,.78]);
+    mapSkinFrame([70,365,800,970],modal,32,navy,supportSkin,.64);
+    supportSkin(334,260,272,155,{x:l.w/2-crestW/2,y:modal.y-crestW*.38,w:crestW,h:crestW*155/272});
+    mapLabel('选择本局支援',{x:modal.x+24,y:modal.y+38,w:modal.w-48,h:34},l.w<360?23:27,paper,{padding:0});
+    line(modal.x+modal.w*.20,modal.y+77,modal.x+modal.w*.80,modal.y+77,1.5,cyan);
+    mapLabel(v.lowHealthItemWarning?'当前血量低，推荐使用道具':'二选一 · 不占用地图位置',{x:modal.x+16,y:modal.y+81,w:modal.w-32,h:22},13,v.lowHealthItemWarning?[1,.48,.36,1]:[.58,.75,.85,1],{padding:0});
     for(i=0;i<2;i+=1){
-      r=l.itemChoices[i];item=v.battleItemChoices[i];accent=i?p.violet:p.primary;
-      refinedPanel(r,accent,i?[.095,.045,.15,.98]:[.035,.105,.12,.98],'card');
-      if(!item)continue;
-      iconKey=item.effect==='clear_all_enemies'?'ui-item-clear':'ui-item-economy';
-      iconSize=Math.min(r.w*.46,r.h*.44);
-      imageAsset(iconKey,r.x+(r.w-iconSize)*.5,r.y+r.h*.055,iconSize,iconSize,1)||itemChoiceIcon(r,item.effect,accent);
-      text(item.displayName||(item.effect==='clear_all_enemies'?'清除怪物':'经济强化'),r.x+r.w*.5,r.y+r.h*.55,.96,p.paper,r.w*.88,'center','title');
-      text(item.description||(item.effect==='clear_all_enemies'?'清除当前地图全部怪物':'本局经济收益提高25%'),r.x+r.w*.5,r.y+r.h*.68,.60,p.muted,r.w*.90,'center');
-      action={x:r.x+r.w*.055,y:r.y+r.h*.80,w:r.w*.89,h:r.h*.16};
-      refinedPanel(action,i?p.violet:[.28,.78,.58,1],i?p.buttonViolet:p.buttonGreen,'button');
-      line(action.x+8,action.y+action.h*.5,action.x+action.w-8,action.y+action.h*.5,1,[accent[0],accent[1],accent[2],.38]);
-      text('观看广告',action.x+action.w*.5,action.y+action.h*.06,.60,p.paper,action.w*.88,'center','compactButton');
-      text('立即使用',action.x+action.w*.5,action.y+action.h*.54,.60,p.paper,action.w*.88,'center','compactButton');
+      r=l.itemChoices[i];item=v.battleItemChoices[i];if(!item)continue;
+      clear=item.effect==='clear_all_enemies';action=l.itemActions[i];
+      mapSkinFrame([clear?473:96,581,375,572],r,36,clear?[.045,.018,.095,1]:[.012,.075,.085,1],supportSkin,.58);
+      artH=Math.min((r.w-24)*282/310,r.h-150);
+      art={x:r.x+12,y:r.y+14,w:r.w-24,h:artH};
+      supportSkin(clear?505:130,620,310,282,art);
+      nameY=r.y+14+artH+7;
+      mapLabel(item.displayName||(clear?'清除怪物':'经济强化'),{x:r.x+8,y:nameY,w:r.w-16,h:26},l.w<360?17:20,clear?[.84,.74,1,1]:[1,.78,.26,1],{padding:0});
+      description=String(item.description||(clear?'清除当前地图全部怪物':'本局经济收益提高25%')).replace(/(\d)\s+(?=\d|%)/g,'$1');
+      lines=M3.MapUI.wrap(description,12,r.w-22);
+      for(j=0;j<Math.min(2,lines.length);j+=1)mapLabel(lines[j],{x:r.x+11,y:nameY+29+j*17,w:r.w-22,h:17},12,[.62,.78,.87,1],{padding:0,spacing:0});
+      supportButton(action,clear,'观看广告使用',false);
     }
-    refinedPanel(l.itemSkip,p.cyan,p.buttonBlue,'button');
-    text('暂不使用',l.itemSkip.x+l.itemSkip.w*.5,l.itemSkip.y+(l.itemSkip.h-16)*.5,1,p.paper,l.itemSkip.w*.88,'center','button');
+    supportButton(l.itemSkip,false,'暂不使用',true);
   }
   function loadingScreen(l,v,failed){
     // Keep the entire reference composition visible, including its title and hero silhouettes.
@@ -859,5 +870,22 @@
     }finally{gl.disable(gl.SCISSOR_TEST);}
   }
   function draw(context,v){var l=M3.UILayout.get(),bg=tone(v,'background',[.05,.07,.1,1]);init(context);gl.viewport(0,0,context.drawingBufferWidth,context.drawingBufferHeight);gl.clearColor(bg[0],bg[1],bg[2],bg.length>3?bg[3]:1);gl.clear(gl.COLOR_BUFFER_BIT);if(v.state==='BOOT')loadingScreen(l,v,false);else if(v.state==='LOADING'){if(v.loadingPhase==='render'){try{prepareAssets(v.assetKeys);mapV2(l,v);if(gl.getError&&gl.getError()!==gl.NO_ERROR)throw new Error('地图画面渲染失败');loadingScreen(l,v,false);if(M3.Game&&M3.Game.assetsRendered)M3.Game.assetsRendered();}catch(error){if(M3.Game&&M3.Game.assetRenderFailed)M3.Game.assetRenderFailed(error);loadingScreen(l,{loadingError:error&&error.message||'图片渲染失败'},true);}}else loadingScreen(l,v,false);}else if(v.state==='LOAD_ERROR')loadingScreen(l,v,true);else if(v.state==='HOME')home(l,v);else if(v.state==='WORLD_MAP')mapV2(l,v);else if(v.state==='LEVEL_DETAIL')detailV2(l,v);else if(v.state==='PROGRESSION')progression(l,v);else if(v.state==='DECK_SELECT')deckV2(l,v);else if(v.state==='HERO_SELECT')heroSelectV2(l,v);else if(v.state==='BATTLE')battle(l,v);else if(v.state==='RESULT')resultV2(l,v);if(v.state==='BATTLE'&&v.itemMenuOpen)itemModalV2(l,v);if(v.mapDialog)mapDialog(l,v);if(v.message){if(v.state!=='BATTLE'&&v.state!=='WORLD_MAP'&&v.state!=='DECK_SELECT'&&v.state!=='HERO_SELECT'&&v.state!=='PROGRESSION')text(v.message,l.w*.5,l.top+l.usable*.94,.75,[1,1,1,1],l.w*.9,'center');}}
-  M3.Renderer={draw:draw,rect:rect,triangles:solid,imageRegion:imageRegion};
+  M3.Renderer={draw:draw,rect:rect,triangles:solid,imageRegion:imageRegion,terminal:{
+    // Tutorial panels need a continuous rail; the hero skin has a transparent title notch.
+    panel:function(r){
+      var steel=[.45,.51,.55,1],light=[.73,.82,.86,1],dark=[.13,.23,.29,1],i,x,y;
+      mapMetalPanel(r,[.278,.863,.906,1],[.043,.145,.204,1]);
+      chamferOutline({x:r.x+5,y:r.y+5,w:r.w-10,h:r.h-10},dark,2,5);
+      line(r.x+12,r.y+2,r.x+r.w-12,r.y+2,2,light);
+      line(r.x+12,r.y+r.h-2,r.x+r.w-12,r.y+r.h-2,2,steel);
+      for(i=0;i<4;i+=1){
+        x=i%2?r.x+r.w-13:r.x+3;y=i<2?r.y+3:r.y+r.h-13;
+        chamfer({x:x,y:y,w:10,h:10},steel,2);
+        line(x+2,y+1,x+8,y+1,1,light);
+        rect(x+4,y+4,3,3,[.03,.09,.12,1]);rect(x+4,y+4,2,1,light);
+      }
+    },
+    tag:function(r){mapMetalPanel(r,[.278,.863,.906,1],[.16,.26,.33,1]);},
+    label:mapLabel,button:towerModalButton,line:line,image:imageAssetContain
+  }};
 })();

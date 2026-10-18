@@ -52,11 +52,12 @@
     for(i=0;i<label.length;i+=1)if(hdIndex[label.charAt(i)]===undefined)return false;
     pen=r.x+(r.w-width)*.5;
     if(opts.align==='left')pen=r.x+padding;else if(opts.align==='right')pen=r.x+r.w-padding-width;
+    // Share one baseline across the line; punctuation keeps its natural vertical position.
     baseline=r.y+r.h*.5+(ascent-descent)*size/(em*2);
     quad=hdData.glyphPixels*size/em;
     for(i=0;i<label.length;i+=1){
       ch=label.charAt(i);
-      glyphHD(renderer,ch,pen,hdData.inkCenters?r.y+r.h*.5-hdData.inkCenters[hdIndex[ch]]*size/em:baseline-ascent*size/em,quad,color,color[3]===undefined?1:color[3]);
+      glyphHD(renderer,ch,pen,baseline-ascent*size/em,quad,color,color[3]===undefined?1:color[3]);
       pen+=advance(ch)+spacing;
     }
     return true;

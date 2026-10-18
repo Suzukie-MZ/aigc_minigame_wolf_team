@@ -7,5 +7,5 @@
   }
   function point(g,x,y){return{x:g.x+x*g.cx,y:g.y+y*g.cy};}
   function pick(g,x,y){if(x<g.x||y<g.y||x>=g.x+g.w||y>=g.y+g.h)return null;return{x:Math.floor((x-g.x)/g.cx),y:Math.floor((y-g.y)/g.cy)};}
-  M3.CombatProjection={manifest:[{key:'battle-scene-surround',url:'subpackages/battle-images/assets/Image/ui/battle-scene-surround.webp',type:'image',version:'1',preload:true}],geometry:geometry,point:point,pick:pick};
+  M3.CombatProjection={manifest:[{key:'ui-support-dossier',url:'subpackages/ui-images/assets/Image/ui/ui-support-dossier-v1.jpg',type:'image',version:'1',preload:true},{key:'battle-scene-surround',url:'subpackages/battle-images/assets/Image/ui/battle-scene-surround.webp',type:'image',version:'1',preload:true}],geometry:geometry,point:point,pick:pick};
 })();

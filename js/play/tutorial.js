@@ -59,18 +59,63 @@
     }else if(stage==='items'){out.title='战斗道具';out.lines=['点击道具入口，','查看本局可用的道具。'];targets.push(l.battleItems);}
     else if(stage==='item-info'){out.title='道具使用方法';out.lines=['观看完整广告后，道具才会生效。','也可暂不使用，直接开始战斗。'];targets.push.apply(targets,l.itemChoices);targets.push(l.itemSkip);out.button='开始战斗';}
     out.targets=targets.filter(function(r){return!!r;});
-    top=l.top||0;h=154;panelY=top+Math.max(52,l.usable*.065);
-    if(v.state==='DECK_SELECT'||v.state==='HERO_SELECT'){
-      var modal=v.state==='DECK_SELECT'?l.towerModal:l.heroModal;available=modal?modal.y-top-16:(l.loadoutCards&&l.loadoutCards[0]&&l.loadoutCards[0].y||top+160)-top-20;
-      h=Math.max(108,Math.min(140,available));panelY=top+10;
-    }else if(out.targets.length&&out.targets[0].y<top+l.usable*.42)panelY=top+l.usable-h-18;
-    if(stage==='route'){h=Math.min(154,Math.max(108,l.board.y-top-42));panelY=l.board.y-h-32;if(panelY<top+10)panelY=l.board.y+l.board.h+28;}
-    if(stage==='tower-place'||stage==='hero-place')panelY=top+10;
-    if(stage==='item-info')panelY=top+Math.max(16,l.usable*.06);
-    out.panel={x:16,y:panelY,w:l.w-32,h:h};
-    out.skipRect={x:out.panel.x+12,y:out.panel.y+h-38,w:80,h:28};
-    out.nextRect=out.button?{x:out.panel.x+out.panel.w-124,y:out.panel.y+h-38,w:112,h:28}:null;
+    // Route teaching reveals its path cells instead of one giant battlefield hole.
+    if(stage==='route'&&c&&c.board&&M3.CombatProjection){
+      var routeGeometry=M3.CombatProjection.geometry(l,c.board);
+      out.targets=(c.board.path||[]).map(function(cell){return{x:routeGeometry.x+cell.x*routeGeometry.cx,y:routeGeometry.y+cell.y*routeGeometry.cy,w:routeGeometry.cx,h:routeGeometry.cy};});
+    }
+    if(stage==='tower-pick')out.lines=['选择 4 座防御塔组成阵容。','已选 '+(v.deck||[]).length+'/4，可点击卡片取消。'];
+    arrange(out,l,v);
     return out;
+  }
+  function overlaps(a,b,gap){return a.x<b.x+b.w+gap&&a.x+a.w>b.x-gap&&a.y<b.y+b.h+gap&&a.y+a.h>b.y-gap;}
+  function copyLines(lines,size,width){
+    var result=[],i,wrapped;
+    for(i=0;i<lines.length;i+=1){wrapped=M3.MapUI?M3.MapUI.wrap(lines[i],size,width):[lines[i]];result=result.concat(wrapped);}
+    return result;
+  }
+  function arrange(out,l,v){
+    var width=l.w-32,normalLines=copyLines(out.lines,16,width-56),compactLines=copyLines(out.id==='tower-pick'?['已选 '+(v.deck||[]).length+'/4，点击卡片选择或取消。']:out.id==='hero-pick'?['点击卡片选择 1 名英雄。']:out.lines,14,width-44),
+      sizes=[144+normalLines.length*20,90+compactLines.length*17],choice=null,pass,mode,i,j,y,p,candidates,blocked,
+      top=l.top||0,bottom=top+l.usable,targets=out.targets,anchor=v.state==='BATTLE'?l.board.y+l.board.h-8:(l.mapDock?l.mapDock.y-12:bottom-12),best=Infinity,score;
+    if(v.state==='HERO_SELECT'||v.state==='DECK_SELECT')anchor=top+sizes[0]+12;
+    // First use quiet battle space. On very short screens, cover only non-target UI.
+    for(pass=0;pass<2&&!choice;pass+=1){
+      blocked=targets.slice();
+      if(pass===0&&v.state==='BATTLE'){
+        blocked.push({x:0,y:top,w:l.w,h:l.board.y-top});
+        blocked.push({x:0,y:l.heroBarY-14,w:l.w,h:bottom-l.heroBarY+14});
+      }
+      for(mode=0;mode<2&&!choice;mode+=1){
+        candidates=[top+(mode?2:12),bottom-sizes[mode]-8,anchor-sizes[mode]];
+        for(i=0;i<blocked.length;i+=1){candidates.push(blocked[i].y-sizes[mode]-6);candidates.push(blocked[i].y+blocked[i].h+6);}
+        best=Infinity;
+        for(i=0;i<candidates.length;i+=1){
+          y=candidates[i];p={x:16,y:y,w:width,h:sizes[mode]};
+          if(y<top+(mode?2:12)||y+p.h>bottom-2)continue;
+          for(j=0;j<blocked.length;j+=1)if(overlaps(p,blocked[j],4))break;
+          if(j<blocked.length)continue;
+          score=Math.abs(y+p.h-anchor);
+          if(score<best){choice={panel:p,compact:!!mode,lines:mode?compactLines:normalLines};best=score;}
+        }
+      }
+    }
+    // Target sets larger than the viewport get a compact status-area card.
+    if(!choice)choice={panel:{x:16,y:top+2,w:width,h:sizes[1]},compact:true,lines:compactLines};
+    out.panel=choice.panel;out.compact=choice.compact;out.displayLines=choice.lines;
+    p=out.panel;out.skipRect={x:p.x+(out.compact?22:24),y:p.y+p.h-(out.compact?58:66),w:out.compact?88:98,h:48};
+    out.nextRect=out.button?{x:p.x+p.w-(out.compact?120:138),y:out.skipRect.y,w:out.compact?98:114,h:48}:null;
+    out.hint='点击高亮区域继续';
+    if(out.id==='first-level')out.hint='点击高亮关卡继续';
+    else if(out.id==='hero-pick')out.hint='点击高亮英雄继续';
+    else if(out.id==='tower-place'||out.id==='hero-place')out.hint='点击高亮地块继续';
+    best=Infinity;out.focusTarget=null;
+    for(i=0;i<targets.length;i+=1){
+      if(targets[i].y+targets[i].h<top||targets[i].y>bottom)continue;
+      if((out.id==='tower-place'||out.id==='hero-place')&&targets[i].y>=l.heroBarY)continue;
+      score=Math.abs(targets[i].y+targets[i].h/2-(p.y+p.h/2));
+      if(score<best){out.focusTarget=targets[i];best=score;}
+    }
   }
   function handlePointer(x,y,v){
     var t=v.tutorial,i;if(!t)return false;

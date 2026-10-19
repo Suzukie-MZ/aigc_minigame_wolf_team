@@ -1,9 +1,26 @@
 (function () {
   var M3=window.M3;
   function quad(v,x,y,w,h){v.push(x,y,x+w,y,x,y+h,x,y+h,x+w,y,x+w,y+h);}
+  function rangeHint(v){
+    var c=v.combat,hint=c.towerRangeHint,l,g,center,rx,ry,fill=[],edge=[],i,a,b,x1,y1,x2,y2,ix1,iy1,ix2,iy2,width=1.8;
+    if(!hint||v.paused||c.selectedObstacle)return;
+    l=M3.UILayout.get();g=M3.CombatProjection.geometry(l,c.board);center=M3.CombatProjection.point(g,hint.x+.5,hint.y+.5);
+    rx=hint.range*g.cx;ry=hint.range*g.cy;
+    // Project the same grid-space circle used by combat onto the compressed ground plane.
+    for(i=0;i<96;i+=1){
+      a=i*Math.PI*2/96;b=(i+1)*Math.PI*2/96;
+      x1=center.x+Math.cos(a)*rx;y1=center.y+Math.sin(a)*ry;x2=center.x+Math.cos(b)*rx;y2=center.y+Math.sin(b)*ry;
+      ix1=center.x+Math.cos(a)*Math.max(0,rx-width);iy1=center.y+Math.sin(a)*Math.max(0,ry-width);
+      ix2=center.x+Math.cos(b)*Math.max(0,rx-width);iy2=center.y+Math.sin(b)*Math.max(0,ry-width);
+      fill.push(center.x,center.y,x1,y1,x2,y2);edge.push(x1,y1,x2,y2,ix1,iy1,ix1,iy1,x2,y2,ix2,iy2);
+    }
+    M3.Renderer.triangles(fill,hint.hero?[1,.83,.42,.12]:[.35,.95,.86,.12]);M3.Renderer.triangles(edge,hint.hero?[1,.83,.42,.85]:[.35,.95,.86,.85]);
+  }
   function render(v){
     var c=v.combat,hero,l,x,y,i,unit,used={},vertices=[],inset,b,px,py,size,alpha,g,cw,ch;
-    if(v.state!=='BATTLE'||!c||v.itemMenuOpen||c.selectedTower||c.selectedObstacle)return;
+    if(v.state!=='BATTLE'||!c||v.itemMenuOpen)return;
+    rangeHint(v);
+    if(c.selectedTower||c.selectedHeroUnit||c.selectedObstacle)return;
     hero=c.mode==='hero';
     if(hero){if(!c.selectedHero||!c.heroUnits[c.selectedHero])return;}
     else if(!c.selectedCard||!c.cardUnits[c.selectedCard])return;
